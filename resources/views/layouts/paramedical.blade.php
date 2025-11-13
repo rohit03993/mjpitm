@@ -11,6 +11,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=playfair+display:400,500,600,700&family=merriweather:400,700&display=swap" rel="stylesheet" />
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -22,24 +23,42 @@
     <!-- Navigation -->
     <nav class="bg-green-900 text-white shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20">
+            <div class="flex justify-between items-center min-h-[70px] md:min-h-[80px] xl:min-h-[90px] py-2">
                 <div class="flex items-center">
-                    <a href="{{ route('home') }}" class="flex items-center space-x-3">
-                        <div class="bg-white rounded-full p-2">
-                            <i class="fas fa-user-md text-green-900 text-2xl"></i>
-                        </div>
-                        <div>
-                            <div class="text-lg font-bold">MJPIPS</div>
-                            <div class="text-xs text-green-200">Healthcare Excellence</div>
-                        </div>
+                    <a href="{{ route('home') }}" class="flex items-center space-x-2 md:space-x-3 lg:space-x-4 hover:opacity-95 transition-opacity duration-200">
+                        @if(file_exists(public_path('images/logos/MJPIPS.png')) || file_exists(public_path('images/logos/MJPIPS.jpg')) || file_exists(public_path('images/logos/MJPIPS.svg')))
+                            @php
+                                $logoPath = file_exists(public_path('images/logos/MJPIPS.png')) ? 'images/logos/MJPIPS.png' : (file_exists(public_path('images/logos/MJPIPS.jpg')) ? 'images/logos/MJPIPS.jpg' : 'images/logos/MJPIPS.svg');
+                            @endphp
+                            <div class="flex items-center justify-center bg-gradient-to-br from-white via-green-50 to-green-100 rounded-lg md:rounded-xl p-1.5 md:p-2 lg:p-2.5 border-2 border-green-300 shadow-md md:shadow-lg hover:shadow-xl hover:border-green-400 transition-all duration-200">
+                                <img src="{{ asset($logoPath) }}" alt="MJPIPS Logo" class="h-10 sm:h-12 md:h-16 lg:h-20 xl:h-24 w-auto max-w-[120px] sm:max-w-[140px] md:max-w-[180px] lg:max-w-[220px] xl:max-w-[260px] object-contain drop-shadow-sm md:drop-shadow-md">
+                            </div>
+                            <div class="hidden lg:block ml-3 max-w-lg">
+                                <div class="text-white font-bold text-base lg:text-lg xl:text-xl leading-tight" style="font-family: 'Playfair Display', 'Merriweather', 'Georgia', serif; line-height: 1.4;">
+                                    <div class="whitespace-nowrap">Mahatma Jyotiba Phule</div>
+                                    <div class="whitespace-nowrap">Institute of Paramedical Science</div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="bg-white rounded-full p-2">
+                                <i class="fas fa-user-md text-green-900 text-2xl"></i>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold">MJPIPS</div>
+                                <div class="text-xs text-green-200">Healthcare Excellence</div>
+                            </div>
+                        @endif
                     </a>
                 </div>
-                <div class="hidden md:flex items-center space-x-6">
+                <div class="hidden md:flex items-center space-x-4">
                     <a href="{{ route('home') }}" class="hover:text-green-200 px-3 py-2 rounded-md transition {{ request()->routeIs('home') ? 'text-green-200 border-b-2 border-green-200' : '' }}">Home</a>
                     <a href="{{ route('about') }}" class="hover:text-green-200 px-3 py-2 rounded-md transition {{ request()->routeIs('about') ? 'text-green-200 border-b-2 border-green-200' : '' }}">About</a>
                     <a href="{{ route('courses') }}" class="hover:text-green-200 px-3 py-2 rounded-md transition {{ request()->routeIs('courses') ? 'text-green-200 border-b-2 border-green-200' : '' }}">Courses</a>
-                    <a href="{{ route('student.login') }}" class="bg-green-700 hover:bg-green-800 px-6 py-2 rounded-md font-semibold transition shadow-md">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Student Portal
+                    <a href="{{ route('login') }}" class="bg-white text-green-900 hover:bg-green-50 px-4 py-2 rounded-md font-semibold transition shadow-md hover:shadow-lg">
+                        <i class="fas fa-user-tie mr-2"></i>Staff Login
+                    </a>
+                    <a href="{{ route('student.login') }}" class="bg-green-700 hover:bg-green-800 px-4 py-2 rounded-md font-semibold transition shadow-md hover:shadow-lg">
+                        <i class="fas fa-user-graduate mr-2"></i>Student Portal
                     </a>
                 </div>
                 <!-- Mobile menu button -->
@@ -56,8 +75,11 @@
                 <a href="{{ route('home') }}" class="block hover:text-green-200 px-3 py-2 rounded-md">Home</a>
                 <a href="{{ route('about') }}" class="block hover:text-green-200 px-3 py-2 rounded-md">About</a>
                 <a href="{{ route('courses') }}" class="block hover:text-green-200 px-3 py-2 rounded-md">Courses</a>
+                <a href="{{ route('login') }}" class="block bg-white text-green-900 hover:bg-green-50 px-3 py-2 rounded-md font-semibold text-center mb-2">
+                    <i class="fas fa-user-tie mr-2"></i>Staff Login
+                </a>
                 <a href="{{ route('student.login') }}" class="block bg-green-700 hover:bg-green-800 px-3 py-2 rounded-md font-semibold text-center">
-                    <i class="fas fa-sign-in-alt mr-2"></i>Student Portal
+                    <i class="fas fa-user-graduate mr-2"></i>Student Portal
                 </a>
             </div>
         </div>
@@ -73,10 +95,21 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <div>
-                    <h3 class="text-xl font-bold mb-4 flex items-center">
-                        <i class="fas fa-user-md mr-2 text-green-400"></i>
-                        MJPIPS
-                    </h3>
+                    <div class="mb-4">
+                        @if(file_exists(public_path('images/logos/MJPIPS.png')) || file_exists(public_path('images/logos/MJPIPS.jpg')) || file_exists(public_path('images/logos/MJPIPS.svg')))
+                            @php
+                                $logoPath = file_exists(public_path('images/logos/MJPIPS.png')) ? 'images/logos/MJPIPS.png' : (file_exists(public_path('images/logos/MJPIPS.jpg')) ? 'images/logos/MJPIPS.jpg' : 'images/logos/MJPIPS.svg');
+                            @endphp
+                            <div class="inline-block bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border-2 border-green-300 shadow-md mb-3">
+                                <img src="{{ asset($logoPath) }}" alt="MJPIPS Logo" class="h-16 md:h-20 lg:h-24 w-auto max-w-[240px] md:max-w-[280px] lg:max-w-[300px] object-contain drop-shadow-sm">
+                            </div>
+                        @else
+                            <h3 class="text-xl font-bold mb-4 flex items-center">
+                                <i class="fas fa-user-md mr-2 text-green-400"></i>
+                                MJPIPS
+                            </h3>
+                        @endif
+                    </div>
                     <p class="text-gray-400 mb-4">
                         {{ $institute->description ?? 'Mahatma Jyotiba Phule Institute of Paramedical Science - Dedicated to excellence in healthcare education and training future healthcare professionals.' }}
                     </p>
@@ -93,6 +126,7 @@
                         <li><a href="{{ route('home') }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>Home</a></li>
                         <li><a href="{{ route('about') }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>About Us</a></li>
                         <li><a href="{{ route('courses') }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>Courses</a></li>
+                        <li><a href="{{ route('login') }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>Staff Login</a></li>
                         <li><a href="{{ route('student.login') }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>Student Portal</a></li>
                     </ul>
                 </div>

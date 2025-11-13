@@ -18,11 +18,31 @@ class DetectInstitute
     {
         $host = $request->getHost();
         
+        // Map local domains to production domains for matching
+        $domainMap = [
+            'mjpitm.local' => 'mjpitm.in',
+            'mjpips.local' => 'mjpips.in',
+            'www.mjpitm.local' => 'mjpitm.in',
+            'www.mjpips.local' => 'mjpips.in',
+        ];
+        
         // For localhost/testing - allow query parameter to select institute
         if ($host === 'localhost' || $host === '127.0.0.1' || str_contains($host, '.local')) {
             // Check if institute_id is passed in query string for testing
             if ($request->has('institute_id')) {
                 $institute = Institute::find($request->get('institute_id'));
+                if ($institute) {
+                    $request->attributes->set('institute_id', $institute->id);
+                    $request->attributes->set('institute', $institute);
+                    session(['current_institute_id' => $institute->id]);
+                }
+            } elseif (isset($domainMap[$host])) {
+                // Map .local domain to production domain and find institute
+                $productionDomain = $domainMap[$host];
+                $institute = Institute::where('domain', $productionDomain)
+                    ->where('status', 'active')
+                    ->first();
+                
                 if ($institute) {
                     $request->attributes->set('institute_id', $institute->id);
                     $request->attributes->set('institute', $institute);

@@ -16,7 +16,27 @@ class Course extends Model
         'duration_years',
         'description',
         'status',
+        'registration_fee',
+        'entrance_fee',
+        'enrollment_fee',
+        'tuition_fee',
+        'caution_money',
+        'hostel_fee_amount',
+        'late_fee',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'registration_fee' => 'decimal:2',
+            'entrance_fee' => 'decimal:2',
+            'enrollment_fee' => 'decimal:2',
+            'tuition_fee' => 'decimal:2',
+            'caution_money' => 'decimal:2',
+            'hostel_fee_amount' => 'decimal:2',
+            'late_fee' => 'decimal:2',
+        ];
+    }
 
     /**
      * Get the institute that owns this course

@@ -22,7 +22,7 @@ class LandingPageController extends Controller
 
         // Map institute to view
         $instituteViews = [
-            1 => 'institutes.tech.home',        // Tech Institute (mjfitm.in)
+            1 => 'institutes.tech.home',        // Tech Institute (mjpitm.in)
             2 => 'institutes.paramedical.home', // Paramedical Institute (mjpips.in)
         ];
 

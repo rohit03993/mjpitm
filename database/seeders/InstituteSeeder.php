@@ -15,7 +15,7 @@ class InstituteSeeder extends Seeder
     {
         Institute::create([
             'name' => 'Mahatma Jyotiba Phule Institute of Technology & Management',
-            'domain' => 'mjfitm.in',
+            'domain' => 'mjpitm.in',
             'description' => 'Technical & Management courses (BCA, BBA, etc.)',
             'status' => 'active',
         ]);
