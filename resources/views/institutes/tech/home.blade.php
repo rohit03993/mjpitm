@@ -98,6 +98,7 @@
                 <p class="text-gray-600 font-semibold text-center">Years</p>
             </div>
         </div>
+        </div>
     </div>
 </section>
 

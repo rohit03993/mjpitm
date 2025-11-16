@@ -14,6 +14,11 @@ Route::get('/', [LandingPageController::class, 'index'])->name('home');
 Route::get('/about', [LandingPageController::class, 'about'])->name('about');
 Route::get('/courses', [LandingPageController::class, 'courses'])->name('courses');
 
+// Combined Login choice page (Staff / Student)
+Route::get('/login-options', function () {
+    return view('auth.login-options');
+})->name('login.options');
+
 // Student Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/student/login', [StudentAuthController::class, 'showLoginForm'])->name('student.login');
