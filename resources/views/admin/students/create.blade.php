@@ -152,13 +152,17 @@
 
                 <!-- Communication Details Section -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6 bg-yellow-50 border-b border-yellow-200">
+                    <div class="p-6 bg-yellow-50 border-b border-yellow-200 flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-yellow-900">Communication Details</h3>
+                        <p class="text-xs text-yellow-900 opacity-80">Keep at least one student contact and one guardian contact updated.</p>
                     </div>
                     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Contact Number -->
+                        <!-- Student Contact -->
+                        <div class="md:col-span-2">
+                            <h4 class="text-sm font-semibold text-gray-800 mb-2">Student Contact</h4>
+                        </div>
                         <div>
-                            <x-input-label for="phone" :value="__('Contact Number')" />
+                            <x-input-label for="phone" :value="__('Student Mobile Number')" />
                             <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" :value="old('phone')" />
                             <x-input-error :messages="$errors->get('phone')" class="mt-2" />
                         </div>
@@ -179,7 +183,7 @@
 
                         <!-- Mother's Contact No -->
                         <div>
-                            <x-input-label for="mother_contact" :value="__('Mother\'s Contact No')" />
+                            <x-input-label for="mother_contact" :value="__('Mother\'s / Guardian\'s Contact No')" />
                             <x-text-input id="mother_contact" class="block mt-1 w-full" type="tel" name="mother_contact" :value="old('mother_contact')" />
                             <x-input-error :messages="$errors->get('mother_contact')" class="mt-2" />
                         </div>
@@ -201,14 +205,27 @@
                         <!-- State -->
                         <div>
                             <x-input-label for="state" :value="__('State')" />
-                            <x-text-input id="state" class="block mt-1 w-full" type="text" name="state" :value="old('state')" placeholder="Select a State" />
+                            <select
+                                id="state"
+                                name="state"
+                                class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
+                                onchange="loadDistricts(this.value)"
+                            >
+                                <option value="">Select a State</option>
+                            </select>
                             <x-input-error :messages="$errors->get('state')" class="mt-2" />
                         </div>
-
+            
                         <!-- District -->
                         <div>
                             <x-input-label for="district" :value="__('District')" />
-                            <x-text-input id="district" class="block mt-1 w-full" type="text" name="district" :value="old('district')" />
+                            <select
+                                id="district"
+                                name="district"
+                                class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                                <option value="">Select District</option>
+                            </select>
                             <x-input-error :messages="$errors->get('district')" class="mt-2" />
                         </div>
 
@@ -240,8 +257,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Examination</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year Of Passing</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Board/University</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage/CGPA</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subjects</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage (%)</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -267,13 +283,7 @@
                                             <input type="text" name="qualifications[{{ $loop->index }}][board_university]" value="{{ old('qualifications.'.$loop->index.'.board_university') }}" class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="grid grid-cols-2 gap-2">
-                                                <input type="number" step="0.01" name="qualifications[{{ $loop->index }}][percentage]" value="{{ old('qualifications.'.$loop->index.'.percentage') }}" class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" placeholder="%" min="0" max="100">
-                                                <input type="text" name="qualifications[{{ $loop->index }}][cgpa]" value="{{ old('qualifications.'.$loop->index.'.cgpa') }}" class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" placeholder="CGPA">
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap">
-                                            <input type="text" name="qualifications[{{ $loop->index }}][subjects]" value="{{ old('qualifications.'.$loop->index.'.subjects') }}" class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
+                                            <input type="number" step="0.01" name="qualifications[{{ $loop->index }}][percentage]" value="{{ old('qualifications.'.$loop->index.'.percentage') }}" class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" placeholder="%" min="0" max="100">
                                         </td>
                                     </tr>
                                 @endforeach
@@ -378,13 +388,6 @@
                             <x-text-input id="current_semester" class="block mt-1 w-full" type="number" name="current_semester" :value="old('current_semester', 1)" min="1" />
                             <x-input-error :messages="$errors->get('current_semester')" class="mt-2" />
                         </div>
-
-                        <!-- Roll Number -->
-                        <div>
-                            <x-input-label for="roll_number" :value="__('Roll Number *')" />
-                            <x-text-input id="roll_number" class="block mt-1 w-full" type="text" name="roll_number" :value="old('roll_number')" required />
-                            <x-input-error :messages="$errors->get('roll_number')" class="mt-2" />
-                        </div>
                     </div>
                 </div>
 
@@ -458,14 +461,15 @@
 
                 <!-- Payment Details Section -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6 bg-green-50 border-b border-green-200">
+                    <div class="p-6 bg-green-50 border-b border-green-200 flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-green-900text-green-100">Payment Details</h3>
+                        <p class="text-xs text-green-900 opacity-80">Capture how the registration fee was received.</p>
                     </div>
                     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Mode of Payment -->
                         <div>
                             <x-input-label for="payment_mode" :value="__('Mode of Payment')" />
-                            <select id="payment_mode" name="payment_mode" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
+                            <select id="payment_mode" name="payment_mode" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" onchange="updatePaymentHelp()">
                                 <option value="">Select</option>
                                 <option value="Cash" {{ old('payment_mode') == 'Cash' ? 'selected' : '' }}>Cash</option>
                                 <option value="Cheque" {{ old('payment_mode') == 'Cheque' ? 'selected' : '' }}>Cheque</option>
@@ -473,17 +477,33 @@
                                 <option value="DD" {{ old('payment_mode') == 'DD' ? 'selected' : '' }}>Demand Draft (DD)</option>
                                 <option value="Bank Transfer" {{ old('payment_mode') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
                             </select>
+                            <p id="payment_mode_help" class="mt-1 text-xs text-gray-500">
+                                @if(old('payment_mode') === 'Cash')
+                                    Enter the cash receipt number below.
+                                @elseif(old('payment_mode') === 'Cheque' || old('payment_mode') === 'DD')
+                                    Enter the cheque / DD number below.
+                                @elseif(old('payment_mode') === 'Online' || old('payment_mode') === 'Bank Transfer')
+                                    Enter the transaction / UTR number below.
+                                @else
+                                    Select a mode to see what reference details are required.
+                                @endif
+                            </p>
                             <x-input-error :messages="$errors->get('payment_mode')" class="mt-2" />
                         </div>
 
-                        <!-- Bank Account -->
+                        <!-- Payment Reference / Receipt Number -->
                         <div>
-                            <x-input-label for="bank_account" :value="__('Bank Account')" />
-                            <select id="bank_account" name="bank_account" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Select</option>
-                                <option value="Bank Account 1" {{ old('bank_account') == 'Bank Account 1' ? 'selected' : '' }}>Bank Account 1</option>
-                                <option value="Bank Account 2" {{ old('bank_account') == 'Bank Account 2' ? 'selected' : '' }}>Bank Account 2</option>
-                            </select>
+                            <x-input-label for="bank_account" :value="__('Payment Reference / Receipt No.')" />
+                            <x-text-input
+                                id="bank_account"
+                                class="block mt-1 w-full"
+                                type="text"
+                                name="bank_account"
+                                :value="old('bank_account')"
+                            />
+                            <p class="mt-1 text-xs text-gray-500">
+                                For Cash: Receipt no. &nbsp;|&nbsp; Cheque / DD: Cheque or DD no. &nbsp;|&nbsp; Online / Bank: Transaction or UTR no.
+                            </p>
                             <x-input-error :messages="$errors->get('bank_account')" class="mt-2" />
                         </div>
 
@@ -639,10 +659,54 @@
             if (courseSelect && courseSelect.value) {
                 loadCourseFees(courseSelect.value);
             }
+
+            // Initialize Indian states and districts
+            initStatesAndDistricts();
         });
 
         // Courses data from server
         const coursesData = @json(isset($coursesJson) ? json_decode($coursesJson, true) : []);
+
+        // Indian states and union territories with representative districts (can be extended later)
+        const indianLocations = {
+            "Andhra Pradesh": ["Anantapur", "Chittoor", "East Godavari", "Guntur", "Krishna", "Kurnool", "Nellore", "Prakasam", "Srikakulam", "Visakhapatnam", "Vizianagaram", "West Godavari", "YSR Kadapa"],
+            "Arunachal Pradesh": ["Tawang", "West Kameng", "East Kameng", "Papum Pare", "Upper Subansiri", "West Siang"],
+            "Assam": ["Barpeta", "Bongaigaon", "Cachar", "Darrang", "Dibrugarh", "Goalpara", "Golaghat", "Jorhat", "Kamrup", "Karimganj", "Nagaon", "Sivasagar", "Sonitpur", "Tinsukia"],
+            "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Nalanda", "Purnia", "Darbhanga", "Aurangabad"],
+            "Chhattisgarh": ["Balod", "Bilaspur", "Durg", "Janjgir-Champa", "Korba", "Raipur", "Rajnandgaon"],
+            "Goa": ["North Goa", "South Goa"],
+            "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Kheda"],
+            "Haryana": ["Ambala", "Faridabad", "Gurugram", "Hisar", "Karnal", "Kurukshetra", "Panipat", "Rohtak"],
+            "Himachal Pradesh": ["Bilaspur", "Chamba", "Hamirpur", "Kangra", "Kinnaur", "Kullu", "Mandi", "Shimla", "Solan", "Una"],
+            "Jharkhand": ["Bokaro", "Deoghar", "Dhanbad", "Giridih", "Hazaribagh", "Jamshedpur", "Ranchi"],
+            "Karnataka": ["Bagalkot", "Ballari", "Belagavi", "Bengaluru Rural", "Bengaluru Urban", "Bidar", "Dakshina Kannada", "Dharwad", "Gulbarga", "Hassan", "Mysuru", "Shivamogga", "Udupi"],
+            "Kerala": ["Alappuzha", "Ernakulam", "Idukki", "Kannur", "Kasaragod", "Kollam", "Kottayam", "Kozhikode", "Malappuram", "Palakkad", "Pathanamthitta", "Thiruvananthapuram", "Thrissur", "Wayanad"],
+            "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain", "Rewa", "Sagar", "Satna"],
+            "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Thane", "Aurangabad", "Kolhapur", "Solapur", "Satara"],
+            "Manipur": ["Bishnupur", "Chandel", "Imphal East", "Imphal West", "Thoubal", "Senapati", "Ukhrul"],
+            "Meghalaya": ["East Garo Hills", "West Garo Hills", "East Khasi Hills", "West Khasi Hills", "Jaintia Hills"],
+            "Mizoram": ["Aizawl", "Champhai", "Kolasib", "Lunglei", "Mamit", "Saiha", "Serchhip"],
+            "Nagaland": ["Dimapur", "Kohima", "Mokokchung", "Mon", "Phek", "Tuensang", "Wokha", "Zunheboto"],
+            "Odisha": ["Angul", "Balasore", "Balangir", "Bhadrak", "Cuttack", "Ganjam", "Jajpur", "Khurda", "Mayurbhanj", "Puri", "Sambalpur", "Sundargarh"],
+            "Punjab": ["Amritsar", "Barnala", "Bathinda", "Faridkot", "Ferozepur", "Gurdaspur", "Hoshiarpur", "Jalandhar", "Ludhiana", "Moga", "Patiala", "Sangrur"],
+            "Rajasthan": ["Ajmer", "Alwar", "Bharatpur", "Bhilwara", "Bikaner", "Chittorgarh", "Jaipur", "Jodhpur", "Kota", "Udaipur"],
+            "Sikkim": ["East Sikkim", "North Sikkim", "South Sikkim", "West Sikkim"],
+            "Tamil Nadu": ["Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kanchipuram", "Madurai", "Salem", "Thanjavur", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Vellore"],
+            "Telangana": ["Adilabad", "Hyderabad", "Karimnagar", "Khammam", "Mahbubnagar", "Medak", "Nalgonda", "Nizamabad", "Ranga Reddy", "Warangal"],
+            "Tripura": ["Dhalai", "Gomati", "Khowai", "North Tripura", "Sepahijala", "South Tripura", "Unakoti", "West Tripura"],
+            "Uttar Pradesh": ["Agra", "Aligarh", "Allahabad", "Bareilly", "Ghaziabad", "Gorakhpur", "Jhansi", "Kanpur Nagar", "Lucknow", "Meerut", "Moradabad", "Noida", "Varanasi"],
+            "Uttarakhand": ["Almora", "Dehradun", "Haridwar", "Nainital", "Pauri Garhwal", "Pithoragarh", "Rudraprayag", "Tehri Garhwal", "Udham Singh Nagar"],
+            "West Bengal": ["Alipurduar", "Bankura", "Birbhum", "Cooch Behar", "Darjeeling", "Hooghly", "Howrah", "Jalpaiguri", "Kolkata", "Malda", "Murshidabad", "Nadia", "North 24 Parganas", "South 24 Parganas"],
+            // Union Territories
+            "Andaman and Nicobar Islands": ["Nicobar", "North and Middle Andaman", "South Andaman"],
+            "Chandigarh": ["Chandigarh"],
+            "Dadra and Nagar Haveli and Daman and Diu": ["Dadra and Nagar Haveli", "Daman", "Diu"],
+            "Delhi": ["Central Delhi", "East Delhi", "New Delhi", "North Delhi", "North East Delhi", "North West Delhi", "South Delhi", "South East Delhi", "South West Delhi", "West Delhi"],
+            "Jammu and Kashmir": ["Anantnag", "Baramulla", "Budgam", "Jammu", "Kathua", "Kupwara", "Pulwama", "Srinagar", "Udhampur"],
+            "Ladakh": ["Kargil", "Leh"],
+            "Lakshadweep": ["Lakshadweep"],
+            "Puducherry": ["Karaikal", "Mahe", "Puducherry", "Yanam"]
+        };
         
         // Load courses based on selected institute (for Super Admin)
         function loadCourses(instituteId) {
@@ -708,6 +772,29 @@
                 clearFees();
             }
         }
+
+        // Load districts for a given state; optionally preselect a district
+        function loadDistricts(stateName, preselectDistrict = null) {
+            const districtSelect = document.getElementById('district');
+            if (!districtSelect) return;
+
+            // Clear existing options
+            districtSelect.innerHTML = '<option value=\"\">Select District</option>';
+
+            if (!stateName || !indianLocations[stateName]) {
+                return;
+            }
+
+            indianLocations[stateName].forEach(districtName => {
+                const option = document.createElement('option');
+                option.value = districtName;
+                option.textContent = districtName;
+                if (preselectDistrict && preselectDistrict === districtName) {
+                    option.selected = true;
+                }
+                districtSelect.appendChild(option);
+            });
+        }
         
         // Clear all fee fields
         function clearFees() {
@@ -735,6 +822,56 @@
             
             if (admissionYearInput && !admissionYearInput.value) {
                 admissionYearInput.value = currentYear;
+            }
+        }
+
+        // Populate states dropdown and pre-select old value if present
+        function initStatesAndDistricts() {
+            const stateSelect = document.getElementById('state');
+            const districtSelect = document.getElementById('district');
+            if (!stateSelect || !districtSelect) return;
+
+            const oldState = @json(old('state'));
+            const oldDistrict = @json(old('district'));
+
+            // Populate states
+            Object.keys(indianLocations).sort().forEach(stateName => {
+                const option = document.createElement('option');
+                option.value = stateName;
+                option.textContent = stateName;
+                if (oldState && oldState === stateName) {
+                    option.selected = true;
+                }
+                stateSelect.appendChild(option);
+            });
+
+            // If there is an old state, populate districts for it and select old district
+            if (oldState && indianLocations[oldState]) {
+                loadDistricts(oldState, oldDistrict);
+            }
+        }
+
+        // Update helper text under payment mode based on selection
+        function updatePaymentHelp() {
+            const modeSelect = document.getElementById('payment_mode');
+            const help = document.getElementById('payment_mode_help');
+            if (!modeSelect || !help) return;
+
+            const value = modeSelect.value;
+            switch (value) {
+                case 'Cash':
+                    help.textContent = 'For Cash, enter the cash receipt number in the field below.';
+                    break;
+                case 'Cheque':
+                case 'DD':
+                    help.textContent = 'For Cheque / DD, enter the cheque or DD number in the field below.';
+                    break;
+                case 'Online':
+                case 'Bank Transfer':
+                    help.textContent = 'For Online / Bank Transfer, enter the transaction or UTR number in the field below.';
+                    break;
+                default:
+                    help.textContent = 'Select a mode to see what reference details are required.';
             }
         }
     </script>

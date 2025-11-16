@@ -20,12 +20,58 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <!-- Search and Filter -->
-                    <div class="mb-6 flex flex-col md:flex-row gap-4">
+                    <!-- Search and Filters -->
+                    <form method="GET" action="{{ route('admin.students.index') }}" class="mb-6 flex flex-col md:flex-row gap-4 items-end">
                         <div class="flex-1">
-                            <input type="text" id="search" placeholder="Search by name, roll number, or email..." class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                            <input
+                                type="text"
+                                id="search"
+                                name="search"
+                                value="{{ request('search') }}"
+                                placeholder="Search by name, roll number, or email..."
+                                class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
+                            >
                         </div>
-                    </div>
+
+                        <div class="w-full md:w-48">
+                            <label for="institute_id" class="block text-sm font-medium text-gray-700 mb-1">Institute</label>
+                            <select
+                                id="institute_id"
+                                name="institute_id"
+                                class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                            >
+                                <option value="">All Institutes</option>
+                                @foreach($institutes as $institute)
+                                    <option value="{{ $institute->id }}" {{ (string)request('institute_id') === (string)$institute->id ? 'selected' : '' }}>
+                                        {{ $institute->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="w-full md:w-40">
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select
+                                id="status"
+                                name="status"
+                                class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                            >
+                                <option value="">All Status</option>
+                                @foreach($statuses as $value => $label)
+                                    <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                Apply
+                            </button>
+                        </div>
+                    </form>
 
                     <!-- Students Table -->
                     <div class="overflow-x-auto">
@@ -34,6 +80,7 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll Number</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Institute</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
@@ -51,6 +98,22 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ $student->name }}
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            @if($student->institute)
+                                                @php
+                                                    $isParamedical = \Illuminate\Support\Str::contains(
+                                                        \Illuminate\Support\Str::lower($student->institute->name),
+                                                        'paramedical'
+                                                    );
+                                                @endphp
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                    {{ $isParamedical ? 'bg-green-50 text-green-800' : 'bg-blue-50 text-blue-800' }}">
+                                                    {{ $student->institute->name }}
+                                                </span>
+                                            @else
+                                                <span class="text-xs text-gray-400">N/A</span>
+                                            @endif
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $student->course->name ?? 'N/A' }}
                                         </td>
@@ -64,14 +127,23 @@
                                             {{ $student->current_semester }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $student->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                @if($student->status === 'active')
+                                                    bg-green-100 text-green-800
+                                                @elseif($student->status === 'pending')
+                                                    bg-yellow-100 text-yellow-800
+                                                @else
+                                                    bg-red-100 text-red-800
+                                                @endif">
                                                 {{ ucfirst($student->status) }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <a href="{{ route('admin.students.show', $student->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
-                                            <span class="mx-2">|</span>
-                                            <a href="{{ route('admin.students.edit', $student->id) }}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                                            @if(auth()->user() && auth()->user()->isSuperAdmin())
+                                                <span class="mx-2">|</span>
+                                                <a href="{{ route('admin.students.edit', $student->id) }}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

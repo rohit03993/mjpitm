@@ -27,19 +27,21 @@ class StudentAuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $request->validate([
-            'roll_number' => ['required', 'string'],
+            'identifier' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        // Find student by roll number
-        $student = Student::where('roll_number', $request->roll_number)
-            ->where('status', 'active')
+        $identifier = $request->identifier;
+
+        // Find student by registration number or roll number
+        $student = Student::where('registration_number', $identifier)
+            ->orWhere('roll_number', $identifier)
             ->first();
 
         // Check if student exists and password matches
         if (!$student || !Hash::check($request->password, $student->password)) {
             throw ValidationException::withMessages([
-                'roll_number' => __('The provided credentials do not match our records.'),
+                'identifier' => __('The provided credentials do not match our records.'),
             ]);
         }
 
@@ -47,7 +49,7 @@ class StudentAuthController extends Controller
         $instituteId = session('current_institute_id');
         if ($instituteId && $student->institute_id != $instituteId) {
             throw ValidationException::withMessages([
-                'roll_number' => __('You do not have access to this institute.'),
+                'identifier' => __('You do not have access to this institute.'),
             ]);
         }
 
@@ -87,7 +89,7 @@ class StudentAuthController extends Controller
     public function sendPasswordResetLink(Request $request): RedirectResponse
     {
         $request->validate([
-            'roll_number' => ['required', 'string', 'exists:students,roll_number'],
+            'identifier' => ['required', 'string'],
         ]);
 
         // TODO: Implement password reset email functionality

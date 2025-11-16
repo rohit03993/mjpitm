@@ -14,7 +14,7 @@
                     Forgot Password
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-                    Enter your roll number to receive a password reset link
+                    Enter your registration / roll number to receive a password reset link
                 </p>
             </div>
 
@@ -56,18 +56,18 @@
                 @csrf
 
                 <div>
-                    <label for="roll_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Roll Number
+                    <label for="identifier" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Registration / Roll Number
                     </label>
                     <input 
-                        id="roll_number" 
-                        name="roll_number" 
+                        id="identifier" 
+                        name="identifier" 
                         type="text" 
                         required 
                         autofocus
-                        value="{{ old('roll_number') }}"
+                        value="{{ old('identifier') }}"
                         class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                        placeholder="Enter your roll number" 
+                        placeholder="Enter your registration / roll number" 
                     />
                 </div>
 

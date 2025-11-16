@@ -17,34 +17,49 @@ class StudentController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        
-        if ($user->isSuperAdmin()) {
-            // Super Admin can see all students or filter by institute
-            $instituteId = session('current_institute_id');
-            
-            if ($instituteId) {
-                $students = Student::where('institute_id', $instituteId)
-                    ->with(['course', 'qualifications'])
-                    ->latest()
-                    ->paginate(15);
-            } else {
-                // Show all students if no institute selected
-                $students = Student::with(['course', 'qualifications', 'institute'])
-                    ->latest()
-                    ->paginate(15);
-            }
-        } else {
-            $instituteId = $user->institute_id ?? session('current_institute_id');
-            $students = Student::where('institute_id', $instituteId)
-                ->with(['course', 'qualifications'])
-                ->latest()
-                ->paginate(15);
+
+        $query = Student::with(['course', 'qualifications', 'institute', 'creator']);
+
+        // Role-based visibility:
+        // - Super Admin: sees all students (optional filters)
+        // - Normal Admin: sees only students they created
+        if (!$user->isSuperAdmin()) {
+            $query->where('created_by', $user->id);
         }
-        
-        return view('admin.students.index', compact('students'));
+
+        // Filters
+        if ($request->filled('institute_id')) {
+            $query->where('institute_id', $request->input('institute_id'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('roll_number', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $students = $query->latest()->paginate(15)->withQueryString();
+
+        // For filters dropdowns
+        $institutes = \App\Models\Institute::where('status', 'active')->get(['id', 'name']);
+        $statuses = [
+            'active' => 'Active',
+            'pending' => 'Pending',
+            'inactive' => 'Inactive',
+            'rejected' => 'Rejected',
+        ];
+
+        return view('admin.students.index', compact('students', 'institutes', 'statuses'));
     }
 
     /**
@@ -149,7 +164,6 @@ class StudentController extends Controller
             'admission_year' => ['required', 'string', 'max:255'],
             'current_semester' => ['nullable', 'integer', 'min:1'],
             'stream' => ['nullable', 'string', 'max:255'],
-            'roll_number' => ['required', 'string', 'max:255', 'unique:students,roll_number'],
             
             // Fee Details
             'registration_fee' => ['nullable', 'numeric', 'min:0'],
@@ -205,7 +219,8 @@ class StudentController extends Controller
         $validated['institute_id'] = $instituteId;
         $validated['created_by'] = Auth::id();
         $validated['password'] = Hash::make($validated['password']);
-        $validated['status'] = 'active';
+        // New students start as pending until approved by admin / super admin
+        $validated['status'] = 'pending';
         $validated['declaration_accepted'] = true;
         
         // Handle boolean fields
@@ -213,6 +228,9 @@ class StudentController extends Controller
         $validated['hostel_facility_required'] = $request->has('hostel_facility') && $request->hostel_facility == '1';
         $validated['pay_in_installment'] = $request->has('pay_in_installment') && $request->pay_in_installment == '1';
         
+        // Generate a unique registration number for the student
+        $validated['registration_number'] = $this->generateRegistrationNumber($instituteId);
+
         // Remove qualifications from validated data (will be handled separately)
         $qualifications = $validated['qualifications'] ?? [];
         unset($validated['qualifications']);
@@ -260,7 +278,16 @@ class StudentController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $user = Auth::user();
+
+        $student = Student::with(['institute', 'course', 'qualifications', 'creator'])->findOrFail($id);
+
+        // Normal admins (staff) can view only students they created
+        if (!$user->isSuperAdmin() && $student->created_by !== $user->id) {
+            abort(403, 'You are not authorized to view this student.');
+        }
+
+        return view('admin.students.show', compact('student'));
     }
 
     /**
@@ -268,7 +295,22 @@ class StudentController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $student = Student::with(['institute', 'course', 'creator'])->findOrFail($id);
+
+        // Only super admins can assign roll numbers / change status for now
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can update student status and roll number.');
+        }
+
+        $statuses = [
+            'pending' => 'Pending',
+            'active' => 'Active',
+            'inactive' => 'Inactive',
+            'rejected' => 'Rejected',
+        ];
+
+        return view('admin.students.edit', compact('student', 'statuses'));
     }
 
     /**
@@ -276,7 +318,31 @@ class StudentController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $student = Student::findOrFail($id);
+
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can update student status and roll number.');
+        }
+
+        $validated = $request->validate([
+            'roll_number' => ['nullable', 'string', 'max:255', Rule::unique('students', 'roll_number')->ignore($student->id)],
+            'status' => ['required', Rule::in(['pending', 'active', 'inactive', 'rejected'])],
+        ]);
+
+        // If status is active, ensure roll number is present
+        if ($validated['status'] === 'active' && empty($validated['roll_number'])) {
+            return back()
+                ->withErrors(['roll_number' => 'Roll number is required when activating a student.'])
+                ->withInput();
+        }
+
+        $student->roll_number = $validated['roll_number'] ?? $student->roll_number;
+        $student->status = $validated['status'];
+        $student->save();
+
+        return redirect()->route('admin.students.index')
+            ->with('success', 'Student status and roll number updated successfully.');
     }
 
     /**
@@ -285,5 +351,24 @@ class StudentController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    /**
+     * Generate a unique registration number for a new student.
+     *
+     * Format example: REG-2025-00123 or REG-2025-TECH-00123 (we can refine later)
+     */
+    protected function generateRegistrationNumber(int $instituteId): string
+    {
+        $year = date('Y');
+
+        // Count existing students for this year (optional per institute)
+        $sequence = Student::whereYear('created_at', $year)
+            ->where('institute_id', $instituteId)
+            ->count() + 1;
+
+        $sequencePadded = str_pad($sequence, 5, '0', STR_PAD_LEFT);
+
+        return "REG-{$year}-{$sequencePadded}";
     }
 }

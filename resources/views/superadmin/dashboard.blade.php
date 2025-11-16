@@ -91,9 +91,9 @@
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <a href="#" class="p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
-                            <h4 class="font-medium text-indigo-900">Manage Institutes</h4>
-                            <p class="text-sm text-indigo-700">Add, edit, or view institutes</p>
+                        <a href="{{ route('superadmin.users.index') }}" class="p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
+                            <h4 class="font-medium text-indigo-900">Manage Admins</h4>
+                            <p class="text-sm text-indigo-700">Create and manage admin accounts</p>
                         </a>
                         <a href="{{ route('admin.courses.index') }}" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
                             <h4 class="font-medium text-blue-900">Manage Courses</h4>

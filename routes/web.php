@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\StudentAuthController;
 use App\Http\Controllers\Student\DashboardController as StudentDashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
 use App\Http\Middleware\EnsureUserIsSuperAdmin;
 use Illuminate\Support\Facades\Route;
 
@@ -33,12 +34,14 @@ Route::middleware(['auth:student'])->group(function () {
     Route::post('/student/logout', [StudentAuthController::class, 'logout'])->name('student.logout');
 });
 
-// Admin Dashboard Routes (protected)
+// Admin Dashboard Routes (protected) - for all admins (Super + Staff)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     
     // Student Management Routes
+    // Staff: can list, create, store, and view students they created.
+    // Super Admin: can also edit status / roll no (enforced in controller).
     Route::resource('admin/students', \App\Http\Controllers\Admin\StudentController::class)->names([
         'index' => 'admin.students.index',
         'create' => 'admin.students.create',
@@ -48,8 +51,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'update' => 'admin.students.update',
         'destroy' => 'admin.students.destroy',
     ]);
-    
-    // Course Management Routes
+});
+
+// Super Admin Dashboard Routes (protected)
+Route::middleware(['auth', 'verified', EnsureUserIsSuperAdmin::class])->group(function () {
+    Route::get('/superadmin/dashboard', [SuperAdminDashboardController::class, 'index'])->name('superadmin.dashboard');
+
+    // Course Management Routes - ONLY Super Admin
     Route::resource('admin/courses', \App\Http\Controllers\Admin\CourseController::class)->names([
         'index' => 'admin.courses.index',
         'create' => 'admin.courses.create',
@@ -59,11 +67,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'update' => 'admin.courses.update',
         'destroy' => 'admin.courses.destroy',
     ]);
-});
 
-// Super Admin Dashboard Routes (protected)
-Route::middleware(['auth', 'verified', EnsureUserIsSuperAdmin::class])->group(function () {
-    Route::get('/superadmin/dashboard', [SuperAdminDashboardController::class, 'index'])->name('superadmin.dashboard');
+    // Super Admin - Admin Management
+    Route::resource('superadmin/users', SuperAdminUserController::class)->only([
+        'index',
+        'create',
+        'store',
+        'edit',
+        'update',
+    ])->names([
+        'index' => 'superadmin.users.index',
+        'create' => 'superadmin.users.create',
+        'store' => 'superadmin.users.store',
+        'edit' => 'superadmin.users.edit',
+        'update' => 'superadmin.users.update',
+    ]);
 });
 
 // Admin Profile Routes

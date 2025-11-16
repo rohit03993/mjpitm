@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Student;
 use App\Models\Course;
-use App\Models\Fee;
-use App\Models\Result;
+use App\Models\Institute;
 
 class DashboardController extends Controller
 {
@@ -18,64 +17,73 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
-        // For super admin, use session institute_id; for institute admin, use their institute_id
+
+        // Load both institutes (Tech & Paramedical) by domain so IDs are consistent
+        $techInstitute = Institute::where('domain', 'mjpitm.in')->first();
+        $paramedicalInstitute = Institute::where('domain', 'mjpips.in')->first();
+
+        // Helper closure to compute basic stats per institute
+        // If $forUserId is provided, stats are limited to students created by that admin
+        $buildStats = function (?Institute $institute, ?int $forUserId = null) {
+            if (!$institute) {
+                return [
+                    'institute' => null,
+                    'students_total' => 0,
+                    'students_active' => 0,
+                    'courses_total' => 0,
+                    'courses_active' => 0,
+                    'fees_total' => 0,
+                ];
+            }
+
+            $instituteId = $institute->id;
+
+            $studentQuery = Student::where('institute_id', $instituteId);
+            if ($forUserId) {
+                $studentQuery->where('created_by', $forUserId);
+            }
+
+            return [
+                'institute' => $institute,
+                'students_total' => (clone $studentQuery)->count(),
+                'students_active' => (clone $studentQuery)
+                    ->where('status', 'active')
+                    ->count(),
+                'courses_total' => Course::where('institute_id', $instituteId)->count(),
+                'courses_active' => Course::where('institute_id', $instituteId)
+                    ->where('status', 'active')
+                    ->count(),
+                // Sum of total_deposit from student records (already includes all fee components)
+                'fees_total' => (clone $studentQuery)->sum('total_deposit'),
+            ];
+        };
+
         if ($user->isSuperAdmin()) {
-            $instituteId = session('current_institute_id');
+            // Super Admin sees overall stats across all admins
+            $techStats = $buildStats($techInstitute);
+            $paramedicalStats = $buildStats($paramedicalInstitute);
+
+            // Recent students across all institutes
+            $recentStudents = Student::with(['institute', 'course', 'creator'])
+                ->latest()
+                ->take(5)
+                ->get();
         } else {
-            $instituteId = $user->institute_id ?? session('current_institute_id');
-        }
-        
-        // If no institute ID found, redirect to home
-        if (!$instituteId) {
-            return redirect()->route('home')->with('error', 'No institute selected.');
-        }
+            // Normal admins see only students they have created
+            $techStats = $buildStats($techInstitute, $user->id);
+            $paramedicalStats = $buildStats($paramedicalInstitute, $user->id);
 
-        // Get statistics for the institute
-        $totalStudents = Student::where('institute_id', $instituteId)->count();
-        $activeStudents = Student::where('institute_id', $instituteId)->where('status', 'active')->count();
-        $totalCourses = Course::where('institute_id', $instituteId)->count();
-        $activeCourses = Course::where('institute_id', $instituteId)->where('status', 'active')->count();
-        
-        // Fee statistics
-        $totalFees = Fee::whereHas('student', function($query) use ($instituteId) {
-            $query->where('institute_id', $instituteId);
-        })->count();
-        $verifiedFees = Fee::whereHas('student', function($query) use ($instituteId) {
-            $query->where('institute_id', $instituteId);
-        })->where('status', 'verified')->count();
-        $pendingFees = Fee::whereHas('student', function($query) use ($instituteId) {
-            $query->where('institute_id', $instituteId);
-        })->where('status', 'pending_verification')->count();
-        
-        // Result statistics
-        $totalResults = Result::whereHas('student', function($query) use ($instituteId) {
-            $query->where('institute_id', $instituteId);
-        })->count();
-        $publishedResults = Result::whereHas('student', function($query) use ($instituteId) {
-            $query->where('institute_id', $instituteId);
-        })->where('status', 'published')->count();
-        $pendingResults = Result::whereHas('student', function($query) use ($instituteId) {
-            $query->where('institute_id', $instituteId);
-        })->where('status', 'pending_verification')->count();
-
-        // Recent students
-        $recentStudents = Student::where('institute_id', $instituteId)
-            ->latest()
-            ->take(5)
-            ->get();
+            // Recent students created by this admin
+            $recentStudents = Student::with(['institute', 'course', 'creator'])
+                ->where('created_by', $user->id)
+                ->latest()
+                ->take(5)
+                ->get();
+        }
 
         return view('admin.dashboard', compact(
-            'totalStudents',
-            'activeStudents',
-            'totalCourses',
-            'activeCourses',
-            'totalFees',
-            'verifiedFees',
-            'pendingFees',
-            'totalResults',
-            'publishedResults',
-            'pendingResults',
+            'techStats',
+            'paramedicalStats',
             'recentStudents'
         ));
     }

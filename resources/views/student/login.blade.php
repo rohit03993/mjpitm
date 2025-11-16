@@ -14,7 +14,7 @@
                     Student Login
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-600">
-                    Enter your roll number and password to access your dashboard
+                    Enter your registration / roll number and password to access your dashboard
                 </p>
             </div>
 
@@ -54,18 +54,18 @@
                 @csrf
 
                 <div class="rounded-md shadow-sm -space-y-px">
-                    <!-- Roll Number -->
+                    <!-- Registration / Roll Number -->
                     <div>
-                        <label for="roll_number" class="sr-only">Roll Number</label>
+                        <label for="identifier" class="sr-only">Registration / Roll Number</label>
                         <input 
-                            id="roll_number" 
-                            name="roll_number" 
+                            id="identifier" 
+                            name="identifier" 
                             type="text" 
                             required 
                             autofocus
-                            value="{{ old('roll_number') }}"
+                            value="{{ old('identifier') }}"
                             class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 bg-white rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
-                            placeholder="Roll Number" 
+                            placeholder="Registration / Roll Number" 
                         />
                     </div>
 
