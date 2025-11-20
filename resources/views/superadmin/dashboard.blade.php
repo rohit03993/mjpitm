@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Super Admin Dashboard') }}
+            {{ __('Admin Dashboard') }}
         </h2>
     </x-slot>
 
@@ -90,7 +90,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <a href="{{ route('superadmin.users.index') }}" class="p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
                             <h4 class="font-medium text-indigo-900">Manage Admins</h4>
                             <p class="text-sm text-indigo-700">Create and manage admin accounts</p>
@@ -106,6 +106,10 @@
                         <a href="{{ route('admin.students.create') }}" class="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition">
                             <h4 class="font-medium text-green-900">Register Student</h4>
                             <p class="text-sm text-green-700">Register a new student</p>
+                        </a>
+                        <a href="{{ route('registration.form') }}" class="p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition">
+                            <h4 class="font-medium text-amber-900">Registration Form</h4>
+                            <p class="text-sm text-amber-700">Download & share form</p>
                         </a>
                     </div>
                 </div>

@@ -31,6 +31,11 @@ class StudentAuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        // Logout any existing sessions (admin or staff)
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         $identifier = $request->identifier;
 
         // Find student by registration number or roll number
@@ -72,7 +77,7 @@ class StudentAuthController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect()->route('student.login');
+        return redirect()->route('login.options');
     }
 
     /**

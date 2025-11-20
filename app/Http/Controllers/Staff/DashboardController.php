@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Http\Controllers\Staff;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Student;
+use App\Models\Course;
+use App\Models\Institute;
+
+class DashboardController extends Controller
+{
+    /**
+     * Display the staff dashboard.
+     * Staff can only see students they have added.
+     */
+    public function index(Request $request)
+    {
+        $user = Auth::user();
+
+        // Redirect super admin to super admin dashboard
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('superadmin.dashboard');
+        }
+
+        // Staff can only see students they created
+        $myStudents = Student::where('created_by', $user->id)
+            ->with(['institute', 'course'])
+            ->latest()
+            ->get();
+
+        // Statistics for staff's own students
+        $totalStudents = $myStudents->count();
+        $activeStudents = $myStudents->where('status', 'active')->count();
+        $pendingStudents = $myStudents->where('status', 'pending')->count();
+        
+        // Group students by institute
+        $studentsByInstitute = $myStudents->groupBy('institute_id');
+        
+        // Get institute details
+        $institutes = [];
+        foreach ($studentsByInstitute as $instituteId => $students) {
+            $institute = Institute::find($instituteId);
+            if ($institute) {
+                $institutes[] = [
+                    'institute' => $institute,
+                    'students_count' => $students->count(),
+                    'active_count' => $students->where('status', 'active')->count(),
+                ];
+            }
+        }
+
+        // Recent students (last 10)
+        $recentStudents = $myStudents->take(10);
+
+        // Total fees collected from students I added
+        $totalFees = $myStudents->sum('total_deposit');
+
+        return view('staff.dashboard', compact(
+            'user',
+            'totalStudents',
+            'activeStudents',
+            'pendingStudents',
+            'institutes',
+            'recentStudents',
+            'totalFees'
+        ));
+    }
+}
+

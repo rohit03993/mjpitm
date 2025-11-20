@@ -21,24 +21,13 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * Handle an incoming authentication request.
+     * This is the legacy login - redirects to appropriate login page based on role.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
-
-        $request->session()->regenerate();
-
-        $user = Auth::user();
-
-        // Redirect based on user role
-        if ($user->isSuperAdmin()) {
-            return redirect()->intended('/superadmin/dashboard');
-        } elseif ($user->isInstituteAdmin()) {
-            return redirect()->intended('/admin/dashboard');
-        }
-
-        // Default redirect
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Redirect to login options page - users should choose their login type
+        return redirect()->route('login.options')
+            ->with('message', 'Please select your login type from the options.');
     }
 
     /**

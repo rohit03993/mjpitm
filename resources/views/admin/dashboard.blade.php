@@ -108,7 +108,7 @@
                         </a>
 
                         @if(auth()->user() && auth()->user()->isSuperAdmin())
-                            <!-- Only Super Admin gets course / results management -->
+                            <!-- Only Admin gets course / results management -->
                             <a href="{{ route('admin.courses.index') }}" class="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition">
                                 <h4 class="font-medium text-green-900">Manage Courses</h4>
                                 <p class="text-sm text-green-700">Add, edit, or view courses</p>
