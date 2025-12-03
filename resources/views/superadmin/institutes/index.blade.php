@@ -1,11 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
+        <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Courses') }}
+                {{ __('Institutes') }}
             </h2>
-            <a href="{{ route('admin.courses.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
-                + Add New Course
+            <a href="{{ route('superadmin.institutes.create') }}"
+               class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                + Create Institute
             </a>
         </div>
     </x-slot>
@@ -26,65 +27,49 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <!-- Search and Filter -->
-                    <div class="mb-6 flex flex-col md:flex-row gap-4">
-                        <div class="flex-1">
-                            <input type="text" id="search" placeholder="Search by course name, code, or institute..." class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                    </div>
-
-                    <!-- Courses Table -->
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Institute</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admins</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($courses as $course)
+                                @forelse($institutes as $institute)
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {{ $course->code }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $course->name }}
+                                            {{ $institute->name }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            @if($course->category)
-                                                <span class="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-800">{{ $course->category->name }}</span>
-                                            @else
-                                                <span class="text-gray-400">—</span>
-                                            @endif
+                                            {{ $institute->domain }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $course->institute->name ?? 'N/A' }}
+                                            {{ $institute->students_count }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $course->duration_years }} {{ $course->duration_years == 1 ? 'Year' : 'Years' }}
+                                            {{ $institute->courses_count }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $course->students_count }}
+                                            {{ $institute->admins_count }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $course->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                                {{ ucfirst($course->status) }}
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $institute->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ ucfirst($institute->status) }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('admin.courses.show', $course->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                            <a href="{{ route('superadmin.institutes.show', $institute->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
                                             <span class="mx-2">|</span>
-                                            <a href="{{ route('admin.courses.edit', $course->id) }}" class="text-blue-600 hover:text-blue-900">Edit</a>
-                                            @if($course->students_count == 0)
+                                            <a href="{{ route('superadmin.institutes.edit', $institute->id) }}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                                            @if($institute->students_count == 0 && $institute->courses_count == 0)
                                                 <span class="mx-2">|</span>
-                                                <form action="{{ route('admin.courses.destroy', $course->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this course?');">
+                                                <form action="{{ route('superadmin.institutes.destroy', $institute->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this institute?');">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
@@ -94,8 +79,8 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
-                                            No courses found. <a href="{{ route('admin.courses.create') }}" class="text-indigo-600 hover:text-indigo-900">Add a new course</a>
+                                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                                            No institutes found. <a href="{{ route('superadmin.institutes.create') }}" class="text-indigo-600 hover:text-indigo-900">Create a new institute</a>
                                         </td>
                                     </tr>
                                 @endforelse
@@ -104,9 +89,9 @@
                     </div>
 
                     <!-- Pagination -->
-                    @if($courses->hasPages())
+                    @if($institutes->hasPages())
                         <div class="mt-6">
-                            {{ $courses->links() }}
+                            {{ $institutes->links() }}
                         </div>
                     @endif
                 </div>

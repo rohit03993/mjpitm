@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Models\Institute;
+use App\Models\CourseCategory;
 use Illuminate\Support\Facades\Auth;
 
 class CourseController extends Controller
@@ -15,8 +16,8 @@ class CourseController extends Controller
      */
     public function index()
     {
-        // For all admins, load all courses with institute relationships
-        $courses = Course::with('institute')
+        // For all admins, load all courses with institute and category relationships
+        $courses = Course::with(['institute', 'category'])
             ->withCount('students')
             ->latest()
             ->paginate(15);
@@ -32,7 +33,24 @@ class CourseController extends Controller
         // Get all active institutes for the dropdown
         $institutes = Institute::where('status', 'active')->get();
         
-        return view('admin.courses.create', compact('institutes'));
+        // Get all active categories with their institutes for the dropdown
+        $categories = CourseCategory::where('status', 'active')
+            ->with('institute')
+            ->orderBy('institute_id')
+            ->orderBy('display_order')
+            ->orderBy('name')
+            ->get();
+        
+        // Pass categories as JSON for JavaScript filtering
+        $categoriesJson = $categories->map(function($category) {
+            return [
+                'id' => $category->id,
+                'institute_id' => $category->institute_id,
+                'name' => $category->name,
+            ];
+        })->toJson();
+        
+        return view('admin.courses.create', compact('institutes', 'categories', 'categoriesJson'));
     }
 
     /**
@@ -53,6 +71,7 @@ class CourseController extends Controller
         // Validate the request
         $validated = $request->validate([
             'institute_id' => ['required', 'exists:institutes,id'],
+            'category_id' => ['nullable', 'exists:course_categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:255', 'unique:courses,code'],
             'duration_years' => ['required', 'integer', 'min:1', 'max:10'],
@@ -94,7 +113,24 @@ class CourseController extends Controller
         // Get all active institutes for the dropdown
         $institutes = Institute::where('status', 'active')->get();
         
-        return view('admin.courses.edit', compact('course', 'institutes'));
+        // Get all active categories with their institutes for the dropdown
+        $categories = CourseCategory::where('status', 'active')
+            ->with('institute')
+            ->orderBy('institute_id')
+            ->orderBy('display_order')
+            ->orderBy('name')
+            ->get();
+        
+        // Pass categories as JSON for JavaScript filtering
+        $categoriesJson = $categories->map(function($category) {
+            return [
+                'id' => $category->id,
+                'institute_id' => $category->institute_id,
+                'name' => $category->name,
+            ];
+        })->toJson();
+        
+        return view('admin.courses.edit', compact('course', 'institutes', 'categories', 'categoriesJson'));
     }
 
     /**
@@ -105,6 +141,7 @@ class CourseController extends Controller
         // Validate the request
         $validated = $request->validate([
             'institute_id' => ['required', 'exists:institutes,id'],
+            'category_id' => ['nullable', 'exists:course_categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:255', 'unique:courses,code,' . $course->id],
             'duration_years' => ['required', 'integer', 'min:1', 'max:10'],

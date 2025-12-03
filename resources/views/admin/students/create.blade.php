@@ -302,24 +302,38 @@
                         <!-- Institute Selection (for all admins) -->
                         <div class="md:col-span-2">
                             <x-input-label for="institute_id" :value="__('Institute *')" />
-                            <select id="institute_id" name="institute_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="loadCourses(this.value)">
+                            <select id="institute_id" name="institute_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="loadCategories(this.value)">
                                 <option value="">Select Institute</option>
                                 @foreach($institutes as $institute)
                                     <option value="{{ $institute->id }}" {{ (old('institute_id', isset($currentInstituteId) ? $currentInstituteId : '')) == $institute->id ? 'selected' : '' }}>{{ $institute->name }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('institute_id')" class="mt-2" />
-                            <p class="mt-1 text-sm text-gray-500">Select an institute to view available courses</p>
+                            <p class="mt-1 text-sm text-gray-500">Select an institute to view available categories and courses</p>
                         </div>
                         @endif
                         
+                        <!-- Course Category -->
+                        <div class="md:col-span-2">
+                            <x-input-label for="category_filter" :value="__('Course Category')" />
+                            <select id="category_filter" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" onchange="filterCoursesByCategory(this.value)">
+                                <option value="">All Categories (Select to filter courses)</option>
+                                @if(isset($categories))
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}" data-institute-id="{{ $category->institute_id }}">{{ $category->name }}</option>
+                                @endforeach
+                                @endif
+                            </select>
+                            <p class="mt-1 text-sm text-gray-500">Filter courses by category (optional)</p>
+                        </div>
+
                         <!-- Course -->
                         <div class="md:col-span-2">
                             <x-input-label for="course_id" :value="__('Course *')" />
                             <select id="course_id" name="course_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="loadCourseFees(this.value); updateSession();">
                                 <option value="">Select Course</option>
                                 @foreach($courses as $course)
-                                    <option value="{{ $course->id }}" data-institute-id="{{ $course->institute_id }}" {{ old('course_id') == $course->id ? 'selected' : '' }}>{{ $course->name }}@if(isset($institutes)) ({{ $course->institute->name ?? '' }})@endif</option>
+                                    <option value="{{ $course->id }}" data-institute-id="{{ $course->institute_id }}" data-category-id="{{ $course->category_id }}" {{ old('course_id') == $course->id ? 'selected' : '' }}>{{ $course->name }}@if($course->category) [{{ $course->category->name }}]@endif</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('course_id')" class="mt-2" />
@@ -391,127 +405,40 @@
                     </div>
                 </div>
 
-                <!-- Fee Details Section -->
+                <!-- Course Fee Information (Read-only) -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6 bg-yellow-50 border-b border-yellow-200 flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-yellow-900">Fee Details</h3>
-                        <label class="flex items-center">
-                            <input type="checkbox" name="pay_in_installment" value="1" {{ old('pay_in_installment') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                            <span class="ml-2 text-sm text-yellow-900">Pay In Installment</span>
-                        </label>
+                    <div class="p-6 bg-yellow-50 border-b border-yellow-200">
+                        <h3 class="text-lg font-semibold text-yellow-900">Course Fee Information</h3>
                     </div>
-                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <!-- Registration Fee -->
-                        <div>
-                            <x-input-label for="registration_fee" :value="__('Registration Fee')" />
-                            <x-text-input id="registration_fee" class="block mt-1 w-full" type="number" step="0.01" name="registration_fee" :value="old('registration_fee')" min="0" oninput="calculateTotal()" />
-                            <x-input-error :messages="$errors->get('registration_fee')" class="mt-2" />
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Total Course Fee (from course) -->
+                            <div>
+                                <x-input-label for="course_total_fee" :value="__('Total Course Fee')" />
+                                <x-text-input id="course_total_fee" class="block mt-1 w-full bg-gray-100 font-semibold text-lg" type="text" readonly placeholder="Select a course" />
+                                <p class="mt-1 text-xs text-gray-500">Auto-filled from selected course</p>
+                            </div>
+                            
+                            <!-- Fee Per Year -->
+                            <div>
+                                <x-input-label for="course_fee_per_year" :value="__('Fee Per Year')" />
+                                <x-text-input id="course_fee_per_year" class="block mt-1 w-full bg-gray-100" type="text" readonly placeholder="—" />
+                            </div>
+                            
+                            <!-- Course Duration -->
+                            <div>
+                                <x-input-label for="course_duration" :value="__('Course Duration')" />
+                                <x-text-input id="course_duration" class="block mt-1 w-full bg-gray-100" type="text" readonly placeholder="—" />
+                            </div>
                         </div>
-
-                        <!-- Entrance Fee -->
-                        <div>
-                            <x-input-label for="entrance_fee" :value="__('Entrance Fee')" />
-                            <x-text-input id="entrance_fee" class="block mt-1 w-full" type="number" step="0.01" name="entrance_fee" :value="old('entrance_fee')" min="0" oninput="calculateTotal()" />
-                            <x-input-error :messages="$errors->get('entrance_fee')" class="mt-2" />
-                        </div>
-
-                        <!-- Enrollment Fee -->
-                        <div>
-                            <x-input-label for="enrollment_fee" :value="__('Enrollment Fee')" />
-                            <x-text-input id="enrollment_fee" class="block mt-1 w-full" type="number" step="0.01" name="enrollment_fee" :value="old('enrollment_fee')" min="0" oninput="calculateTotal()" />
-                            <x-input-error :messages="$errors->get('enrollment_fee')" class="mt-2" />
-                        </div>
-
-                        <!-- Tuition Fee -->
-                        <div>
-                            <x-input-label for="tuition_fee" :value="__('Tuition Fee')" />
-                            <x-text-input id="tuition_fee" class="block mt-1 w-full" type="number" step="0.01" name="tuition_fee" :value="old('tuition_fee')" min="0" oninput="calculateTotal()" />
-                            <x-input-error :messages="$errors->get('tuition_fee')" class="mt-2" />
-                        </div>
-
-                        <!-- Caution Money -->
-                        <div>
-                            <x-input-label for="caution_money" :value="__('Caution Money')" />
-                            <x-text-input id="caution_money" class="block mt-1 w-full" type="number" step="0.01" name="caution_money" :value="old('caution_money')" min="0" oninput="calculateTotal()" />
-                            <x-input-error :messages="$errors->get('caution_money')" class="mt-2" />
-                        </div>
-
-                        <!-- Hostel Fee -->
-                        <div>
-                            <x-input-label for="hostel_fee_amount" :value="__('Hostel Fee')" />
-                            <x-text-input id="hostel_fee_amount" class="block mt-1 w-full" type="number" step="0.01" name="hostel_fee_amount" :value="old('hostel_fee_amount')" min="0" oninput="calculateTotal()" />
-                            <x-input-error :messages="$errors->get('hostel_fee_amount')" class="mt-2" />
-                        </div>
-
-                        <!-- Late Fee -->
-                        <div>
-                            <x-input-label for="late_fee" :value="__('Late Fee')" />
-                            <x-text-input id="late_fee" class="block mt-1 w-full" type="number" step="0.01" name="late_fee" :value="old('late_fee')" min="0" oninput="calculateTotal()" />
-                            <x-input-error :messages="$errors->get('late_fee')" class="mt-2" />
-                        </div>
-
-                        <!-- Total Deposit -->
-                        <div>
-                            <x-input-label for="total_deposit" :value="__('Total Deposit')" />
-                            <x-text-input id="total_deposit" class="block mt-1 w-full bg-gray-100" type="number" step="0.01" name="total_deposit" :value="old('total_deposit')" min="0" readonly />
-                            <x-input-error :messages="$errors->get('total_deposit')" class="mt-2" />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Payment Details Section -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6 bg-green-50 border-b border-green-200 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-green-900text-green-100">Payment Details</h3>
-                        <p class="text-xs text-green-900 opacity-80">Capture how the registration fee was received.</p>
-                    </div>
-                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Mode of Payment -->
-                        <div>
-                            <x-input-label for="payment_mode" :value="__('Mode of Payment')" />
-                            <select id="payment_mode" name="payment_mode" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" onchange="updatePaymentHelp()">
-                                <option value="">Select</option>
-                                <option value="Cash" {{ old('payment_mode') == 'Cash' ? 'selected' : '' }}>Cash</option>
-                                <option value="Cheque" {{ old('payment_mode') == 'Cheque' ? 'selected' : '' }}>Cheque</option>
-                                <option value="Online" {{ old('payment_mode') == 'Online' ? 'selected' : '' }}>Online</option>
-                                <option value="DD" {{ old('payment_mode') == 'DD' ? 'selected' : '' }}>Demand Draft (DD)</option>
-                                <option value="Bank Transfer" {{ old('payment_mode') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
-                            </select>
-                            <p id="payment_mode_help" class="mt-1 text-xs text-gray-500">
-                                @if(old('payment_mode') === 'Cash')
-                                    Enter the cash receipt number below.
-                                @elseif(old('payment_mode') === 'Cheque' || old('payment_mode') === 'DD')
-                                    Enter the cheque / DD number below.
-                                @elseif(old('payment_mode') === 'Online' || old('payment_mode') === 'Bank Transfer')
-                                    Enter the transaction / UTR number below.
-                                @else
-                                    Select a mode to see what reference details are required.
-                                @endif
+                        
+                        <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <p class="text-sm text-blue-800">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <strong>Note:</strong> Fee payments can be added after student registration from the student's profile page.
                             </p>
-                            <x-input-error :messages="$errors->get('payment_mode')" class="mt-2" />
-                        </div>
-
-                        <!-- Payment Reference / Receipt Number -->
-                        <div>
-                            <x-input-label for="bank_account" :value="__('Payment Reference / Receipt No.')" />
-                            <x-text-input
-                                id="bank_account"
-                                class="block mt-1 w-full"
-                                type="text"
-                                name="bank_account"
-                                :value="old('bank_account')"
-                            />
-                            <p class="mt-1 text-xs text-gray-500">
-                                For Cash: Receipt no. &nbsp;|&nbsp; Cheque / DD: Cheque or DD no. &nbsp;|&nbsp; Online / Bank: Transaction or UTR no.
-                            </p>
-                            <x-input-error :messages="$errors->get('bank_account')" class="mt-2" />
-                        </div>
-
-                        <!-- Deposit Date -->
-                        <div>
-                            <x-input-label for="deposit_date" :value="__('Deposit Date')" />
-                            <x-text-input id="deposit_date" class="block mt-1 w-full" type="date" name="deposit_date" :value="old('deposit_date')" />
-                            <x-input-error :messages="$errors->get('deposit_date')" class="mt-2" />
                         </div>
                     </div>
                 </div>
@@ -609,18 +536,6 @@
             }
         }
 
-        function calculateTotal() {
-            const registrationFee = parseFloat(document.getElementById('registration_fee').value) || 0;
-            const entranceFee = parseFloat(document.getElementById('entrance_fee').value) || 0;
-            const enrollmentFee = parseFloat(document.getElementById('enrollment_fee').value) || 0;
-            const tuitionFee = parseFloat(document.getElementById('tuition_fee').value) || 0;
-            const cautionMoney = parseFloat(document.getElementById('caution_money').value) || 0;
-            const hostelFee = parseFloat(document.getElementById('hostel_fee_amount').value) || 0;
-            const lateFee = parseFloat(document.getElementById('late_fee').value) || 0;
-            
-            const total = registrationFee + entranceFee + enrollmentFee + tuitionFee + cautionMoney + hostelFee + lateFee;
-            document.getElementById('total_deposit').value = total.toFixed(2);
-        }
 
         // Initialize employment fields on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -632,18 +547,24 @@
             // Initialize session and admission year
             updateSession();
             
-            // Filter courses by institute (for all admins)
+            // Filter categories and courses by institute (for all admins)
             @if(isset($institutes))
             const instituteSelect = document.getElementById('institute_id');
             if (instituteSelect) {
-                // Filter courses based on currently selected institute
+                // Filter categories and courses based on currently selected institute
                 // If an institute is pre-selected from session, filter by that
-                // Otherwise, show all courses initially
                 if (instituteSelect.value) {
-                    loadCourses(instituteSelect.value);
+                    loadCategories(instituteSelect.value);
                 } else {
-                    // Show all courses if no institute is selected
+                    // Show all options if no institute is selected
+                    const categorySelect = document.getElementById('category_filter');
                     const courseSelect = document.getElementById('course_id');
+                    if (categorySelect) {
+                        const allCategories = categorySelect.querySelectorAll('option');
+                        allCategories.forEach(option => {
+                            option.style.display = '';
+                        });
+                    }
                     if (courseSelect) {
                         const allCourses = courseSelect.querySelectorAll('option');
                         allCourses.forEach(option => {
@@ -666,6 +587,9 @@
 
         // Courses data from server
         const coursesData = @json(isset($coursesJson) ? json_decode($coursesJson, true) : []);
+        
+        // Categories data from server
+        const categoriesData = @json(isset($categoriesJson) ? json_decode($categoriesJson, true) : []);
 
         // Indian states and union territories with representative districts (can be extended later)
         const indianLocations = {
@@ -708,17 +632,32 @@
             "Puducherry": ["Karaikal", "Mahe", "Puducherry", "Yanam"]
         };
         
-        // Load courses based on selected institute (for Super Admin)
-        function loadCourses(instituteId) {
+        // Load categories and courses based on selected institute
+        function loadCategories(instituteId) {
+            const categorySelect = document.getElementById('category_filter');
             const courseSelect = document.getElementById('course_id');
+            const allCategories = categorySelect.querySelectorAll('option');
             const allCourses = courseSelect.querySelectorAll('option');
             
-            // Show all options first
+            // Filter categories by institute
+            allCategories.forEach(option => {
+                option.style.display = '';
+                if (option.value && instituteId) {
+                    const optionInstituteId = String(option.dataset.instituteId || '');
+                    if (optionInstituteId !== String(instituteId)) {
+                        option.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Reset category selection
+            categorySelect.value = '';
+            
+            // Filter courses by institute - convert both to strings for comparison
             allCourses.forEach(option => {
                 option.style.display = '';
             });
             
-            // Filter courses by institute - convert both to strings for comparison
             if (instituteId) {
                 const instituteIdStr = String(instituteId);
                 allCourses.forEach(option => {
@@ -738,15 +677,57 @@
                         clearFees();
                     }
                 }
-            } else {
-                // If no institute selected, show all courses
-                allCourses.forEach(option => {
-                    option.style.display = '';
-                });
             }
         }
         
-        // Load fees when course is selected
+        // Filter courses by category
+        function filterCoursesByCategory(categoryId) {
+            const instituteSelect = document.getElementById('institute_id');
+            const courseSelect = document.getElementById('course_id');
+            const allCourses = courseSelect.querySelectorAll('option');
+            const instituteId = instituteSelect ? instituteSelect.value : '';
+            
+            // First, show all courses for the selected institute
+            allCourses.forEach(option => {
+                option.style.display = '';
+                if (option.value && instituteId) {
+                    const optionInstituteId = String(option.dataset.instituteId || '');
+                    if (optionInstituteId !== String(instituteId)) {
+                        option.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Then, if a category is selected, further filter by category
+            if (categoryId) {
+                const categoryIdStr = String(categoryId);
+                allCourses.forEach(option => {
+                    if (option.value && option.style.display !== 'none') {
+                        const optionCategoryId = String(option.dataset.categoryId || '');
+                        // Hide if category doesn't match (but allow courses with no category when showing all)
+                        if (optionCategoryId !== categoryIdStr) {
+                            option.style.display = 'none';
+                        }
+                    }
+                });
+            }
+            
+            // Reset course selection if current selection is hidden
+            if (courseSelect.value) {
+                const selectedOption = courseSelect.options[courseSelect.selectedIndex];
+                if (selectedOption && selectedOption.style.display === 'none') {
+                    courseSelect.value = '';
+                    clearFees();
+                }
+            }
+        }
+        
+        // Legacy function for backward compatibility
+        function loadCourses(instituteId) {
+            loadCategories(instituteId);
+        }
+        
+        // Load course fee info when course is selected (read-only display)
         function loadCourseFees(courseId) {
             if (!courseId) {
                 clearFees();
@@ -757,17 +738,14 @@
             const course = coursesData.find(c => String(c.id) === String(courseId));
             
             if (course) {
-                // Populate fee fields
-                document.getElementById('registration_fee').value = course.registration_fee || 0;
-                document.getElementById('entrance_fee').value = course.entrance_fee || 0;
-                document.getElementById('enrollment_fee').value = course.enrollment_fee || 0;
-                document.getElementById('tuition_fee').value = course.tuition_fee || 0;
-                document.getElementById('caution_money').value = course.caution_money || 0;
-                document.getElementById('hostel_fee_amount').value = course.hostel_fee_amount || 0;
-                document.getElementById('late_fee').value = course.late_fee || 0;
+                // Display course fee info (read-only)
+                const totalFee = parseFloat(course.tuition_fee) || 0;
+                const duration = parseInt(course.duration_years) || 1;
+                const feePerYear = duration > 0 ? (totalFee / duration) : totalFee;
                 
-                // Calculate total
-                calculateTotal();
+                document.getElementById('course_total_fee').value = '₹ ' + totalFee.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('course_fee_per_year').value = '₹ ' + feePerYear.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('course_duration').value = duration + ' Year' + (duration > 1 ? 's' : '');
             } else {
                 clearFees();
             }
@@ -796,16 +774,14 @@
             });
         }
         
-        // Clear all fee fields
+        // Clear course fee display
         function clearFees() {
-            document.getElementById('registration_fee').value = '';
-            document.getElementById('entrance_fee').value = '';
-            document.getElementById('enrollment_fee').value = '';
-            document.getElementById('tuition_fee').value = '';
-            document.getElementById('caution_money').value = '';
-            document.getElementById('hostel_fee_amount').value = '';
-            document.getElementById('late_fee').value = '';
-            document.getElementById('total_deposit').value = '';
+            document.getElementById('course_total_fee').value = '';
+            document.getElementById('course_total_fee').placeholder = 'Select a course';
+            document.getElementById('course_fee_per_year').value = '';
+            document.getElementById('course_fee_per_year').placeholder = '—';
+            document.getElementById('course_duration').value = '';
+            document.getElementById('course_duration').placeholder = '—';
         }
         
         // Auto-populate session based on current year
@@ -851,29 +827,6 @@
             }
         }
 
-        // Update helper text under payment mode based on selection
-        function updatePaymentHelp() {
-            const modeSelect = document.getElementById('payment_mode');
-            const help = document.getElementById('payment_mode_help');
-            if (!modeSelect || !help) return;
-
-            const value = modeSelect.value;
-            switch (value) {
-                case 'Cash':
-                    help.textContent = 'For Cash, enter the cash receipt number in the field below.';
-                    break;
-                case 'Cheque':
-                case 'DD':
-                    help.textContent = 'For Cheque / DD, enter the cheque or DD number in the field below.';
-                    break;
-                case 'Online':
-                case 'Bank Transfer':
-                    help.textContent = 'For Online / Bank Transfer, enter the transaction or UTR number in the field below.';
-                    break;
-                default:
-                    help.textContent = 'Select a mode to see what reference details are required.';
-            }
-        }
     </script>
 </x-app-layout>
 

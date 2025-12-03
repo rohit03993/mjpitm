@@ -1,10 +1,10 @@
 <x-guest-layout>
     <div class="mb-6">
         <h2 class="text-2xl font-bold text-gray-900 text-center">
-            Staff Login
+            Guest Login
         </h2>
         <p class="mt-2 text-sm text-gray-600 text-center">
-            Staff & Institute Admin Portal - Add students and manage institute operations
+            Channel Partner Portal - Register students and collect fees
         </p>
     </div>
 

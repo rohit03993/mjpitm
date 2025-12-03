@@ -64,7 +64,7 @@
                         </div>
                     </div>
 
-                    <!-- Staff Login -->
+                    <!-- Guest Login (Channel Partners) -->
                     <div class="bg-white border border-blue-100 rounded-xl shadow-sm hover:shadow-md transition p-6 flex flex-col">
                         <div class="mb-4">
                             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
@@ -73,16 +73,16 @@
                                 </svg>
                             </div>
                             <h2 class="text-lg font-semibold text-gray-900 mb-1">
-                                Staff / Admin
+                                Guest
                             </h2>
                             <p class="text-sm text-gray-600">
-                                Institute Admin and Staff - Add students and manage your institute operations.
+                                Channel Partners - Register students and collect fees on behalf of institutes.
                             </p>
                         </div>
                         <div class="mt-auto">
                             <a href="{{ route('staff.login') }}"
                                class="inline-flex items-center px-5 py-2.5 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                Staff Login
+                                Guest Login
                             </a>
                         </div>
                     </div>

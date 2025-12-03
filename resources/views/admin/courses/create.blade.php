@@ -48,13 +48,26 @@
                         <!-- Institute -->
                         <div class="md:col-span-2">
                             <x-input-label for="institute_id" :value="__('Institute *')" />
-                            <select id="institute_id" name="institute_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
+                            <select id="institute_id" name="institute_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="filterCategories(this.value)">
                                 <option value="">Select Institute</option>
                                 @foreach($institutes as $institute)
                                     <option value="{{ $institute->id }}" {{ old('institute_id', session('current_institute_id')) == $institute->id ? 'selected' : '' }}>{{ $institute->name }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('institute_id')" class="mt-2" />
+                        </div>
+
+                        <!-- Category -->
+                        <div class="md:col-span-2">
+                            <x-input-label for="category_id" :value="__('Course Category')" />
+                            <select id="category_id" name="category_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Select Category (Optional)</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}" data-institute-id="{{ $category->institute_id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }} ({{ $category->institute->name ?? '' }})</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Group this course under a category. Select institute first to filter categories.</p>
+                            <x-input-error :messages="$errors->get('category_id')" class="mt-2" />
                         </div>
 
                         <!-- Course Name -->
@@ -74,7 +87,7 @@
                         <!-- Duration (Years) -->
                         <div>
                             <x-input-label for="duration_years" :value="__('Duration (Years) *')" />
-                            <x-text-input id="duration_years" class="block mt-1 w-full" type="number" name="duration_years" :value="old('duration_years', 3)" required min="1" max="10" />
+                            <x-text-input id="duration_years" class="block mt-1 w-full" type="number" name="duration_years" :value="old('duration_years', 3)" required min="1" max="10" oninput="updateDurationDisplay(); calculateTotalFee();" />
                             <x-input-error :messages="$errors->get('duration_years')" class="mt-2" />
                         </div>
 
@@ -101,56 +114,28 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 bg-yellow-50 border-b border-yellow-200">
                         <h3 class="text-lg font-semibold text-yellow-900">Course Fee Structure</h3>
-                        <p class="text-sm text-gray-600 mt-1">Set default fees for this course. These will be auto-populated when registering students.</p>
+                        <p class="text-sm text-gray-600 mt-1">Enter fee per year or total fee - the other will be calculated automatically based on course duration.</p>
                     </div>
-                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <!-- Registration Fee -->
-                        <div>
-                            <x-input-label for="registration_fee" :value="__('Registration Fee')" />
-                            <x-text-input id="registration_fee" class="block mt-1 w-full" type="number" step="0.01" name="registration_fee" :value="old('registration_fee')" min="0" placeholder="0.00" />
-                            <x-input-error :messages="$errors->get('registration_fee')" class="mt-2" />
-                        </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                            <!-- Fee Per Year -->
+                            <div>
+                                <x-input-label for="tuition_fee" :value="__('Tuition Fee (Per Year) ₹')" />
+                                <x-text-input id="tuition_fee" class="block mt-1 w-full" type="number" step="0.01" name="tuition_fee" :value="old('tuition_fee')" min="0" placeholder="0.00" oninput="calculateTotalFee()" />
+                                <x-input-error :messages="$errors->get('tuition_fee')" class="mt-2" />
+                            </div>
 
-                        <!-- Entrance Fee -->
-                        <div>
-                            <x-input-label for="entrance_fee" :value="__('Entrance Fee')" />
-                            <x-text-input id="entrance_fee" class="block mt-1 w-full" type="number" step="0.01" name="entrance_fee" :value="old('entrance_fee')" min="0" placeholder="0.00" />
-                            <x-input-error :messages="$errors->get('entrance_fee')" class="mt-2" />
-                        </div>
+                            <!-- Multiply Symbol -->
+                            <div class="hidden md:flex items-center justify-center text-2xl text-gray-400 font-bold pb-2">
+                                × <span id="duration_display" class="ml-2">3</span> years =
+                            </div>
 
-                        <!-- Enrollment Fee -->
-                        <div>
-                            <x-input-label for="enrollment_fee" :value="__('Enrollment Fee')" />
-                            <x-text-input id="enrollment_fee" class="block mt-1 w-full" type="number" step="0.01" name="enrollment_fee" :value="old('enrollment_fee')" min="0" placeholder="0.00" />
-                            <x-input-error :messages="$errors->get('enrollment_fee')" class="mt-2" />
-                        </div>
-
-                        <!-- Tuition Fee -->
-                        <div>
-                            <x-input-label for="tuition_fee" :value="__('Tuition Fee')" />
-                            <x-text-input id="tuition_fee" class="block mt-1 w-full" type="number" step="0.01" name="tuition_fee" :value="old('tuition_fee')" min="0" placeholder="0.00" />
-                            <x-input-error :messages="$errors->get('tuition_fee')" class="mt-2" />
-                        </div>
-
-                        <!-- Caution Money -->
-                        <div>
-                            <x-input-label for="caution_money" :value="__('Caution Money')" />
-                            <x-text-input id="caution_money" class="block mt-1 w-full" type="number" step="0.01" name="caution_money" :value="old('caution_money')" min="0" placeholder="0.00" />
-                            <x-input-error :messages="$errors->get('caution_money')" class="mt-2" />
-                        </div>
-
-                        <!-- Hostel Fee -->
-                        <div>
-                            <x-input-label for="hostel_fee_amount" :value="__('Hostel Fee')" />
-                            <x-text-input id="hostel_fee_amount" class="block mt-1 w-full" type="number" step="0.01" name="hostel_fee_amount" :value="old('hostel_fee_amount')" min="0" placeholder="0.00" />
-                            <x-input-error :messages="$errors->get('hostel_fee_amount')" class="mt-2" />
-                        </div>
-
-                        <!-- Late Fee -->
-                        <div>
-                            <x-input-label for="late_fee" :value="__('Late Fee')" />
-                            <x-text-input id="late_fee" class="block mt-1 w-full" type="number" step="0.01" name="late_fee" :value="old('late_fee')" min="0" placeholder="0.00" />
-                            <x-input-error :messages="$errors->get('late_fee')" class="mt-2" />
+                            <!-- Total Fee (Calculated) -->
+                            <div>
+                                <x-input-label for="total_course_fee" :value="__('Total Course Fee ₹')" />
+                                <x-text-input id="total_course_fee" class="block mt-1 w-full bg-green-50 border-green-300" type="number" step="0.01" min="0" placeholder="0.00" oninput="calculatePerYearFee()" />
+                                <p class="mt-1 text-xs text-gray-500">Auto-calculated or enter manually</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -167,5 +152,84 @@
             </form>
         </div>
     </div>
+
+    <script>
+        // Categories data from server
+        const categoriesData = @json(isset($categoriesJson) ? json_decode($categoriesJson, true) : []);
+        
+        // Filter categories based on selected institute
+        function filterCategories(instituteId) {
+            const categorySelect = document.getElementById('category_id');
+            const allOptions = categorySelect.querySelectorAll('option');
+            
+            // Show all options first
+            allOptions.forEach(option => {
+                option.style.display = '';
+            });
+            
+            // Filter categories by institute
+            if (instituteId) {
+                const instituteIdStr = String(instituteId);
+                allOptions.forEach(option => {
+                    if (option.value) {
+                        const optionInstituteId = String(option.dataset.instituteId || '');
+                        if (optionInstituteId !== instituteIdStr) {
+                            option.style.display = 'none';
+                        }
+                    }
+                });
+                
+                // Reset selection if current selection is hidden
+                if (categorySelect.value) {
+                    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                    if (selectedOption && selectedOption.style.display === 'none') {
+                        categorySelect.value = '';
+                    }
+                }
+            }
+        }
+        
+        // Update duration display in fee section
+        function updateDurationDisplay() {
+            const duration = document.getElementById('duration_years').value || 3;
+            const durationDisplay = document.getElementById('duration_display');
+            if (durationDisplay) {
+                durationDisplay.textContent = duration;
+            }
+        }
+        
+        // Calculate total fee from per-year fee
+        function calculateTotalFee() {
+            const perYearFee = parseFloat(document.getElementById('tuition_fee').value) || 0;
+            const duration = parseInt(document.getElementById('duration_years').value) || 3;
+            const totalFee = perYearFee * duration;
+            document.getElementById('total_course_fee').value = totalFee > 0 ? totalFee.toFixed(2) : '';
+        }
+        
+        // Calculate per-year fee from total fee
+        function calculatePerYearFee() {
+            const totalFee = parseFloat(document.getElementById('total_course_fee').value) || 0;
+            const duration = parseInt(document.getElementById('duration_years').value) || 3;
+            const perYearFee = duration > 0 ? totalFee / duration : 0;
+            document.getElementById('tuition_fee').value = perYearFee > 0 ? perYearFee.toFixed(2) : '';
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const instituteSelect = document.getElementById('institute_id');
+            if (instituteSelect && instituteSelect.value) {
+                filterCategories(instituteSelect.value);
+            }
+            
+            // Initialize duration display
+            updateDurationDisplay();
+            
+            // Calculate total if per-year fee exists
+            const tuitionFee = document.getElementById('tuition_fee');
+            if (tuitionFee && tuitionFee.value) {
+                calculateTotalFee();
+            }
+        });
+    </script>
 </x-app-layout>
 

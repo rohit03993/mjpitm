@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\Course;
 use App\Models\Qualification;
+use App\Models\CourseCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -71,8 +72,16 @@ class StudentController extends Controller
         
         // For all admins (Super Admin and Institute Admin), load ALL courses from ALL institutes
         // This allows all admins to switch between institutes and see all courses
-        $courses = Course::with('institute')->where('status', 'active')->get();
+        $courses = Course::with(['institute', 'category'])->where('status', 'active')->get();
         $institutes = \App\Models\Institute::where('status', 'active')->get();
+        
+        // Get all active categories with their institutes
+        $categories = CourseCategory::where('status', 'active')
+            ->with('institute')
+            ->orderBy('institute_id')
+            ->orderBy('display_order')
+            ->orderBy('name')
+            ->get();
         
         // Get current institute from session for pre-selection (default selection)
         $currentInstituteId = session('current_institute_id');
@@ -91,19 +100,24 @@ class StudentController extends Controller
             return [
                 'id' => $course->id,
                 'institute_id' => $course->institute_id,
+                'category_id' => $course->category_id,
                 'name' => $course->name,
-                'registration_fee' => $course->registration_fee ?? 0,
-                'entrance_fee' => $course->entrance_fee ?? 0,
-                'enrollment_fee' => $course->enrollment_fee ?? 0,
+                'duration_years' => $course->duration_years ?? 1,
                 'tuition_fee' => $course->tuition_fee ?? 0,
-                'caution_money' => $course->caution_money ?? 0,
-                'hostel_fee_amount' => $course->hostel_fee_amount ?? 0,
-                'late_fee' => $course->late_fee ?? 0,
+            ];
+        })->toJson();
+        
+        // Pass categories as JSON for JavaScript filtering
+        $categoriesJson = $categories->map(function($category) {
+            return [
+                'id' => $category->id,
+                'institute_id' => $category->institute_id,
+                'name' => $category->name,
             ];
         })->toJson();
         
         // For all admins, show institute selector
-        return view('admin.students.create', compact('courses', 'institutes', 'coursesJson', 'currentInstituteId'));
+        return view('admin.students.create', compact('courses', 'institutes', 'categories', 'coursesJson', 'categoriesJson', 'currentInstituteId'));
     }
 
     /**
@@ -280,14 +294,20 @@ class StudentController extends Controller
     {
         $user = Auth::user();
 
-        $student = Student::with(['institute', 'course', 'qualifications', 'creator'])->findOrFail($id);
+        $student = Student::with(['institute', 'course', 'qualifications', 'creator', 'fees.markedBy', 'fees.verifiedBy'])->findOrFail($id);
 
         // Normal admins (staff) can view only students they created
         if (!$user->isSuperAdmin() && $student->created_by !== $user->id) {
             abort(403, 'You are not authorized to view this student.');
         }
 
-        return view('admin.students.show', compact('student'));
+        // Calculate fee summary
+        $totalCourseFee = $student->course->tuition_fee ?? 0;
+        $verifiedPayments = $student->fees->where('status', 'verified')->sum('amount');
+        $pendingPayments = $student->fees->where('status', 'pending_verification')->sum('amount');
+        $remainingBalance = $totalCourseFee - $verifiedPayments;
+
+        return view('admin.students.show', compact('student', 'totalCourseFee', 'verifiedPayments', 'pendingPayments', 'remainingBalance'));
     }
 
     /**

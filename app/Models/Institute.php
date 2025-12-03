@@ -25,6 +25,25 @@ class Institute extends Model
     }
 
     /**
+     * Get course categories for this institute
+     */
+    public function courseCategories()
+    {
+        return $this->hasMany(CourseCategory::class);
+    }
+
+    /**
+     * Get active course categories for this institute (ordered)
+     */
+    public function activeCourseCategories()
+    {
+        return $this->hasMany(CourseCategory::class)
+            ->where('status', 'active')
+            ->orderBy('display_order')
+            ->orderBy('name');
+    }
+
+    /**
      * Get students for this institute
      */
     public function students()

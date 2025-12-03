@@ -90,15 +90,21 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         <a href="{{ route('superadmin.users.index') }}" class="p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
                             <h4 class="font-medium text-indigo-900">Manage Admins</h4>
                             <p class="text-sm text-indigo-700">Create and manage admin accounts</p>
+                        </a>
+                        <a href="{{ route('admin.categories.index') }}" class="p-4 bg-pink-50 rounded-lg hover:bg-pink-100 transition">
+                            <h4 class="font-medium text-pink-900">Manage Categories</h4>
+                            <p class="text-sm text-pink-700">Create course categories</p>
                         </a>
                         <a href="{{ route('admin.courses.index') }}" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
                             <h4 class="font-medium text-blue-900">Manage Courses</h4>
                             <p class="text-sm text-blue-700">Add, edit, or view courses</p>
                         </a>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <a href="{{ route('admin.students.index') }}" class="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition">
                             <h4 class="font-medium text-purple-900">Manage Students</h4>
                             <p class="text-sm text-purple-700">View and manage all students</p>
@@ -107,9 +113,13 @@
                             <h4 class="font-medium text-green-900">Register Student</h4>
                             <p class="text-sm text-green-700">Register a new student</p>
                         </a>
-                        <a href="{{ route('registration.form') }}" class="p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition">
-                            <h4 class="font-medium text-amber-900">Registration Form</h4>
-                            <p class="text-sm text-amber-700">Download & share form</p>
+                        <a href="{{ route('admin.fees.index') }}" class="p-4 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition">
+                            <h4 class="font-medium text-emerald-900">Manage Fees</h4>
+                            <p class="text-sm text-emerald-700">View & verify payments</p>
+                        </a>
+                        <a href="{{ route('superadmin.system-reset') }}" class="p-4 bg-red-50 rounded-lg hover:bg-red-100 transition border border-red-200">
+                            <h4 class="font-medium text-red-900">⚠️ System Reset</h4>
+                            <p class="text-sm text-red-700">Reset system data</p>
                         </a>
                     </div>
                 </div>

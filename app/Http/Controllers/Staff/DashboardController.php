@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Student;
 use App\Models\Course;
 use App\Models\Institute;
+use App\Models\Fee;
 
 class DashboardController extends Controller
 {
@@ -29,6 +30,8 @@ class DashboardController extends Controller
             ->with(['institute', 'course'])
             ->latest()
             ->get();
+
+        $myStudentIds = $myStudents->pluck('id');
 
         // Statistics for staff's own students
         $totalStudents = $myStudents->count();
@@ -54,8 +57,15 @@ class DashboardController extends Controller
         // Recent students (last 10)
         $recentStudents = $myStudents->take(10);
 
-        // Total fees collected from students I added
-        $totalFees = $myStudents->sum('total_deposit');
+        // Total VERIFIED fees collected from students I registered
+        $totalFeesCollected = Fee::whereIn('student_id', $myStudentIds)
+            ->where('status', 'verified')
+            ->sum('amount');
+        
+        // Pending fees (waiting for admin approval)
+        $pendingFees = Fee::whereIn('student_id', $myStudentIds)
+            ->where('status', 'pending_verification')
+            ->sum('amount');
 
         return view('staff.dashboard', compact(
             'user',
@@ -64,7 +74,8 @@ class DashboardController extends Controller
             'pendingStudents',
             'institutes',
             'recentStudents',
-            'totalFees'
+            'totalFeesCollected',
+            'pendingFees'
         ));
     }
 }

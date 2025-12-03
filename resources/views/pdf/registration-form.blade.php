@@ -213,23 +213,33 @@
             <td class="logo-cell">
                 @php
                     $instituteId = $student->institute_id ?? null;
-                    $logoFile = null;
+                    $logoBase64 = null;
+                    $logoMimeType = 'image/png';
+                    
                     if ($instituteId == 1) {
                         if (file_exists(public_path('images/logos/MJPITM.png'))) {
-                            $logoFile = public_path('images/logos/MJPITM.png');
+                            $logoPath = public_path('images/logos/MJPITM.png');
+                            $logoMimeType = 'image/png';
+                            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
                         } elseif (file_exists(public_path('images/logos/MJPITM.jpg'))) {
-                            $logoFile = public_path('images/logos/MJPITM.jpg');
+                            $logoPath = public_path('images/logos/MJPITM.jpg');
+                            $logoMimeType = 'image/jpeg';
+                            $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
                         }
                     } elseif ($instituteId == 2) {
                         if (file_exists(public_path('images/logos/MJPIPS.png'))) {
-                            $logoFile = public_path('images/logos/MJPIPS.png');
+                            $logoPath = public_path('images/logos/MJPIPS.png');
+                            $logoMimeType = 'image/png';
+                            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
                         } elseif (file_exists(public_path('images/logos/MJPIPS.jpg'))) {
-                            $logoFile = public_path('images/logos/MJPIPS.jpg');
+                            $logoPath = public_path('images/logos/MJPIPS.jpg');
+                            $logoMimeType = 'image/jpeg';
+                            $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
                         }
                     }
                 @endphp
-                @if($logoFile)
-                <img src="{{ $logoFile }}" alt="Logo" style="border: 2px solid #1e40af; border-radius: 8px; padding: 3px; background: #fff;">
+                @if($logoBase64)
+                <img src="{{ $logoBase64 }}" alt="Logo" style="border: 2px solid #1e40af; border-radius: 8px; padding: 3px; background: #fff;">
                 @else
                 <div style="width: 70px; height: 70px; border: 2px solid #1e40af; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 8px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: #fff; font-weight: bold; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     {{ substr($student->institute->name ?? 'MJP', 0, 3) }}
@@ -287,9 +297,20 @@
                 if (!file_exists($photoPath)) {
                     $photoPath = public_path('storage/' . $student->photo);
                 }
+                $photoBase64 = null;
+                if (file_exists($photoPath)) {
+                    $photoExtension = strtolower(pathinfo($photoPath, PATHINFO_EXTENSION));
+                    $photoMimeType = 'image/jpeg'; // default
+                    if ($photoExtension === 'png') {
+                        $photoMimeType = 'image/png';
+                    } elseif ($photoExtension === 'jpg' || $photoExtension === 'jpeg') {
+                        $photoMimeType = 'image/jpeg';
+                    }
+                    $photoBase64 = 'data:' . $photoMimeType . ';base64,' . base64_encode(file_get_contents($photoPath));
+                }
             @endphp
-            @if(file_exists($photoPath))
-            <img src="{{ $photoPath }}" alt="Photo">
+            @if($photoBase64)
+            <img src="{{ $photoBase64 }}" alt="Photo">
             @else
             <div style="width: 100%; height: calc(100% - 12px); display: table-cell; vertical-align: middle; text-align: center; background: #f0f0f0; color: #666; font-size: 5px;">
                 Photo Not Available

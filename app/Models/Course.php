@@ -11,6 +11,7 @@ class Course extends Model
 
     protected $fillable = [
         'institute_id',
+        'category_id',
         'name',
         'code',
         'duration_years',
@@ -44,6 +45,14 @@ class Course extends Model
     public function institute()
     {
         return $this->belongsTo(Institute::class);
+    }
+
+    /**
+     * Get the category this course belongs to
+     */
+    public function category()
+    {
+        return $this->belongsTo(CourseCategory::class, 'category_id');
     }
 
     /**

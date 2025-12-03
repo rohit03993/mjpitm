@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Staff Dashboard') }}
+                {{ __('Guest Dashboard') }}
             </h2>
             <div class="text-sm text-gray-600">
                 Logged in as: <span class="font-semibold">{{ Auth::user()->name }}</span>
@@ -19,7 +19,7 @@
                         Welcome, {{ Auth::user()->name }}!
                     </h3>
                     <p class="text-gray-600">
-                        You are logged in as <strong>{{ ucfirst(str_replace('_', ' ', Auth::user()->role)) }}</strong>
+                        You are logged in as <strong>Guest (Channel Partner)</strong>
                         @if(Auth::user()->institute)
                             at <strong>{{ Auth::user()->institute->name }}</strong>
                         @endif
@@ -86,19 +86,19 @@
                     </div>
                 </div>
 
-                <!-- Total Fees -->
+                <!-- Verified Fees Collected -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+                            <div class="flex-shrink-0 bg-emerald-500 rounded-md p-3">
                                 <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">Total Fees Collected</dt>
-                                    <dd class="text-lg font-medium text-gray-900">₹{{ number_format($totalFees, 2) }}</dd>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Fees Collected (Verified)</dt>
+                                    <dd class="text-lg font-medium text-emerald-600">₹{{ number_format($totalFeesCollected, 2) }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -106,11 +106,25 @@
                 </div>
             </div>
 
+            <!-- Fee Summary -->
+            @if($pendingFees > 0)
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center">
+                    <svg class="h-5 w-5 text-yellow-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-sm text-yellow-800">
+                        You have <strong>₹{{ number_format($pendingFees, 2) }}</strong> in payments pending Admin verification.
+                    </p>
+                </div>
+            </div>
+            @endif
+
             <!-- Quick Actions -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <a href="{{ route('admin.students.create') }}" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
                             <div class="flex items-center">
                                 <svg class="h-8 w-8 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -141,6 +155,17 @@
                                 <div>
                                     <h4 class="font-medium text-amber-900">Registration Form</h4>
                                     <p class="text-sm text-amber-700">Download & share with students</p>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="{{ route('admin.fees.index') }}" class="p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
+                            <div class="flex items-center">
+                                <svg class="h-8 w-8 text-indigo-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div>
+                                    <h4 class="font-medium text-indigo-900">Manage Fees</h4>
+                                    <p class="text-sm text-indigo-700">View & add fee payments</p>
                                 </div>
                             </div>
                         </a>
