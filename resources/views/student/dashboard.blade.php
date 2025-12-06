@@ -227,6 +227,141 @@
                     </div>
                 </div>
 
+                <!-- Academic Certificates Section -->
+                <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg mb-6">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-xl font-semibold text-gray-900">My Academic Certificates</h3>
+                        <p class="text-sm text-gray-500 mt-1">View and download your uploaded certificates</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {{-- Class 10th Certificate --}}
+                            <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:shadow-md transition">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Class 10th Certificate</h4>
+                                @if($student->certificate_class_10th)
+                                    @php
+                                        $isPdf = pathinfo($student->certificate_class_10th, PATHINFO_EXTENSION) === 'pdf';
+                                    @endphp
+                                    @if($isPdf)
+                                        <a href="{{ asset('storage/' . $student->certificate_class_10th) }}" target="_blank" class="block">
+                                            <div class="w-full h-32 flex items-center justify-center border border-gray-300 rounded bg-white hover:bg-gray-50 transition">
+                                                <div class="text-center">
+                                                    <svg class="w-12 h-12 text-red-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <p class="text-xs text-gray-600">PDF Document</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @else
+                                        <a href="{{ asset('storage/' . $student->certificate_class_10th) }}" target="_blank" class="block">
+                                            <img src="{{ asset('storage/' . $student->certificate_class_10th) }}" alt="Class 10th Certificate" class="w-full h-32 object-contain rounded border border-gray-300 bg-white hover:opacity-80 transition">
+                                        </a>
+                                    @endif
+                                    <a href="{{ asset('storage/' . $student->certificate_class_10th) }}" target="_blank" class="mt-2 text-xs text-blue-600 hover:underline block">View / Download</a>
+                                @else
+                                    <div class="w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded bg-white text-gray-400 text-xs">
+                                        Not uploaded
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Class 12th Certificate --}}
+                            <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:shadow-md transition">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Class 12th Certificate</h4>
+                                @if($student->certificate_class_12th)
+                                    @php
+                                        $isPdf = pathinfo($student->certificate_class_12th, PATHINFO_EXTENSION) === 'pdf';
+                                    @endphp
+                                    @if($isPdf)
+                                        <a href="{{ asset('storage/' . $student->certificate_class_12th) }}" target="_blank" class="block">
+                                            <div class="w-full h-32 flex items-center justify-center border border-gray-300 rounded bg-white hover:bg-gray-50 transition">
+                                                <div class="text-center">
+                                                    <svg class="w-12 h-12 text-red-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <p class="text-xs text-gray-600">PDF Document</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @else
+                                        <a href="{{ asset('storage/' . $student->certificate_class_12th) }}" target="_blank" class="block">
+                                            <img src="{{ asset('storage/' . $student->certificate_class_12th) }}" alt="Class 12th Certificate" class="w-full h-32 object-contain rounded border border-gray-300 bg-white hover:opacity-80 transition">
+                                        </a>
+                                    @endif
+                                    <a href="{{ asset('storage/' . $student->certificate_class_12th) }}" target="_blank" class="mt-2 text-xs text-blue-600 hover:underline block">View / Download</a>
+                                @else
+                                    <div class="w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded bg-white text-gray-400 text-xs">
+                                        Not uploaded
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Graduation Certificate --}}
+                            <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:shadow-md transition">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Graduation Certificate</h4>
+                                @if($student->certificate_graduation)
+                                    @php
+                                        $isPdf = pathinfo($student->certificate_graduation, PATHINFO_EXTENSION) === 'pdf';
+                                    @endphp
+                                    @if($isPdf)
+                                        <a href="{{ asset('storage/' . $student->certificate_graduation) }}" target="_blank" class="block">
+                                            <div class="w-full h-32 flex items-center justify-center border border-gray-300 rounded bg-white hover:bg-gray-50 transition">
+                                                <div class="text-center">
+                                                    <svg class="w-12 h-12 text-red-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <p class="text-xs text-gray-600">PDF Document</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @else
+                                        <a href="{{ asset('storage/' . $student->certificate_graduation) }}" target="_blank" class="block">
+                                            <img src="{{ asset('storage/' . $student->certificate_graduation) }}" alt="Graduation Certificate" class="w-full h-32 object-contain rounded border border-gray-300 bg-white hover:opacity-80 transition">
+                                        </a>
+                                    @endif
+                                    <a href="{{ asset('storage/' . $student->certificate_graduation) }}" target="_blank" class="mt-2 text-xs text-blue-600 hover:underline block">View / Download</a>
+                                @else
+                                    <div class="w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded bg-white text-gray-400 text-xs">
+                                        Not uploaded
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Other Certificates --}}
+                            <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:shadow-md transition">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Other Certificates</h4>
+                                @if($student->certificate_others)
+                                    @php
+                                        $isPdf = pathinfo($student->certificate_others, PATHINFO_EXTENSION) === 'pdf';
+                                    @endphp
+                                    @if($isPdf)
+                                        <a href="{{ asset('storage/' . $student->certificate_others) }}" target="_blank" class="block">
+                                            <div class="w-full h-32 flex items-center justify-center border border-gray-300 rounded bg-white hover:bg-gray-50 transition">
+                                                <div class="text-center">
+                                                    <svg class="w-12 h-12 text-red-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <p class="text-xs text-gray-600">PDF Document</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @else
+                                        <a href="{{ asset('storage/' . $student->certificate_others) }}" target="_blank" class="block">
+                                            <img src="{{ asset('storage/' . $student->certificate_others) }}" alt="Other Certificates" class="w-full h-32 object-contain rounded border border-gray-300 bg-white hover:opacity-80 transition">
+                                        </a>
+                                    @endif
+                                    <a href="{{ asset('storage/' . $student->certificate_others) }}" target="_blank" class="mt-2 text-xs text-blue-600 hover:underline block">View / Download</a>
+                                @else
+                                    <div class="w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded bg-white text-gray-400 text-xs">
+                                        Not uploaded
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Published Results Section -->
                 <div id="results-section" class="bg-white overflow-hidden shadow-lg sm:rounded-lg mb-6">
                     <div class="p-6 border-b border-gray-200">

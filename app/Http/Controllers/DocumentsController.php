@@ -27,8 +27,12 @@ class DocumentsController extends Controller
                         ->with('error', 'You do not have permission to view this student\'s registration form.');
                 }
                 
-                // Generate PDF from student data
+                // Generate PDF from student data with optimized settings
                 $pdf = Pdf::loadView('pdf.registration-form', compact('student'));
+                $pdf->setPaper('A4', 'portrait');
+                $pdf->setOption('enable-local-file-access', true);
+                $pdf->setOption('isHtml5ParserEnabled', true);
+                $pdf->setOption('isRemoteEnabled', false);
                 
                 $fileName = 'Registration-Form-' . ($student->registration_number ?? $student->id) . '.pdf';
                 
@@ -66,8 +70,12 @@ class DocumentsController extends Controller
                         ->with('error', 'You do not have permission to download this student\'s registration form.');
                 }
                 
-                // Generate PDF from student data
+                // Generate PDF from student data with optimized settings
                 $pdf = Pdf::loadView('pdf.registration-form', compact('student'));
+                $pdf->setPaper('A4', 'portrait');
+                $pdf->setOption('enable-local-file-access', true);
+                $pdf->setOption('isHtml5ParserEnabled', true);
+                $pdf->setOption('isRemoteEnabled', false);
                 
                 $fileName = 'Registration-Form-' . ($student->registration_number ?? $student->id) . '.pdf';
                 

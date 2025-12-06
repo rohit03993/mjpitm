@@ -140,12 +140,35 @@
 
                         <!-- Photo Upload -->
                         <div class="md:col-span-2">
-                            <x-input-label for="photo" :value="__('Photo')" />
-                            <input id="photo" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="photo" accept="image/*" onchange="previewPhoto(this)" />
+                            <x-input-label for="photo" :value="__('Photograph *')" />
+                            <input id="photo" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="photo" accept="image/*" onchange="previewPhoto(this)" required />
                             <div id="photo_preview" class="mt-4" style="display: none;">
                                 <img id="photo_preview_img" src="" alt="Photo Preview" class="w-32 h-32 object-cover rounded-lg border border-gray-300">
                             </div>
+                            <p class="mt-1 text-xs text-gray-500">Upload passport size photograph (Max 2MB)</p>
                             <x-input-error :messages="$errors->get('photo')" class="mt-2" />
+                        </div>
+
+                        <!-- Aadhar Front Upload -->
+                        <div>
+                            <x-input-label for="aadhar_front" :value="__('Aadhar Front *')" />
+                            <input id="aadhar_front" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="aadhar_front" accept="image/*" onchange="previewAadharFront(this)" required />
+                            <div id="aadhar_front_preview" class="mt-4" style="display: none;">
+                                <img id="aadhar_front_preview_img" src="" alt="Aadhar Front Preview" class="w-full h-48 object-contain rounded-lg border border-gray-300 bg-white">
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Upload Aadhar card front side (Max 2MB)</p>
+                            <x-input-error :messages="$errors->get('aadhar_front')" class="mt-2" />
+                        </div>
+
+                        <!-- Aadhar Back Upload -->
+                        <div>
+                            <x-input-label for="aadhar_back" :value="__('Aadhar Back *')" />
+                            <input id="aadhar_back" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="aadhar_back" accept="image/*" onchange="previewAadharBack(this)" required />
+                            <div id="aadhar_back_preview" class="mt-4" style="display: none;">
+                                <img id="aadhar_back_preview_img" src="" alt="Aadhar Back Preview" class="w-full h-48 object-contain rounded-lg border border-gray-300 bg-white">
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Upload Aadhar card back side (Max 2MB)</p>
+                            <x-input-error :messages="$errors->get('aadhar_back')" class="mt-2" />
                         </div>
                     </div>
                 </div>
@@ -289,6 +312,56 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Academic Certificate Uploads -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h4 class="text-md font-semibold text-gray-900 mb-4">Upload Academic Certificates</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Class 10th Certificate -->
+                            <div>
+                                <x-input-label for="certificate_class_10th" :value="__('Class 10th Certificate')" />
+                                <input id="certificate_class_10th" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="certificate_class_10th" accept="image/*,.pdf" onchange="previewCertificate(this, 'class_10th')" />
+                                <div id="certificate_class_10th_preview" class="mt-4" style="display: none;">
+                                    <div id="certificate_class_10th_preview_content" class="border border-gray-300 rounded-lg p-2 bg-gray-50"></div>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">Upload Class 10th mark sheet/certificate (Image or PDF, Max 5MB)</p>
+                                <x-input-error :messages="$errors->get('certificate_class_10th')" class="mt-2" />
+                            </div>
+
+                            <!-- Class 12th Certificate -->
+                            <div>
+                                <x-input-label for="certificate_class_12th" :value="__('Class 12th Certificate')" />
+                                <input id="certificate_class_12th" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="certificate_class_12th" accept="image/*,.pdf" onchange="previewCertificate(this, 'class_12th')" />
+                                <div id="certificate_class_12th_preview" class="mt-4" style="display: none;">
+                                    <div id="certificate_class_12th_preview_content" class="border border-gray-300 rounded-lg p-2 bg-gray-50"></div>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">Upload Class 12th mark sheet/certificate (Image or PDF, Max 5MB)</p>
+                                <x-input-error :messages="$errors->get('certificate_class_12th')" class="mt-2" />
+                            </div>
+
+                            <!-- Graduation Certificate -->
+                            <div>
+                                <x-input-label for="certificate_graduation" :value="__('Graduation Certificate')" />
+                                <input id="certificate_graduation" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="certificate_graduation" accept="image/*,.pdf" onchange="previewCertificate(this, 'graduation')" />
+                                <div id="certificate_graduation_preview" class="mt-4" style="display: none;">
+                                    <div id="certificate_graduation_preview_content" class="border border-gray-300 rounded-lg p-2 bg-gray-50"></div>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">Upload Graduation degree/certificate (Image or PDF, Max 5MB)</p>
+                                <x-input-error :messages="$errors->get('certificate_graduation')" class="mt-2" />
+                            </div>
+
+                            <!-- Other Certificates -->
+                            <div>
+                                <x-input-label for="certificate_others" :value="__('Other Certificates')" />
+                                <input id="certificate_others" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="certificate_others" accept="image/*,.pdf" onchange="previewCertificate(this, 'others')" />
+                                <div id="certificate_others_preview" class="mt-4" style="display: none;">
+                                    <div id="certificate_others_preview_content" class="border border-gray-300 rounded-lg p-2 bg-gray-50"></div>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">Upload any other certificates (Image or PDF, Max 5MB)</p>
+                                <x-input-error :messages="$errors->get('certificate_others')" class="mt-2" />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -486,6 +559,18 @@
                             </label>
                         </div>
                         <x-input-error :messages="$errors->get('declaration_accepted')" class="mt-2" />
+                        
+                        <!-- Signature Upload (Consent) -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <x-input-label for="signature" :value="__('Signature (Consent) *')" />
+                            <p class="text-sm text-gray-600 mb-3">Please upload your signature as a confirmation of your consent to the above declaration.</p>
+                            <input id="signature" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="signature" accept="image/*" onchange="previewSignature(this)" required />
+                            <div id="signature_preview" class="mt-4" style="display: none;">
+                                <img id="signature_preview_img" src="" alt="Signature Preview" class="w-48 h-24 object-contain rounded-lg border border-gray-300 bg-white">
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Upload scanned signature (Max 2MB). This signature will be used on your registration form as proof of consent.</p>
+                            <x-input-error :messages="$errors->get('signature')" class="mt-2" />
+                        </div>
                     </div>
                 </div>
 
@@ -531,6 +616,91 @@
                     preview.style.display = 'block';
                 };
                 reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        function previewSignature(input) {
+            const preview = document.getElementById('signature_preview');
+            const previewImg = document.getElementById('signature_preview_img');
+            
+            if (!preview || !previewImg) {
+                console.error('Signature preview elements not found');
+                return;
+            }
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.onerror = function(error) {
+                    console.error('Error reading signature file:', error);
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        function previewAadharFront(input) {
+            const preview = document.getElementById('aadhar_front_preview');
+            const previewImg = document.getElementById('aadhar_front_preview_img');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        function previewAadharBack(input) {
+            const preview = document.getElementById('aadhar_back_preview');
+            const previewImg = document.getElementById('aadhar_back_preview_img');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        function previewCertificate(input, type) {
+            const preview = document.getElementById('certificate_' + type + '_preview');
+            const previewContent = document.getElementById('certificate_' + type + '_preview_content');
+            
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const fileType = file.type;
+                
+                if (fileType.startsWith('image/')) {
+                    // Image preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewContent.innerHTML = '<img src="' + e.target.result + '" alt="Certificate Preview" class="w-full h-48 object-contain rounded border border-gray-300 bg-white">';
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else if (fileType === 'application/pdf') {
+                    // PDF preview - show file name and icon
+                    previewContent.innerHTML = '<div class="flex items-center p-4 bg-white rounded border border-gray-300"><svg class="w-12 h-12 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg><div><p class="text-sm font-medium text-gray-900">' + file.name + '</p><p class="text-xs text-gray-500">PDF Document</p></div></div>';
+                    preview.style.display = 'block';
+                } else {
+                    previewContent.innerHTML = '<div class="p-4 bg-white rounded border border-gray-300 text-sm text-gray-600">File: ' + file.name + '</div>';
+                    preview.style.display = 'block';
+                }
             } else {
                 preview.style.display = 'none';
             }

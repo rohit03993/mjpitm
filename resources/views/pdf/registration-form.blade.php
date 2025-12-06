@@ -196,6 +196,30 @@
             text-align: justify;
             line-height: 1.4;
         }
+        .signature-section {
+            margin-top: 8px;
+            padding: 5px;
+            border: 1px solid #000;
+        }
+        .signature-box {
+            display: inline-block;
+            width: 150px;
+            height: 50px;
+            border: 1px solid #000;
+            padding: 2px;
+            margin-top: 5px;
+            text-align: center;
+        }
+        .signature-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .signature-label {
+            font-size: 6px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
         .footer {
             margin-top: 10px;
             padding-top: 3px;
@@ -214,28 +238,27 @@
                 @php
                     $instituteId = $student->institute_id ?? null;
                     $logoBase64 = null;
-                    $logoMimeType = 'image/png';
+                    $logoPath = null;
                     
+                    // Optimize: Check only one file per institute (prefer PNG, fallback to JPG)
                     if ($instituteId == 1) {
-                        if (file_exists(public_path('images/logos/MJPITM.png'))) {
-                            $logoPath = public_path('images/logos/MJPITM.png');
-                            $logoMimeType = 'image/png';
-                            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
-                        } elseif (file_exists(public_path('images/logos/MJPITM.jpg'))) {
-                            $logoPath = public_path('images/logos/MJPITM.jpg');
-                            $logoMimeType = 'image/jpeg';
-                            $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
-                        }
+                        $logoPath = file_exists(public_path('images/logos/MJPITM.png')) 
+                            ? public_path('images/logos/MJPITM.png')
+                            : (file_exists(public_path('images/logos/MJPITM.jpg')) 
+                                ? public_path('images/logos/MJPITM.jpg') 
+                                : null);
                     } elseif ($instituteId == 2) {
-                        if (file_exists(public_path('images/logos/MJPIPS.png'))) {
-                            $logoPath = public_path('images/logos/MJPIPS.png');
-                            $logoMimeType = 'image/png';
-                            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
-                        } elseif (file_exists(public_path('images/logos/MJPIPS.jpg'))) {
-                            $logoPath = public_path('images/logos/MJPIPS.jpg');
-                            $logoMimeType = 'image/jpeg';
-                            $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
-                        }
+                        $logoPath = file_exists(public_path('images/logos/MJPIPS.png')) 
+                            ? public_path('images/logos/MJPIPS.png')
+                            : (file_exists(public_path('images/logos/MJPIPS.jpg')) 
+                                ? public_path('images/logos/MJPIPS.jpg') 
+                                : null);
+                    }
+                    
+                    if ($logoPath) {
+                        $logoExtension = strtolower(pathinfo($logoPath, PATHINFO_EXTENSION));
+                        $logoMimeType = ($logoExtension === 'png') ? 'image/png' : 'image/jpeg';
+                        $logoBase64 = 'data:' . $logoMimeType . ';base64,' . base64_encode(file_get_contents($logoPath));
                     }
                 @endphp
                 @if($logoBase64)
@@ -293,19 +316,16 @@
         @if($student->photo)
         <div class="photo-box">
             @php
-                $photoPath = storage_path('app/public/' . $student->photo);
-                if (!file_exists($photoPath)) {
-                    $photoPath = public_path('storage/' . $student->photo);
-                }
+                // Optimize: Check storage path first, then public path
+                $photoPath = file_exists(storage_path('app/public/' . $student->photo))
+                    ? storage_path('app/public/' . $student->photo)
+                    : (file_exists(public_path('storage/' . $student->photo))
+                        ? public_path('storage/' . $student->photo)
+                        : null);
                 $photoBase64 = null;
-                if (file_exists($photoPath)) {
+                if ($photoPath) {
                     $photoExtension = strtolower(pathinfo($photoPath, PATHINFO_EXTENSION));
-                    $photoMimeType = 'image/jpeg'; // default
-                    if ($photoExtension === 'png') {
-                        $photoMimeType = 'image/png';
-                    } elseif ($photoExtension === 'jpg' || $photoExtension === 'jpeg') {
-                        $photoMimeType = 'image/jpeg';
-                    }
+                    $photoMimeType = ($photoExtension === 'png') ? 'image/png' : 'image/jpeg';
                     $photoBase64 = 'data:' . $photoMimeType . ';base64,' . base64_encode(file_get_contents($photoPath));
                 }
             @endphp
@@ -452,6 +472,43 @@
         <p>
             I further declare that my registration is subject to the rules and regulations of the institute/university. I agree to abide by all the discipline and conduct rules of the institute/university. I am aware that ragging is banned and if I am found guilty of any form of ragging, I shall be liable to be punished as per the law.
         </p>
+    </div>
+
+    <!-- Signature Section -->
+    <div class="signature-section">
+        <div style="font-size: 7px; font-weight: bold; margin-bottom: 3px;">Signature of the Candidate:</div>
+        @if($student->signature)
+        <div class="signature-box">
+            @php
+                // Optimize: Check storage path first, then public path
+                $signaturePath = file_exists(storage_path('app/public/' . $student->signature))
+                    ? storage_path('app/public/' . $student->signature)
+                    : (file_exists(public_path('storage/' . $student->signature))
+                        ? public_path('storage/' . $student->signature)
+                        : null);
+                $signatureBase64 = null;
+                if ($signaturePath) {
+                    $signatureExtension = strtolower(pathinfo($signaturePath, PATHINFO_EXTENSION));
+                    $signatureMimeType = ($signatureExtension === 'png') ? 'image/png' : 'image/jpeg';
+                    $signatureBase64 = 'data:' . $signatureMimeType . ';base64,' . base64_encode(file_get_contents($signaturePath));
+                }
+            @endphp
+            @if($signatureBase64)
+            <img src="{{ $signatureBase64 }}" alt="Signature">
+            @else
+            <div style="width: 100%; height: 100%; display: table-cell; vertical-align: middle; text-align: center; background: #f0f0f0; color: #666; font-size: 5px;">
+                Signature Not Available
+            </div>
+            @endif
+        </div>
+        <div class="signature-label">Signature</div>
+        @else
+        <div class="signature-box" style="background: #f0f0f0;">
+            <div style="width: 100%; height: 100%; display: table-cell; vertical-align: middle; text-align: center; color: #666; font-size: 5px;">
+                Signature Not Available
+            </div>
+        </div>
+        @endif
     </div>
 
     <!-- Footer -->

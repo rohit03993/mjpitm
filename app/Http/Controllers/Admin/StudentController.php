@@ -154,7 +154,14 @@ class StudentController extends Controller
             'is_employed' => ['nullable', 'boolean'],
             'employer_name' => ['nullable', 'string', 'max:255'],
             'designation' => ['nullable', 'string', 'max:255'],
-            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'photo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'signature' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'aadhar_front' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'aadhar_back' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'certificate_class_10th' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
+            'certificate_class_12th' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
+            'certificate_graduation' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
+            'certificate_others' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
             
             // Communication Details
             'email' => ['nullable', 'email', 'max:255', 'unique:students,email'],
@@ -211,10 +218,46 @@ class StudentController extends Controller
             'qualifications.*.subjects' => ['nullable', 'string'],
         ]);
         
-        // Handle photo upload
+        // Handle document uploads
         if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('student-photos', 'public');
+            $photoPath = $request->file('photo')->store('student-documents', 'public');
             $validated['photo'] = $photoPath;
+        }
+        
+        if ($request->hasFile('signature')) {
+            $signaturePath = $request->file('signature')->store('student-documents', 'public');
+            $validated['signature'] = $signaturePath;
+        }
+        
+        if ($request->hasFile('aadhar_front')) {
+            $aadharFrontPath = $request->file('aadhar_front')->store('student-documents', 'public');
+            $validated['aadhar_front'] = $aadharFrontPath;
+        }
+        
+        if ($request->hasFile('aadhar_back')) {
+            $aadharBackPath = $request->file('aadhar_back')->store('student-documents', 'public');
+            $validated['aadhar_back'] = $aadharBackPath;
+        }
+        
+        // Handle certificate uploads
+        if ($request->hasFile('certificate_class_10th')) {
+            $cert10Path = $request->file('certificate_class_10th')->store('student-certificates', 'public');
+            $validated['certificate_class_10th'] = $cert10Path;
+        }
+        
+        if ($request->hasFile('certificate_class_12th')) {
+            $cert12Path = $request->file('certificate_class_12th')->store('student-certificates', 'public');
+            $validated['certificate_class_12th'] = $cert12Path;
+        }
+        
+        if ($request->hasFile('certificate_graduation')) {
+            $certGradPath = $request->file('certificate_graduation')->store('student-certificates', 'public');
+            $validated['certificate_graduation'] = $certGradPath;
+        }
+        
+        if ($request->hasFile('certificate_others')) {
+            $certOthersPath = $request->file('certificate_others')->store('student-certificates', 'public');
+            $validated['certificate_others'] = $certOthersPath;
         }
         
         // Calculate total deposit if not provided
