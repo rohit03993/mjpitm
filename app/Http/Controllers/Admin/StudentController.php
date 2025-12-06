@@ -337,20 +337,14 @@ class StudentController extends Controller
     {
         $user = Auth::user();
 
-        $student = Student::with(['institute', 'course', 'qualifications', 'creator', 'fees.markedBy', 'fees.verifiedBy'])->findOrFail($id);
+        $student = Student::with(['institute', 'course', 'qualifications', 'creator'])->findOrFail($id);
 
         // Normal admins (staff) can view only students they created
         if (!$user->isSuperAdmin() && $student->created_by !== $user->id) {
             abort(403, 'You are not authorized to view this student.');
         }
 
-        // Calculate fee summary
-        $totalCourseFee = $student->course->tuition_fee ?? 0;
-        $verifiedPayments = $student->fees->where('status', 'verified')->sum('amount');
-        $pendingPayments = $student->fees->where('status', 'pending_verification')->sum('amount');
-        $remainingBalance = $totalCourseFee - $verifiedPayments;
-
-        return view('admin.students.show', compact('student', 'totalCourseFee', 'verifiedPayments', 'pendingPayments', 'remainingBalance'));
+        return view('admin.students.show', compact('student'));
     }
 
     /**

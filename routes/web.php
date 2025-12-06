@@ -19,9 +19,9 @@ Route::get('/about', [LandingPageController::class, 'about'])->name('about');
 Route::get('/courses', [LandingPageController::class, 'courses'])->name('courses');
 
 // Public Registration Form Routes (for general access)
-Route::get('/registration-form', function() {
-    return view('documents.registration-form', ['formExists' => false]);
-})->name('registration.form');
+Route::get('/registration-form', [\App\Http\Controllers\PublicRegistrationController::class, 'create'])->name('public.registration');
+Route::post('/registration-form', [\App\Http\Controllers\PublicRegistrationController::class, 'store'])->name('public.registration.store');
+Route::get('/registration-success/{student}', [\App\Http\Controllers\PublicRegistrationController::class, 'success'])->name('public.registration.success');
 
 // Combined Login choice page (Super Admin / Staff / Student)
 Route::get('/login-options', function () {

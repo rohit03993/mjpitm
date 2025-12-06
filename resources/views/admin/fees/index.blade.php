@@ -11,7 +11,7 @@
                 </a>
                 @endif
                 <a href="{{ route('admin.fees.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
-                    + Add Fee Entry
+                    + Add Payment
                 </a>
             </div>
         </div>
@@ -31,137 +31,37 @@
                 </div>
             @endif
 
+            <!-- Fees Table -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <!-- Search and Filters -->
-                    <form method="GET" action="{{ route('admin.fees.index') }}" class="mb-6 flex flex-col gap-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div>
-                                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                                <input
-                                    type="text"
-                                    id="search"
-                                    name="search"
-                                    value="{{ request('search') }}"
-                                    placeholder="Student name, roll no, transaction ID..."
-                                    class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                                >
-                            </div>
-
-                            <div>
-                                <label for="student_id" class="block text-sm font-medium text-gray-700 mb-1">Student</label>
-                                <select
-                                    id="student_id"
-                                    name="student_id"
-                                    class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                                >
-                                    <option value="">All Students</option>
-                                    @foreach($students as $student)
-                                        <option value="{{ $student->id }}" {{ request('student_id') == $student->id ? 'selected' : '' }}>
-                                            {{ $student->name }} ({{ $student->roll_number ?? $student->registration_number }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                                <select
-                                    id="status"
-                                    name="status"
-                                    class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                                >
-                                    <option value="">All Statuses</option>
-                                    @foreach($statuses as $key => $label)
-                                        <option value="{{ $key }}" {{ request('status') == $key ? 'selected' : '' }}>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="payment_type" class="block text-sm font-medium text-gray-700 mb-1">Payment Type</label>
-                                <select
-                                    id="payment_type"
-                                    name="payment_type"
-                                    class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                                >
-                                    <option value="">All Types</option>
-                                    @foreach($paymentTypes as $key => $label)
-                                        <option value="{{ $key }}" {{ request('payment_type') == $key ? 'selected' : '' }}>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="date_from" class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
-                                <input
-                                    type="date"
-                                    id="date_from"
-                                    name="date_from"
-                                    value="{{ request('date_from') }}"
-                                    class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                                >
-                            </div>
-
-                            <div>
-                                <label for="date_to" class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
-                                <input
-                                    type="date"
-                                    id="date_to"
-                                    name="date_to"
-                                    value="{{ request('date_to') }}"
-                                    class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                                >
-                            </div>
-
-                            <div class="flex items-end gap-2">
-                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
-                                    Filter
-                                </button>
-                                <a href="{{ route('admin.fees.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                    Clear
-                                </a>
-                            </div>
-                        </div>
-                    </form>
-
-                    <!-- Fees Table -->
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
+                                    @if(auth()->user()->isSuperAdmin())
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($fees as $fee)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ $fee->student->name ?? 'N/A' }}</div>
-                                            <div class="text-sm text-gray-500">{{ $fee->student->roll_number ?? $fee->student->registration_number ?? 'N/A' }}</div>
-                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                                             ₹{{ number_format($fee->amount, 2) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ ucfirst($fee->payment_type ?? 'N/A') }}
-                                            @if($fee->semester)
-                                                <span class="text-xs text-gray-400">(Sem {{ $fee->semester }})</span>
-                                            @endif
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                {{ $fee->payment_mode === 'online' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
+                                                {{ ucfirst($fee->payment_mode ?? 'offline') }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $fee->transaction_id ?? 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -170,18 +70,26 @@
                                                 {{ ucfirst(str_replace('_', ' ', $fee->status)) }}
                                             </span>
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $fee->markedBy->name ?? 'N/A' }}
+                                        </td>
+                                        @if(auth()->user()->isSuperAdmin())
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('admin.fees.show', $fee->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
-                                            @if($fee->status === 'pending_verification' && auth()->user()->isSuperAdmin())
-                                                <span class="mx-2">|</span>
-                                                <a href="{{ route('admin.fees.show', $fee->id) }}" class="text-green-600 hover:text-green-900">Verify</a>
+                                            <button type="button" onclick="openViewModal({{ $fee->id }}, {{ $fee->amount }}, '{{ $fee->payment_mode ?? 'offline' }}', '{{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}', '{{ $fee->status }}', '{{ addslashes($fee->markedBy->name ?? 'N/A') }}', '{{ $fee->created_at ? $fee->created_at->format('d M Y, h:i A') : 'N/A' }}', '{{ addslashes($fee->verifiedBy->name ?? 'N/A') }}', '{{ $fee->verified_at ? $fee->verified_at->format('d M Y, h:i A') : 'N/A' }}', '{{ addslashes($fee->approved_by_name ?? 'N/A') }}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                View
+                                            </button>
+                                            @if($fee->status === 'pending_verification')
+                                                <button type="button" onclick="openApproveModal({{ $fee->id }}, {{ $fee->amount }})" class="text-green-600 hover:text-green-900 font-semibold">
+                                                    Approve
+                                                </button>
                                             @endif
                                         </td>
+                                        @endif
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
-                                            No fees found. <a href="{{ route('admin.fees.create') }}" class="text-indigo-600 hover:text-indigo-900">Add a new fee entry</a>
+                                        <td colspan="{{ auth()->user()->isSuperAdmin() ? '6' : '5' }}" class="px-6 py-4 text-center text-sm text-gray-500">
+                                            No payment entries yet. <a href="{{ route('admin.fees.create') }}" class="text-indigo-600 hover:text-indigo-900">Add your first payment</a>
                                         </td>
                                     </tr>
                                 @endforelse
@@ -199,5 +107,167 @@
             </div>
         </div>
     </div>
+
+    @if(auth()->user()->isSuperAdmin())
+    <!-- View Modal -->
+    <div id="viewModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Payment Details</h3>
+                    <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Amount</dt>
+                        <dd class="mt-1 text-lg font-bold text-gray-900" id="viewAmount">—</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Payment Mode</dt>
+                        <dd class="mt-1 text-sm text-gray-900" id="viewPaymentMode">—</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Payment Date</dt>
+                        <dd class="mt-1 text-sm text-gray-900" id="viewPaymentDate">—</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Status</dt>
+                        <dd class="mt-1 text-sm" id="viewStatus">—</dd>
+                    </div>
+                    <div class="border-t pt-3">
+                        <dt class="text-sm font-medium text-gray-500">Added By</dt>
+                        <dd class="mt-1 text-sm text-gray-900" id="viewAddedBy">—</dd>
+                        <dd class="text-xs text-gray-500" id="viewCreatedAt">—</dd>
+                    </div>
+                    <div id="viewApprovedSection" class="border-t pt-3 hidden">
+                        <dt class="text-sm font-medium text-gray-500">Approved By (Admin)</dt>
+                        <dd class="mt-1 text-sm text-gray-900" id="viewVerifiedBy">—</dd>
+                        <dd class="text-xs text-gray-500" id="viewVerifiedAt">—</dd>
+                        <dt class="text-sm font-medium text-gray-500 mt-2">Payment Received/Approved By</dt>
+                        <dd class="mt-1 text-sm text-gray-900 font-semibold" id="viewApprovedByName">—</dd>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end mt-6">
+                    <button type="button" onclick="closeViewModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approval Modal -->
+    <div id="approveModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Approve Payment</h3>
+                    <button onclick="closeApproveModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="approveForm" method="POST">
+                    @csrf
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-600 mb-2">Amount: <strong class="text-lg text-green-600">₹<span id="modalAmount">0</span></strong></p>
+                    </div>
+                    <div class="mb-4">
+                        <label for="modal_approved_by_name" class="block text-sm font-medium text-gray-700 mb-1">Name of Person Who Approved/Received Payment *</label>
+                        <input type="text" id="modal_approved_by_name" name="approved_by_name" required
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Enter name of person who received/approved the payment">
+                        <p class="mt-1 text-xs text-gray-500">Enter the name of the person (cashier/staff) who physically received or approved this payment</p>
+                    </div>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" onclick="closeApproveModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                            Approve Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openViewModal(feeId, amount, paymentMode, paymentDate, status, addedBy, createdAt, verifiedBy, verifiedAt, approvedByName) {
+            // Set amount
+            document.getElementById('viewAmount').textContent = '₹' + parseFloat(amount).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            
+            // Set payment mode
+            const modeBadge = paymentMode === 'online' 
+                ? '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">' + paymentMode.charAt(0).toUpperCase() + paymentMode.slice(1) + '</span>'
+                : '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">' + paymentMode.charAt(0).toUpperCase() + paymentMode.slice(1) + '</span>';
+            document.getElementById('viewPaymentMode').innerHTML = modeBadge;
+            
+            // Set payment date
+            document.getElementById('viewPaymentDate').textContent = paymentDate;
+            
+            // Set status
+            let statusClass = 'bg-gray-100 text-gray-800';
+            if (status === 'verified') statusClass = 'bg-green-100 text-green-800';
+            else if (status === 'pending_verification') statusClass = 'bg-yellow-100 text-yellow-800';
+            else if (status === 'rejected') statusClass = 'bg-red-100 text-red-800';
+            
+            const statusText = status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            document.getElementById('viewStatus').innerHTML = '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ' + statusClass + '">' + statusText + '</span>';
+            
+            // Set added by info
+            document.getElementById('viewAddedBy').textContent = addedBy;
+            document.getElementById('viewCreatedAt').textContent = 'Added on: ' + createdAt;
+            
+            // Set approved info (if verified)
+            if (status === 'verified' && verifiedBy !== 'N/A') {
+                document.getElementById('viewApprovedSection').classList.remove('hidden');
+                document.getElementById('viewVerifiedBy').textContent = verifiedBy;
+                document.getElementById('viewVerifiedAt').textContent = 'Approved on: ' + verifiedAt;
+                document.getElementById('viewApprovedByName').textContent = approvedByName !== 'N/A' ? approvedByName : '—';
+            } else {
+                document.getElementById('viewApprovedSection').classList.add('hidden');
+            }
+            
+            document.getElementById('viewModal').classList.remove('hidden');
+        }
+        
+        function closeViewModal() {
+            document.getElementById('viewModal').classList.add('hidden');
+        }
+        
+        function openApproveModal(feeId, amount) {
+            document.getElementById('approveForm').action = '/admin/fees/' + feeId + '/verify';
+            document.getElementById('modalAmount').textContent = parseFloat(amount).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('modal_approved_by_name').value = '';
+            document.getElementById('approveModal').classList.remove('hidden');
+        }
+        
+        function closeApproveModal() {
+            document.getElementById('approveModal').classList.add('hidden');
+        }
+        
+        // Close modals when clicking outside
+        document.getElementById('viewModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeViewModal();
+            }
+        });
+        
+        document.getElementById('approveModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeApproveModal();
+            }
+        });
+    </script>
+    @endif
 </x-app-layout>
 

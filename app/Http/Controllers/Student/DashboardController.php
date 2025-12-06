@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $student = Auth::guard('student')->user();
         
         // Load relationships
-        $student->load(['course', 'course.institute', 'fees', 'results.subject']);
+        $student->load(['course', 'course.institute', 'results.subject']);
 
         // Get only published results (students can only see published results)
         $publishedResults = $student->results()
@@ -26,11 +26,6 @@ class DashboardController extends Controller
             ->latest('semester')
             ->get();
 
-        // Get all fees (students can see all their fees)
-        $fees = $student->fees()
-            ->latest('payment_date')
-            ->get();
-
-        return view('student.dashboard', compact('student', 'publishedResults', 'fees'));
+        return view('student.dashboard', compact('student', 'publishedResults'));
     }
 }

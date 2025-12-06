@@ -140,6 +140,8 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <a href="{{ route('admin.students.show', $student->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                            <span class="mx-2">|</span>
+                                            <a href="{{ route('admin.fees.create', ['student_id' => $student->id]) }}" class="text-green-600 hover:text-green-900 font-semibold">Add Payment</a>
                                             @if(auth()->user() && auth()->user()->isSuperAdmin())
                                                 <span class="mx-2">|</span>
                                                 <a href="{{ route('admin.students.edit', $student->id) }}" class="text-blue-600 hover:text-blue-900">Edit</a>

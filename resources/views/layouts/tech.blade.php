@@ -54,6 +54,7 @@
                     <a href="{{ route('home') }}" class="hover:text-blue-200 px-3 py-2 rounded-md transition {{ request()->routeIs('home') ? 'text-blue-200 border-b-2 border-blue-200' : '' }}">Home</a>
                     <a href="{{ route('about') }}" class="hover:text-blue-200 px-3 py-2 rounded-md transition {{ request()->routeIs('about') ? 'text-blue-200 border-b-2 border-blue-200' : '' }}">About</a>
                     <a href="{{ route('courses') }}" class="hover:text-blue-200 px-3 py-2 rounded-md transition {{ request()->routeIs('courses') ? 'text-blue-200 border-b-2 border-blue-200' : '' }}">Courses</a>
+                    <a href="{{ route('public.registration') }}" class="hover:text-blue-200 px-3 py-2 rounded-md transition {{ request()->routeIs('public.registration') ? 'text-blue-200 border-b-2 border-blue-200' : '' }}">Registration Form</a>
                     <a href="{{ route('login.options') }}" class="inline-flex items-center bg-white text-blue-900 hover:bg-blue-50 px-4 py-2 rounded-md font-semibold transition shadow-md hover:shadow-lg">
                         <i class="fas fa-sign-in-alt mr-2"></i>
                         Login
@@ -73,6 +74,7 @@
                 <a href="{{ route('home') }}" class="block hover:text-blue-200 px-3 py-2 rounded-md">Home</a>
                 <a href="{{ route('about') }}" class="block hover:text-blue-200 px-3 py-2 rounded-md">About</a>
                 <a href="{{ route('courses') }}" class="block hover:text-blue-200 px-3 py-2 rounded-md">Courses</a>
+                <a href="{{ route('public.registration') }}" class="block hover:text-blue-200 px-3 py-2 rounded-md">Registration Form</a>
                 <a href="{{ route('login.options') }}" class="block bg-white text-blue-900 hover:bg-blue-50 px-3 py-2 rounded-md font-semibold text-center">
                     <i class="fas fa-sign-in-alt mr-2"></i>Login
                 </a>

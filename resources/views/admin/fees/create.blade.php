@@ -44,64 +44,32 @@
                         <h3 class="text-lg font-semibold text-blue-900">Fee Payment Details</h3>
                     </div>
                     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Student -->
-                        <div class="md:col-span-2">
-                            <x-input-label for="student_id" :value="__('Student *')" />
-                            <select id="student_id" name="student_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="updateStudentInfo()">
-                                <option value="">Select Student</option>
-                                @foreach($students as $student)
-                                    <option value="{{ $student->id }}" 
-                                        data-course="{{ $student->course->name ?? 'N/A' }}"
-                                        data-fee="{{ $student->course->tuition_fee ?? 0 }}"
-                                        {{ (old('student_id', $selectedStudentId ?? '') == $student->id) ? 'selected' : '' }}>
-                                        {{ $student->name }} - {{ $student->course->name ?? 'N/A' }} ({{ $student->roll_number ?? $student->registration_number ?? 'N/A' }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            <x-input-error :messages="$errors->get('student_id')" class="mt-2" />
-                            
-                            <!-- Student Info Display -->
-                            <div id="student-info" class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100 {{ isset($selectedStudent) ? '' : 'hidden' }}">
-                                <p class="text-sm text-blue-800">
-                                    <strong>Course:</strong> <span id="student-course">{{ $selectedStudent->course->name ?? '—' }}</span>
-                                </p>
-                                <p class="text-sm text-blue-800">
-                                    <strong>Total Course Fee:</strong> ₹<span id="student-fee">{{ number_format($selectedStudent->course->tuition_fee ?? 0, 2) }}</span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Hidden Payment Type (always tuition) -->
+                        <!-- Hidden field -->
                         <input type="hidden" name="payment_type" value="tuition">
 
                         <!-- Amount -->
                         <div>
-                            <x-input-label for="amount" :value="__('Amount Received (₹) *')" />
+                            <x-input-label for="amount" :value="__('Amount (₹) *')" />
                             <x-text-input id="amount" class="block mt-1 w-full text-lg font-semibold" type="number" step="0.01" name="amount" :value="old('amount')" required min="1" placeholder="Enter amount" />
                             <x-input-error :messages="$errors->get('amount')" class="mt-2" />
                         </div>
 
-                        <!-- Payment Date -->
+                        <!-- Payment Mode -->
                         <div>
+                            <x-input-label for="payment_mode" :value="__('Payment Mode *')" />
+                            <select id="payment_mode" name="payment_mode" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
+                                <option value="">Select Payment Mode</option>
+                                <option value="online" {{ old('payment_mode') == 'online' ? 'selected' : '' }}>Online</option>
+                                <option value="offline" {{ old('payment_mode', 'offline') == 'offline' ? 'selected' : '' }}>Offline</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('payment_mode')" class="mt-2" />
+                        </div>
+
+                        <!-- Payment Date -->
+                        <div class="md:col-span-2">
                             <x-input-label for="payment_date" :value="__('Payment Date *')" />
                             <x-text-input id="payment_date" class="block mt-1 w-full" type="date" name="payment_date" :value="old('payment_date', date('Y-m-d'))" required />
                             <x-input-error :messages="$errors->get('payment_date')" class="mt-2" />
-                        </div>
-
-                        <!-- Remarks -->
-                        <div class="md:col-span-2">
-                            <x-input-label for="remarks" :value="__('Remarks (Optional)')" />
-                            <textarea id="remarks" name="remarks" rows="2" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Any notes about this payment...">{{ old('remarks') }}</textarea>
-                            <x-input-error :messages="$errors->get('remarks')" class="mt-2" />
-                        </div>
-                        
-                        <div class="md:col-span-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                            <p class="text-sm text-yellow-800">
-                                <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <strong>Note:</strong> This payment will be marked as <span class="font-semibold">Pending Verification</span>. Admin will verify and add Transaction ID.
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -112,37 +80,11 @@
                         Cancel
                     </a>
                     <x-primary-button>
-                        {{ __('Create Fee Entry') }}
+                        {{ __('Save Entry') }}
                     </x-primary-button>
                 </div>
             </form>
         </div>
     </div>
-    <script>
-        function updateStudentInfo() {
-            const select = document.getElementById('student_id');
-            const infoDiv = document.getElementById('student-info');
-            const courseSpan = document.getElementById('student-course');
-            const feeSpan = document.getElementById('student-fee');
-            
-            const selectedOption = select.options[select.selectedIndex];
-            
-            if (selectedOption && selectedOption.value) {
-                const course = selectedOption.dataset.course || '—';
-                const fee = parseFloat(selectedOption.dataset.fee) || 0;
-                
-                courseSpan.textContent = course;
-                feeSpan.textContent = fee.toLocaleString('en-IN', {minimumFractionDigits: 2});
-                infoDiv.classList.remove('hidden');
-            } else {
-                infoDiv.classList.add('hidden');
-            }
-        }
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            updateStudentInfo();
-        });
-    </script>
 </x-app-layout>
 

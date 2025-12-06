@@ -41,12 +41,17 @@
                         <dd class="mt-1 text-sm text-gray-900">{{ $fee->semester ?? 'N/A' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm font-medium text-gray-500">Payment Date</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}</dd>
+                        <dt class="text-sm font-medium text-gray-500">Payment Mode</dt>
+                        <dd class="mt-1">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {{ $fee->payment_mode === 'online' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
+                                {{ ucfirst($fee->payment_mode ?? 'offline') }}
+                            </span>
+                        </dd>
                     </div>
                     <div>
-                        <dt class="text-sm font-medium text-gray-500">Transaction ID</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $fee->transaction_id ?? 'N/A' }}</dd>
+                        <dt class="text-sm font-medium text-gray-500">Payment Date</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Status</dt>
@@ -80,9 +85,15 @@
                     </div>
                     @if($fee->verified_by)
                     <div>
-                        <dt class="text-sm font-medium text-gray-500">Verified By</dt>
+                        <dt class="text-sm font-medium text-gray-500">Verified By (Admin)</dt>
                         <dd class="mt-1 text-sm text-gray-900">{{ $fee->verifiedBy->name ?? 'N/A' }}</dd>
                         <dd class="text-xs text-gray-500">{{ $fee->verified_at ? $fee->verified_at->format('d M Y, h:i A') : 'N/A' }}</dd>
+                    </div>
+                    @endif
+                    @if($fee->approved_by_name)
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Payment Received/Approved By</dt>
+                        <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ $fee->approved_by_name }}</dd>
                     </div>
                     @endif
                 </div>
@@ -98,11 +109,11 @@
                     <form action="{{ route('admin.fees.verify', $fee->id) }}" method="POST" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                         @csrf
                         <div class="mb-4">
-                            <label for="transaction_id" class="block text-sm font-medium text-green-900 mb-2">Transaction ID / Receipt No. *</label>
-                            <input type="text" id="transaction_id" name="transaction_id" required
+                            <label for="approved_by_name" class="block text-sm font-medium text-green-900 mb-2">Name of Person Who Approved/Received Payment *</label>
+                            <input type="text" id="approved_by_name" name="approved_by_name" required
                                 class="block w-full rounded-md border-green-300 bg-white text-gray-900 focus:border-green-500 focus:ring-green-500"
-                                placeholder="Enter transaction ID or receipt number">
-                            <p class="mt-1 text-xs text-green-700">Required to approve the payment</p>
+                                placeholder="Enter name of person who received/approved the payment">
+                            <p class="mt-1 text-xs text-green-700">Enter the name of the person (cashier/staff) who physically received or approved this payment</p>
                         </div>
                         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                             ✓ Approve Payment

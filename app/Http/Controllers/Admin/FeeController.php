@@ -17,62 +17,21 @@ class FeeController extends Controller
     {
         $user = Auth::user();
 
-        $query = Fee::with(['student.course', 'student.institute', 'markedBy', 'verifiedBy']);
-
-        // Role-based filtering: Staff sees only fees for students they created
-        if (!$user->isSuperAdmin()) {
-            $query->whereHas('student', function ($q) use ($user) {
-                $q->where('created_by', $user->id);
-            });
-        }
-
-        // Filter by student
-        if ($request->filled('student_id')) {
-            $query->where('student_id', $request->input('student_id'));
-        }
+        // Get all fees (no student filtering since student_id can be null)
+        $query = Fee::with(['student', 'markedBy', 'verifiedBy']);
 
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
 
-        // Filter by payment type
-        if ($request->filled('payment_type')) {
-            $query->where('payment_type', $request->input('payment_type'));
-        }
-
-        // Date range filter
-        if ($request->filled('date_from')) {
-            $query->whereDate('payment_date', '>=', $request->input('date_from'));
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('payment_date', '<=', $request->input('date_to'));
-        }
-
-        // Search
+        // Search by amount
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('transaction_id', 'like', "%{$search}%")
-                    ->orWhereHas('student', function ($sq) use ($search) {
-                        $sq->where('name', 'like', "%{$search}%")
-                            ->orWhere('roll_number', 'like', "%{$search}%")
-                            ->orWhere('registration_number', 'like', "%{$search}%");
-                    });
-            });
+            $query->where('amount', 'like', "%{$search}%");
         }
 
         $fees = $query->latest('payment_date')->latest()->paginate(15)->withQueryString();
-
-        // Get students for filter dropdown (role-based)
-        if ($user->isSuperAdmin()) {
-            $students = Student::orderBy('name')->get(['id', 'name', 'roll_number', 'registration_number']);
-        } else {
-            // Staff sees only students they created
-            $students = Student::where('created_by', $user->id)
-                ->orderBy('name')
-                ->get(['id', 'name', 'roll_number', 'registration_number']);
-        }
 
         $statuses = [
             'pending_verification' => 'Pending Verification',
@@ -84,7 +43,7 @@ class FeeController extends Controller
             'tuition' => 'Tuition Fee',
         ];
 
-        return view('admin.fees.index', compact('fees', 'students', 'statuses', 'paymentTypes'));
+        return view('admin.fees.index', compact('fees', 'statuses', 'paymentTypes'));
     }
 
     /**
@@ -92,40 +51,8 @@ class FeeController extends Controller
      */
     public function create(Request $request)
     {
-        $user = Auth::user();
-
-        // Get students for dropdown (role-based)
-        // For Staff: only students they created
-        // For Super Admin: all active students
-        if ($user->isSuperAdmin()) {
-            $students = Student::where('status', 'active')
-                ->with(['course', 'institute'])
-                ->orderBy('name')
-                ->get();
-        } else {
-            $students = Student::where('created_by', $user->id)
-                ->with(['course', 'institute'])
-                ->orderBy('name')
-                ->get();
-        }
-
-        $paymentTypes = [
-            'tuition' => 'Tuition Fee',
-            'semester' => 'Semester Fee',
-            'annual' => 'Annual Fee',
-            'exam' => 'Exam Fee',
-            'hostel' => 'Hostel Fee',
-            'other' => 'Other',
-        ];
-
-        // Handle pre-selected student from query parameter
-        $selectedStudentId = $request->input('student_id');
-        $selectedStudent = null;
-        if ($selectedStudentId) {
-            $selectedStudent = $students->firstWhere('id', $selectedStudentId);
-        }
-
-        return view('admin.fees.create', compact('students', 'paymentTypes', 'selectedStudentId', 'selectedStudent'));
+        // No student information needed
+        return view('admin.fees.create');
     }
 
     /**
@@ -134,26 +61,16 @@ class FeeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'student_id' => ['required', 'exists:students,id'],
+            'student_id' => ['nullable', 'exists:students,id'],
             'amount' => ['required', 'numeric', 'min:1'],
             'payment_type' => ['nullable', 'string', 'max:50'],
+            'payment_mode' => ['required', 'in:online,offline'],
             'payment_date' => ['required', 'date'],
             'remarks' => ['nullable', 'string'],
         ]);
         
         // Default payment type to tuition
         $validated['payment_type'] = $validated['payment_type'] ?? 'tuition';
-
-        // Check permission: Staff can only add fees for students they created
-        $user = Auth::user();
-        if (!$user->isSuperAdmin()) {
-            $student = Student::findOrFail($validated['student_id']);
-            if ($student->created_by !== $user->id) {
-                return redirect()->back()
-                    ->withErrors(['student_id' => 'You can only add fees for students you registered.'])
-                    ->withInput();
-            }
-        }
 
         $validated['status'] = 'pending_verification';
         $validated['marked_by'] = Auth::id();
@@ -196,20 +113,20 @@ class FeeController extends Controller
                 ->with('error', 'Only pending verification fees can be verified.');
         }
 
-        // Validate transaction ID (required for approval)
+        // Validate approved_by_name (required for approval)
         $validated = $request->validate([
-            'transaction_id' => ['required', 'string', 'max:255'],
+            'approved_by_name' => ['required', 'string', 'max:255'],
         ]);
 
         $fee->update([
             'status' => 'verified',
-            'transaction_id' => $validated['transaction_id'],
+            'approved_by_name' => $validated['approved_by_name'],
             'verified_by' => Auth::id(),
             'verified_at' => now(),
         ]);
 
         return redirect()->back()
-            ->with('success', 'Fee payment verified successfully with Transaction ID: ' . $validated['transaction_id']);
+            ->with('success', 'Fee payment verified successfully. Approved by: ' . $validated['approved_by_name']);
     }
 
     /**
@@ -262,11 +179,10 @@ class FeeController extends Controller
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
-                $q->where('transaction_id', 'like', "%{$search}%")
-                    ->orWhereHas('student', function ($sq) use ($search) {
-                        $sq->where('name', 'like', "%{$search}%")
-                            ->orWhere('roll_number', 'like', "%{$search}%");
-                    });
+                $q->whereHas('student', function ($sq) use ($search) {
+                    $sq->where('name', 'like', "%{$search}%")
+                        ->orWhere('roll_number', 'like', "%{$search}%");
+                });
             });
         }
 

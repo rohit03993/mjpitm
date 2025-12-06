@@ -127,34 +127,6 @@
                         </div>
                     </div>
 
-                    <!-- Fee Status -->
-                    <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg border-l-4 border-green-500">
-                        <div class="p-6">
-                            <div class="flex items-center mb-4">
-                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                                    <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <h3 class="text-lg font-semibold text-gray-900">Fee Status</h3>
-                            </div>
-                            <div class="space-y-2">
-                                <p class="text-gray-700">
-                                    <span class="font-medium">Total Fees:</span> 
-                                    <span class="text-gray-900">{{ $student->fees->count() }}</span>
-                                </p>
-                                <p class="text-gray-700">
-                                    <span class="font-medium">Verified:</span> 
-                                    <span class="text-green-600 font-semibold">{{ $student->fees->where('status', 'verified')->count() }}</span>
-                                </p>
-                                <p class="text-gray-700">
-                                    <span class="font-medium">Pending:</span> 
-                                    <span class="text-yellow-600 font-semibold">{{ $student->fees->where('status', 'pending_verification')->count() }}</span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Results Status -->
                     <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg border-l-4 border-purple-500">
                         <div class="p-6">
@@ -420,63 +392,6 @@
                     </div>
                 </div>
 
-                <!-- Fee Payment History Section -->
-                <div id="fees-section" class="bg-white overflow-hidden shadow-lg sm:rounded-lg mb-6">
-                    <div class="p-6 border-b border-gray-200">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-xl font-semibold text-gray-900">Fee Payment History</h3>
-                            <span class="text-sm text-gray-500">{{ $fees->count() }} payment(s)</span>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        @if($fees->count() > 0)
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Type</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        @foreach($fees as $fee)
-                                            <tr>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {{ ucfirst($fee->payment_type ?? 'N/A') }}
-                                                    @if($fee->semester)
-                                                        <span class="text-xs text-gray-500">(Sem {{ $fee->semester }})</span>
-                                                    @endif
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                                    ₹{{ number_format($fee->amount, 2) }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {{ $fee->transaction_id ?? 'N/A' }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                        {{ $fee->status === 'verified' ? 'bg-green-100 text-green-800' : 
-                                                           ($fee->status === 'pending_verification' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                                        {{ ucfirst(str_replace('_', ' ', $fee->status)) }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @else
-                            <p class="text-center text-gray-500 py-8">No fee payment records available.</p>
-                        @endif
-                    </div>
-                </div>
-
                 <!-- Quick Actions -->
                 <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg">
                     <div class="p-6">
@@ -492,19 +407,6 @@
                                     <div>
                                         <h4 class="font-semibold text-indigo-900 text-lg">View Results</h4>
                                         <p class="text-sm text-indigo-700 mt-1">Check your exam results</p>
-                                    </div>
-                                </div>
-                            </a>
-                            <a href="#fees" onclick="document.getElementById('fees-section').scrollIntoView({behavior: 'smooth'}); return false;" class="block p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg hover:shadow-md transition border border-green-100">
-                                <div class="flex items-center">
-                                    <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mr-4">
-                                        <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-semibold text-green-900 text-lg">View Fees</h4>
-                                        <p class="text-sm text-green-700 mt-1">Check your fee payment status</p>
                                     </div>
                                 </div>
                             </a>

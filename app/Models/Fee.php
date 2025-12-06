@@ -13,14 +13,15 @@ class Fee extends Model
         'student_id',
         'amount',
         'payment_type',
+        'payment_mode',
         'semester',
         'status',
         'payment_date',
-        'transaction_id',
         'remarks',
         'marked_by',
         'verified_by',
         'verified_at',
+        'approved_by_name',
     ];
 
     protected function casts(): array

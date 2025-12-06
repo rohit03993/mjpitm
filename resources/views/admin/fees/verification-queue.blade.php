@@ -8,8 +8,8 @@
                 <a href="{{ route('admin.fees.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                     All Fees
                 </a>
-                <a href="{{ route('admin.fees.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
-                    + Add Fee Entry
+                <a href="{{ route('admin.students.index') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                    Select Student to Add Payment
                 </a>
             </div>
         </div>
@@ -40,7 +40,7 @@
                                     id="search"
                                     name="search"
                                     value="{{ request('search') }}"
-                                    placeholder="Search by student name, roll number, or transaction ID..."
+                                    placeholder="Search by student name or roll number..."
                                     class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
                                 >
                             </div>
@@ -61,8 +61,8 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marked By</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
@@ -84,10 +84,13 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}
+                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                {{ $fee->payment_mode === 'online' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
+                                                {{ ucfirst($fee->payment_mode ?? 'offline') }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $fee->transaction_id ?? 'N/A' }}
+                                            {{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $fee->markedBy->name ?? 'N/A' }}
@@ -96,10 +99,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex flex-col gap-1">
                                                 <a href="{{ route('admin.fees.show', $fee->id) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
-                                                <form action="{{ route('admin.fees.verify', $fee->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to verify this fee payment?');">
-                                                    @csrf
-                                                    <button type="submit" class="text-green-600 hover:text-green-900">Verify</button>
-                                                </form>
+                                                <a href="{{ route('admin.fees.show', $fee->id) }}" class="text-green-600 hover:text-green-900">Approve</a>
                                             </div>
                                         </td>
                                     </tr>
