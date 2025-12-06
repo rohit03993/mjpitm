@@ -218,7 +218,14 @@ class PublicRegistrationController extends Controller
      */
     public function success($studentId)
     {
+        $instituteId = session('current_institute_id');
         $student = Student::findOrFail($studentId);
+        
+        // Verify student belongs to current institute (security check)
+        if ($instituteId && $student->institute_id != $instituteId) {
+            abort(403, 'Unauthorized access.');
+        }
+        
         return view('public.registration-success', compact('student'));
     }
 

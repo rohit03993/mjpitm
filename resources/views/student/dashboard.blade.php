@@ -2,7 +2,10 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Student Dashboard - {{ config('app.name', 'Laravel') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -10,29 +13,30 @@
     <div class="min-h-screen">
         <!-- Navigation -->
         <nav class="bg-white shadow-lg border-b-4 border-amber-500">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+                <div class="flex justify-between items-center h-14 sm:h-16">
+                    <div class="flex items-center min-w-0 flex-1">
+                        <div class="flex-shrink-0 flex items-center space-x-2 sm:space-x-3">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-amber-500 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                 </svg>
                             </div>
-                            <h1 class="text-xl font-bold text-gray-900">
+                            <h1 class="text-base sm:text-xl font-bold text-gray-900 truncate">
                                 Student Portal
                             </h1>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <div class="text-right">
-                            <p class="text-sm font-medium text-gray-900">{{ $student->name }}</p>
-                            <p class="text-xs text-gray-500">{{ $student->registration_number ?? '—' }}</p>
+                    <div class="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-medium text-gray-900 truncate max-w-[120px]">{{ $student->name }}</p>
+                            <p class="text-xs text-gray-500 truncate max-w-[120px]">{{ $student->registration_number ?? '—' }}</p>
                         </div>
                         <form method="POST" action="{{ route('student.logout') }}">
                             @csrf
-                            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Logout
+                            <button type="submit" class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                <span class="hidden sm:inline">Logout</span>
+                                <span class="sm:hidden">Out</span>
                             </button>
                         </form>
                     </div>
@@ -41,8 +45,8 @@
         </nav>
 
         <!-- Main Content -->
-        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div class="px-4 py-6 sm:px-0">
+        <main class="max-w-7xl mx-auto py-4 sm:py-6 px-3 sm:px-6 lg:px-8">
+            <div class="py-4 sm:py-6">
                 <!-- Welcome Message with Institute Branding -->
                 @php
                     $isParamedical = $student->institute && \Illuminate\Support\Str::contains(\Illuminate\Support\Str::lower($student->institute->name), 'paramedical');
@@ -109,7 +113,7 @@
                                 </p>
                                 <p class="text-gray-700">
                                     <span class="font-medium">Duration:</span> 
-                                    <span class="text-gray-900">{{ $student->course->duration_years ?? 'N/A' }} Years</span>
+                                    <span class="text-gray-900">{{ $student->course->formatted_duration ?? 'N/A' }}</span>
                                 </p>
                                 <p class="text-gray-700">
                                     <span class="font-medium">Semester:</span> 

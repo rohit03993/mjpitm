@@ -97,7 +97,8 @@ class TestUsersSeeder extends Seeder
                 'phone' => '9876543211',
                 'address' => 'Test Address 2, City',
                 'country' => 'India',
-                'nationality' => 'Indian',
+                'nationality' => 'Indian',0
+                 
                 'state' => 'Uttar Pradesh',
                 'district' => 'Lucknow',
                 'pin_code' => '226002',

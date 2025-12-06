@@ -28,20 +28,20 @@ Route::get('/login-options', function () {
     return view('auth.login-options');
 })->name('login.options');
 
-// Super Admin Authentication Routes
-Route::middleware('guest')->group(function () {
+// Super Admin Authentication Routes (with rate limiting: 5 attempts per minute)
+Route::middleware(['guest', 'throttle:5,1'])->group(function () {
     Route::get('/superadmin/login', [SuperAdminAuthController::class, 'showLoginForm'])->name('superadmin.login');
     Route::post('/superadmin/login', [SuperAdminAuthController::class, 'login']);
 });
 
-// Staff Authentication Routes
-Route::middleware('guest')->group(function () {
+// Staff Authentication Routes (with rate limiting: 5 attempts per minute)
+Route::middleware(['guest', 'throttle:5,1'])->group(function () {
     Route::get('/staff/login', [StaffAuthController::class, 'showLoginForm'])->name('staff.login');
     Route::post('/staff/login', [StaffAuthController::class, 'login']);
 });
 
-// Student Authentication Routes
-Route::middleware('guest')->group(function () {
+// Student Authentication Routes (with rate limiting: 5 attempts per minute)
+Route::middleware(['guest', 'throttle:5,1'])->group(function () {
     Route::get('/student/login', [StudentAuthController::class, 'showLoginForm'])->name('student.login');
     Route::post('/student/login', [StudentAuthController::class, 'login']);
     Route::get('/student/forgot-password', [StudentAuthController::class, 'showPasswordRequestForm'])->name('student.password.request');

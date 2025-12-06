@@ -13,7 +13,7 @@
                 <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6">
                     <h3 class="text-xl font-semibold text-blue-900 mb-2">{{ $course->name }}</h3>
                     <p class="text-gray-600 mb-2">Code: {{ $course->code }}</p>
-                    <p class="text-gray-600 mb-4">Duration: {{ $course->duration_years }} Years</p>
+                    <p class="text-gray-600 mb-4">Duration: {{ $course->formatted_duration }}</p>
                     @if($course->description)
                         <p class="text-gray-700 mb-4">{{ Str::limit($course->description, 100) }}</p>
                     @endif

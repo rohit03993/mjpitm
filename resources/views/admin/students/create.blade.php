@@ -910,12 +910,31 @@
             if (course) {
                 // Display course fee info (read-only)
                 const totalFee = parseFloat(course.tuition_fee) || 0;
-                const duration = parseInt(course.duration_years) || 1;
-                const feePerYear = duration > 0 ? (totalFee / duration) : totalFee;
+                const totalMonths = parseInt(course.duration_months) || 0;
+                
+                // Calculate total duration in years for fee calculation
+                const totalYears = totalMonths / 12;
+                const feePerYear = totalYears > 0 ? (totalFee / totalYears) : totalFee;
+                
+                // Format duration display
+                let durationText = 'Not specified';
+                if (totalMonths > 0) {
+                    if (totalMonths < 12) {
+                        durationText = totalMonths + ' month' + (totalMonths > 1 ? 's' : '');
+                    } else {
+                        const years = Math.floor(totalMonths / 12);
+                        const months = totalMonths % 12;
+                        if (months > 0) {
+                            durationText = years + ' year' + (years > 1 ? 's' : '') + ' ' + months + ' month' + (months > 1 ? 's' : '');
+                        } else {
+                            durationText = years + ' year' + (years > 1 ? 's' : '');
+                        }
+                    }
+                }
                 
                 document.getElementById('course_total_fee').value = '₹ ' + totalFee.toLocaleString('en-IN', {minimumFractionDigits: 2});
                 document.getElementById('course_fee_per_year').value = '₹ ' + feePerYear.toLocaleString('en-IN', {minimumFractionDigits: 2});
-                document.getElementById('course_duration').value = duration + ' Year' + (duration > 1 ? 's' : '');
+                document.getElementById('course_duration').value = durationText;
             } else {
                 clearFees();
             }

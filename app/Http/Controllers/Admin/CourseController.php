@@ -74,7 +74,8 @@ class CourseController extends Controller
             'category_id' => ['nullable', 'exists:course_categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:255', 'unique:courses,code'],
-            'duration_years' => ['required', 'integer', 'min:1', 'max:10'],
+            'duration_value' => ['required', 'numeric', 'min:0.1'],
+            'duration_type' => ['required', 'in:months,years'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'in:active,inactive'],
             
@@ -87,6 +88,16 @@ class CourseController extends Controller
             'hostel_fee_amount' => ['nullable', 'numeric', 'min:0'],
             'late_fee' => ['nullable', 'numeric', 'min:0'],
         ]);
+        
+        // Convert duration to months
+        if ($validated['duration_type'] === 'years') {
+            $validated['duration_months'] = (int)($validated['duration_value'] * 12);
+        } else {
+            $validated['duration_months'] = (int)$validated['duration_value'];
+        }
+        
+        // Remove temporary fields
+        unset($validated['duration_value'], $validated['duration_type']);
         
         // Create the course
         $course = Course::create($validated);
@@ -130,7 +141,18 @@ class CourseController extends Controller
             ];
         })->toJson();
         
-        return view('admin.courses.edit', compact('course', 'institutes', 'categories', 'categoriesJson'));
+        // Calculate duration value and type for the form
+        $durationMonths = $course->duration_months ?? 0;
+        $durationValue = $durationMonths;
+        $durationType = 'months';
+        
+        // If duration is a multiple of 12, show as years
+        if ($durationMonths > 0 && $durationMonths % 12 == 0) {
+            $durationValue = $durationMonths / 12;
+            $durationType = 'years';
+        }
+        
+        return view('admin.courses.edit', compact('course', 'institutes', 'categories', 'categoriesJson', 'durationValue', 'durationType'));
     }
 
     /**
@@ -144,7 +166,8 @@ class CourseController extends Controller
             'category_id' => ['nullable', 'exists:course_categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:255', 'unique:courses,code,' . $course->id],
-            'duration_years' => ['required', 'integer', 'min:1', 'max:10'],
+            'duration_value' => ['required', 'numeric', 'min:0.1'],
+            'duration_type' => ['required', 'in:months,years'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'in:active,inactive'],
             
@@ -157,6 +180,16 @@ class CourseController extends Controller
             'hostel_fee_amount' => ['nullable', 'numeric', 'min:0'],
             'late_fee' => ['nullable', 'numeric', 'min:0'],
         ]);
+        
+        // Convert duration to months
+        if ($validated['duration_type'] === 'years') {
+            $validated['duration_months'] = (int)($validated['duration_value'] * 12);
+        } else {
+            $validated['duration_months'] = (int)$validated['duration_value'];
+        }
+        
+        // Remove temporary fields
+        unset($validated['duration_value'], $validated['duration_type']);
         
         // Update the course
         $course->update($validated);

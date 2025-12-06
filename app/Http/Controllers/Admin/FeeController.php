@@ -86,14 +86,11 @@ class FeeController extends Controller
      */
     public function show(Fee $fee)
     {
-        $fee->load(['student.course', 'student.institute', 'markedBy', 'verifiedBy']);
+        // Load relationships (student is optional since fees are independent)
+        $fee->load(['student', 'markedBy', 'verifiedBy']);
 
-        // Check permission
-        $user = Auth::user();
-        if (!$user->isSuperAdmin() && $fee->student->institute_id !== $user->institute_id) {
-            abort(403, 'You are not authorized to view this fee.');
-        }
-
+        // All authenticated users can view fees (same as index method)
+        // No need to check student relationships since fees are independent
         return view('admin.fees.show', compact('fee'));
     }
 
@@ -172,17 +169,16 @@ class FeeController extends Controller
             abort(403, 'Only Admin can access the verification queue.');
         }
 
-        $query = Fee::with(['student.course', 'student.institute', 'markedBy'])
+        $query = Fee::with(['student', 'markedBy'])
             ->where('status', 'pending_verification');
 
-        // Search
+        // Search by amount or payment mode (fees are independent, no student search)
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
-                $q->whereHas('student', function ($sq) use ($search) {
-                    $sq->where('name', 'like', "%{$search}%")
-                        ->orWhere('roll_number', 'like', "%{$search}%");
-                });
+                $q->where('amount', 'like', "%{$search}%")
+                    ->orWhere('payment_mode', 'like', "%{$search}%")
+                    ->orWhere('approved_by_name', 'like', "%{$search}%");
             });
         }
 

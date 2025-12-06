@@ -284,7 +284,7 @@
         <!-- Footer -->
         <div class="card-footer">
             <div class="validity-cell">
-                <strong>Duration:</strong> {{ $student->course->duration_years ?? 3 }} Years
+                <strong>Duration:</strong> {{ $student->course->formatted_duration ?? '3 Years' }}
             </div>
         </div>
         </div><!-- end card-content -->

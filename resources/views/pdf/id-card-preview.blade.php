@@ -310,7 +310,7 @@
                     <!-- Footer -->
                     <div class="card-footer">
                         <div class="validity">
-                            <strong>Duration:</strong> {{ $student->course->duration_years ?? 3 }} Years
+                            <strong>Duration:</strong> {{ $student->course->formatted_duration ?? '3 Years' }}
                         </div>
                     </div>
                     </div><!-- end card-content -->
@@ -336,7 +336,7 @@
                 </div>
                 <div>
                     <p class="text-gray-500">Duration</p>
-                    <p class="font-medium">{{ $student->course->duration_years ?? 3 }} Years</p>
+                    <p class="font-medium">{{ $student->course->formatted_duration ?? '3 Years' }}</p>
                 </div>
                 <div>
                     <p class="text-gray-500">Institute</p>
@@ -348,7 +348,17 @@
                 </div>
                 <div>
                     <p class="text-gray-500">Valid Till</p>
-                    <p class="font-medium">{{ $student->admission_year ? ($student->admission_year + ($student->course->duration_years ?? 3)) : date('Y', strtotime('+3 years')) }}</p>
+                    <p class="font-medium">
+                        @if($student->admission_year && $student->course)
+                            @php
+                                $totalMonths = $student->course->total_months ?? 36;
+                                $endYear = $student->admission_year + floor($totalMonths / 12);
+                            @endphp
+                            {{ $endYear }}
+                        @else
+                            {{ date('Y', strtotime('+3 years')) }}
+                        @endif
+                    </p>
                 </div>
                 <div>
                     <p class="text-gray-500">Status</p>

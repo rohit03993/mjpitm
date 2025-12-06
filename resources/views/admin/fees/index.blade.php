@@ -1,16 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+            <h2 class="font-semibold text-lg sm:text-xl text-gray-800 leading-tight">
                 {{ __('Fee Management') }}
             </h2>
-            <div class="flex gap-2">
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 @if(auth()->user()->isSuperAdmin())
-                <a href="{{ route('admin.fees.verification-queue') }}" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+                <a href="{{ route('admin.fees.verification-queue') }}" class="text-center bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded text-sm sm:text-base">
                     Verification Queue
                 </a>
                 @endif
-                <a href="{{ route('admin.fees.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                <a href="{{ route('admin.fees.create') }}" class="text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded text-sm sm:text-base">
                     + Add Payment
                 </a>
             </div>
@@ -31,87 +31,116 @@
                 </div>
             @endif
 
-            <!-- Fees Table -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
-                                    @if(auth()->user()->isSuperAdmin())
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                    @endif
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($fees as $fee)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                            ₹{{ number_format($fee->amount, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                {{ $fee->payment_mode === 'online' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
-                                                {{ ucfirst($fee->payment_mode ?? 'offline') }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                {{ $fee->status === 'verified' ? 'bg-green-100 text-green-800' : 
-                                                   ($fee->status === 'pending_verification' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                                {{ ucfirst(str_replace('_', ' ', $fee->status)) }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $fee->markedBy->name ?? 'N/A' }}
-                                        </td>
-                                        @if(auth()->user()->isSuperAdmin())
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button type="button" onclick="openViewModal({{ $fee->id }}, {{ $fee->amount }}, '{{ $fee->payment_mode ?? 'offline' }}', '{{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}', '{{ $fee->status }}', '{{ addslashes($fee->markedBy->name ?? 'N/A') }}', '{{ $fee->created_at ? $fee->created_at->format('d M Y, h:i A') : 'N/A' }}', '{{ addslashes($fee->verifiedBy->name ?? 'N/A') }}', '{{ $fee->verified_at ? $fee->verified_at->format('d M Y, h:i A') : 'N/A' }}', '{{ addslashes($fee->approved_by_name ?? 'N/A') }}')" class="text-blue-600 hover:text-blue-900 mr-3">
-                                                View
-                                            </button>
-                                            @if($fee->status === 'pending_verification')
-                                                <button type="button" onclick="openApproveModal({{ $fee->id }}, {{ $fee->amount }})" class="text-green-600 hover:text-green-900 font-semibold">
-                                                    Approve
-                                                </button>
-                                            @endif
-                                        </td>
-                                        @endif
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="{{ auth()->user()->isSuperAdmin() ? '6' : '5' }}" class="px-6 py-4 text-center text-sm text-gray-500">
-                                            No payment entries yet. <a href="{{ route('admin.fees.create') }}" class="text-indigo-600 hover:text-indigo-900">Add your first payment</a>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    @if($fees->hasPages())
-                        <div class="mt-6">
-                            {{ $fees->links() }}
+            <!-- Fees Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                @forelse($fees as $fee)
+                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 overflow-hidden">
+                        <!-- Card Header -->
+                        <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-3 sm:px-6 sm:py-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-2xl sm:text-3xl font-bold text-white">
+                                        ₹{{ number_format($fee->amount, 2) }}
+                                    </p>
+                                    <p class="text-xs sm:text-sm text-indigo-100 mt-1">
+                                        Payment Entry #{{ $fee->id }}
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {{ $fee->status === 'verified' ? 'bg-green-100 text-green-800' : 
+                                           ($fee->status === 'pending_verification' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        {{ ucfirst(str_replace('_', ' ', $fee->status)) }}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    @endif
-                </div>
+
+                        <!-- Card Body -->
+                        <div class="p-4 sm:p-6">
+                            <div class="space-y-3">
+                                <!-- Payment Mode -->
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-500">Payment Mode</span>
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {{ $fee->payment_mode === 'online' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
+                                        {{ ucfirst($fee->payment_mode ?? 'offline') }}
+                                    </span>
+                                </div>
+
+                                <!-- Payment Date -->
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-500">Payment Date</span>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        {{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}
+                                    </span>
+                                </div>
+
+                                <!-- Added By -->
+                                <div class="flex items-center justify-between border-t pt-3">
+                                    <span class="text-sm text-gray-500">Added By</span>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        {{ $fee->markedBy->name ?? 'N/A' }}
+                                    </span>
+                                </div>
+
+                                <!-- Created At -->
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-400">Created</span>
+                                    <span class="text-xs text-gray-500">
+                                        {{ $fee->created_at ? $fee->created_at->format('d M Y, h:i A') : 'N/A' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Actions (Super Admin Only) -->
+                            @if(auth()->user()->isSuperAdmin())
+                            <div class="mt-4 pt-4 border-t flex flex-col sm:flex-row gap-2">
+                                <button type="button" 
+                                    onclick="openViewModal({{ $fee->id }}, {{ $fee->amount }}, '{{ $fee->payment_mode ?? 'offline' }}', '{{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}', '{{ $fee->status }}', '{{ addslashes($fee->markedBy->name ?? 'N/A') }}', '{{ $fee->created_at ? $fee->created_at->format('d M Y, h:i A') : 'N/A' }}', '{{ addslashes($fee->verifiedBy->name ?? 'N/A') }}', '{{ $fee->verified_at ? $fee->verified_at->format('d M Y, h:i A') : 'N/A' }}', '{{ addslashes($fee->approved_by_name ?? 'N/A') }}')" 
+                                    class="flex-1 px-3 py-2 text-sm font-medium text-center text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors">
+                                    View Details
+                                </button>
+                                @if($fee->status === 'pending_verification')
+                                    <button type="button" 
+                                        onclick="openApproveModal({{ $fee->id }}, {{ $fee->amount }})" 
+                                        class="flex-1 px-3 py-2 text-sm font-medium text-center text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
+                                        Approve
+                                    </button>
+                                @endif
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="col-span-full bg-white rounded-lg shadow-md p-8 sm:p-12 text-center">
+                        <svg class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="mt-4 text-lg sm:text-xl font-medium text-gray-900">No payment entries yet</h3>
+                        <p class="mt-2 text-sm text-gray-500">Get started by adding your first payment entry.</p>
+                        <div class="mt-6">
+                            <a href="{{ route('admin.fees.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                + Add Payment
+                            </a>
+                        </div>
+                    </div>
+                @endforelse
             </div>
+
+            <!-- Pagination -->
+            @if($fees->hasPages())
+                <div class="mt-6">
+                    {{ $fees->links() }}
+                </div>
+            @endif
         </div>
     </div>
 
     @if(auth()->user()->isSuperAdmin())
     <!-- View Modal -->
     <div id="viewModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full sm:w-96 max-w-md shadow-lg rounded-md bg-white m-4 sm:m-auto">
             <div class="mt-3">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900">Payment Details</h3>
@@ -164,7 +193,7 @@
 
     <!-- Approval Modal -->
     <div id="approveModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full sm:w-96 max-w-md shadow-lg rounded-md bg-white m-4 sm:m-auto">
             <div class="mt-3">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900">Approve Payment</h3>

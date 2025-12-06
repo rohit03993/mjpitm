@@ -68,7 +68,7 @@
                                             {{ $course->institute->name ?? 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $course->duration_years }} {{ $course->duration_years == 1 ? 'Year' : 'Years' }}
+                                            {{ $course->formatted_duration }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $course->students_count }}

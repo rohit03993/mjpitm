@@ -102,7 +102,7 @@ class StudentController extends Controller
                 'institute_id' => $course->institute_id,
                 'category_id' => $course->category_id,
                 'name' => $course->name,
-                'duration_years' => $course->duration_years ?? 1,
+                'duration_months' => $course->duration_months ?? 0,
                 'tuition_fee' => $course->tuition_fee ?? 0,
             ];
         })->toJson();
@@ -205,8 +205,8 @@ class StudentController extends Controller
             // Declaration
             'declaration_accepted' => ['required', 'accepted'],
             
-            // Password
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            // Password (minimum 8 characters for security)
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
             
             // Qualifications
             'qualifications' => ['nullable', 'array'],
@@ -317,10 +317,10 @@ class StudentController extends Controller
             $student->fees()->create([
                 'amount' => $student->total_deposit,
                 'payment_type' => 'registration',
+                'payment_mode' => $student->payment_mode ?? 'offline', // Default to offline
                 'semester' => $student->current_semester ?? 1,
                 'status' => 'pending_verification',
                 'payment_date' => $student->deposit_date ?? now(),
-                'transaction_id' => $student->bank_account ?? null,
                 'remarks' => 'Initial registration fee',
                 'marked_by' => Auth::id(),
             ]);

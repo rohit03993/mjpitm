@@ -14,7 +14,7 @@ class Course extends Model
         'category_id',
         'name',
         'code',
-        'duration_years',
+        'duration_months',
         'description',
         'status',
         'registration_fee',
@@ -69,5 +69,45 @@ class Course extends Model
     public function subjects()
     {
         return $this->hasMany(Subject::class);
+    }
+
+    /**
+     * Get formatted duration string (e.g., "2 months", "1 year", "2 years 6 months")
+     */
+    public function getFormattedDurationAttribute()
+    {
+        $totalMonths = $this->duration_months ?? 0;
+        
+        if ($totalMonths == 0) {
+            return 'Not specified';
+        }
+        
+        // If less than 12 months, show only months
+        if ($totalMonths < 12) {
+            return $totalMonths . ' ' . ($totalMonths == 1 ? 'month' : 'months');
+        }
+        
+        // Calculate years and remaining months
+        $displayYears = floor($totalMonths / 12);
+        $remainingMonths = $totalMonths % 12;
+        
+        $result = '';
+        if ($displayYears > 0) {
+            $result = $displayYears . ' ' . ($displayYears == 1 ? 'year' : 'years');
+        }
+        if ($remainingMonths > 0) {
+            if ($result) $result .= ' ';
+            $result .= $remainingMonths . ' ' . ($remainingMonths == 1 ? 'month' : 'months');
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Get total duration in months (alias for duration_months)
+     */
+    public function getTotalMonthsAttribute()
+    {
+        return $this->duration_months ?? 0;
     }
 }

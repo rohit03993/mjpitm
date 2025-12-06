@@ -85,11 +85,19 @@
                             <x-input-error :messages="$errors->get('code')" class="mt-2" />
                         </div>
 
-                        <!-- Duration (Years) -->
-                        <div>
-                            <x-input-label for="duration_years" :value="__('Duration (Years) *')" />
-                            <x-text-input id="duration_years" class="block mt-1 w-full" type="number" name="duration_years" :value="old('duration_years', $course->duration_years)" required min="1" max="10" oninput="updateDurationDisplay(); calculateTotalFee();" />
-                            <x-input-error :messages="$errors->get('duration_years')" class="mt-2" />
+                        <!-- Duration -->
+                        <div class="md:col-span-2">
+                            <x-input-label for="duration_value" :value="__('Duration *')" />
+                            <div class="flex gap-2 mt-1">
+                                <x-text-input id="duration_value" class="flex-1" type="number" step="0.1" name="duration_value" :value="old('duration_value', $durationValue ?? ($course->duration_months ?? 0))" required min="0.1" placeholder="Enter duration" oninput="updateDurationDisplay(); updateFeeLabel(); calculateTotalFee();" />
+                                <select id="duration_type" name="duration_type" class="rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="updateDurationDisplay(); updateFeeLabel(); calculateTotalFee();">
+                                    <option value="months" {{ old('duration_type', $durationType ?? 'months') == 'months' ? 'selected' : '' }}>Months</option>
+                                    <option value="years" {{ old('duration_type', $durationType ?? 'months') == 'years' ? 'selected' : '' }}>Years</option>
+                                </select>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Enter duration value and select whether it's in months or years</p>
+                            <x-input-error :messages="$errors->get('duration_value')" class="mt-2" />
+                            <x-input-error :messages="$errors->get('duration_type')" class="mt-2" />
                         </div>
 
                         <!-- Status -->
@@ -115,20 +123,27 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 bg-yellow-50 border-b border-yellow-200">
                         <h3 class="text-lg font-semibold text-yellow-900">Course Fee Structure</h3>
-                        <p class="text-sm text-gray-600 mt-1">Enter fee per year or total fee - the other will be calculated automatically based on course duration.</p>
+                        <p class="text-sm text-gray-600 mt-1">Enter fee per year or total fee - the other will be calculated automatically based on course duration (works for both years and months).</p>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                            <!-- Fee Per Year -->
+                            <!-- Fee Per Year/Month (Dynamic) -->
                             <div>
-                                <x-input-label for="tuition_fee" :value="__('Tuition Fee (Per Year) ₹')" />
-                                <x-text-input id="tuition_fee" class="block mt-1 w-full" type="number" step="0.01" name="tuition_fee" :value="old('tuition_fee', $course->tuition_fee)" min="0" placeholder="0.00" oninput="calculateTotalFee()" />
+                                <x-input-label for="tuition_fee" :value="__('Tuition Fee')" />
+                                <label id="tuition_fee_label" class="block text-sm font-medium text-gray-700 mb-1">
+                                    @php
+                                        $totalMonths = $course->duration_months ?? 0;
+                                        $labelText = ($totalMonths > 0 && $totalMonths < 12) ? 'Tuition Fee (Per Month) ₹' : 'Tuition Fee (Per Year) ₹';
+                                    @endphp
+                                    {{ $labelText }}
+                                </label>
+                                <x-text-input id="tuition_fee" class="block mt-1 w-full" type="number" step="0.01" name="tuition_fee" :value="old('tuition_fee', $course->tuition_fee)" min="0" placeholder="0.00" oninput="calculateTotalFee(); updateFeeLabel();" />
                                 <x-input-error :messages="$errors->get('tuition_fee')" class="mt-2" />
                             </div>
 
                             <!-- Multiply Symbol -->
                             <div class="hidden md:flex items-center justify-center text-2xl text-gray-400 font-bold pb-2">
-                                × <span id="duration_display">{{ $course->duration_years }}</span> years =
+                                × <span id="duration_display">-</span> =
                             </div>
 
                             <!-- Total Fee (Calculated) -->
@@ -190,29 +205,152 @@
             }
         }
         
-        // Update duration display in fee section
-        function updateDurationDisplay() {
-            const duration = document.getElementById('duration_years').value || 3;
-            const durationDisplay = document.getElementById('duration_display');
-            if (durationDisplay) {
-                durationDisplay.textContent = duration;
+        // Update fee label based on duration
+        function updateFeeLabel() {
+            const durationValueInput = document.getElementById('duration_value');
+            const durationTypeSelect = document.getElementById('duration_type');
+            const feeLabel = document.getElementById('tuition_fee_label');
+            
+            if (!feeLabel || !durationValueInput || !durationTypeSelect) {
+                return;
+            }
+            
+            const durationValue = parseFloat(durationValueInput.value) || 0;
+            const durationType = durationTypeSelect.value;
+            
+            let totalMonths = 0;
+            if (durationType === 'years') {
+                totalMonths = durationValue * 12;
+            } else {
+                totalMonths = durationValue;
+            }
+            
+            // If duration is less than 12 months, show "Per Month", otherwise "Per Year"
+            if (totalMonths > 0 && totalMonths < 12) {
+                feeLabel.textContent = 'Tuition Fee (Per Month) ₹';
+            } else if (totalMonths >= 12) {
+                feeLabel.textContent = 'Tuition Fee (Per Year) ₹';
+            } else {
+                // Default to "Per Year" if no duration entered yet
+                feeLabel.textContent = 'Tuition Fee (Per Year) ₹';
             }
         }
         
+        // Update duration display in fee section
+        function updateDurationDisplay() {
+            const durationValue = parseFloat(document.getElementById('duration_value').value) || 0;
+            const durationType = document.getElementById('duration_type').value;
+            const durationDisplay = document.getElementById('duration_display');
+            
+            if (durationDisplay) {
+                let displayText = '-';
+                if (durationValue > 0) {
+                    if (durationType === 'years') {
+                        const totalMonths = durationValue * 12;
+                        if (totalMonths < 12) {
+                            displayText = totalMonths + ' month' + (totalMonths > 1 ? 's' : '');
+                        } else {
+                            const years = Math.floor(totalMonths / 12);
+                            const months = totalMonths % 12;
+                            if (months > 0) {
+                                displayText = years + ' year' + (years > 1 ? 's' : '') + ' ' + months + ' month' + (months > 1 ? 's' : '');
+                            } else {
+                                displayText = years + ' year' + (years > 1 ? 's' : '');
+                            }
+                        }
+                    } else {
+                        const totalMonths = durationValue;
+                        if (totalMonths < 12) {
+                            displayText = totalMonths + ' month' + (totalMonths > 1 ? 's' : '');
+                        } else {
+                            const years = Math.floor(totalMonths / 12);
+                            const months = totalMonths % 12;
+                            if (months > 0) {
+                                displayText = years + ' year' + (years > 1 ? 's' : '') + ' ' + months + ' month' + (months > 1 ? 's' : '');
+                            } else {
+                                displayText = years + ' year' + (years > 1 ? 's' : '');
+                            }
+                        }
+                    }
+                }
+                durationDisplay.textContent = displayText;
+            }
+            
+            // Update fee label when duration changes
+            updateFeeLabel();
+        }
+        
         // Calculate total fee from per-year fee
+        // Calculate total fee from per-year/month fee
         function calculateTotalFee() {
-            const perYearFee = parseFloat(document.getElementById('tuition_fee').value) || 0;
-            const duration = parseInt(document.getElementById('duration_years').value) || 3;
-            const totalFee = perYearFee * duration;
+            const tuitionFee = parseFloat(document.getElementById('tuition_fee').value) || 0;
+            const durationValue = parseFloat(document.getElementById('duration_value').value) || 0;
+            const durationType = document.getElementById('duration_type').value;
+            
+            if (tuitionFee <= 0 || durationValue <= 0) {
+                document.getElementById('total_course_fee').value = '';
+                return;
+            }
+            
+            // Convert duration to total months
+            let totalMonths = 0;
+            if (durationType === 'years') {
+                totalMonths = durationValue * 12;
+            } else {
+                totalMonths = durationValue;
+            }
+            
+            // Check if we're using per-month or per-year fee
+            const feeLabel = document.getElementById('tuition_fee_label');
+            const isPerMonth = feeLabel && feeLabel.textContent.includes('Per Month');
+            
+            let totalFee = 0;
+            if (isPerMonth && totalMonths < 12) {
+                // Direct multiplication for per-month fees
+                totalFee = tuitionFee * totalMonths;
+            } else {
+                // For per-year fees: Total Fee = (Per Year Fee / 12) × Total Months
+                const perMonthFee = tuitionFee / 12;
+                totalFee = perMonthFee * totalMonths;
+            }
+            
             document.getElementById('total_course_fee').value = totalFee > 0 ? totalFee.toFixed(2) : '';
         }
         
-        // Calculate per-year fee from total fee
+        // Calculate per-year/month fee from total fee
         function calculatePerYearFee() {
             const totalFee = parseFloat(document.getElementById('total_course_fee').value) || 0;
-            const duration = parseInt(document.getElementById('duration_years').value) || 3;
-            const perYearFee = duration > 0 ? totalFee / duration : 0;
-            document.getElementById('tuition_fee').value = perYearFee > 0 ? perYearFee.toFixed(2) : '';
+            const durationValue = parseFloat(document.getElementById('duration_value').value) || 0;
+            const durationType = document.getElementById('duration_type').value;
+            
+            if (totalFee <= 0 || durationValue <= 0) {
+                document.getElementById('tuition_fee').value = '';
+                return;
+            }
+            
+            // Convert duration to total months
+            let totalMonths = 0;
+            if (durationType === 'years') {
+                totalMonths = durationValue * 12;
+            } else {
+                totalMonths = durationValue;
+            }
+            
+            // Check if we should show per-month or per-year
+            const feeLabel = document.getElementById('tuition_fee_label');
+            const isPerMonth = feeLabel && feeLabel.textContent.includes('Per Month');
+            
+            let tuitionFee = 0;
+            if (isPerMonth && totalMonths < 12) {
+                // Direct division for per-month fees
+                tuitionFee = totalFee / totalMonths;
+            } else {
+                // For per-year: Per Year Fee = (Total Fee / Total Months) × 12
+                const perMonthFee = totalFee / totalMonths;
+                tuitionFee = perMonthFee * 12;
+            }
+            
+            document.getElementById('tuition_fee').value = tuitionFee > 0 ? tuitionFee.toFixed(2) : '';
         }
         
         // Initialize on page load
@@ -222,13 +360,24 @@
                 filterCategories(instituteSelect.value);
             }
             
-            // Initialize duration display
+            // Initialize duration display and fee label
             updateDurationDisplay();
+            updateFeeLabel();
             
             // Calculate total if per-year fee exists
             const tuitionFee = document.getElementById('tuition_fee');
             if (tuitionFee && tuitionFee.value) {
                 calculateTotalFee();
+            }
+            
+            // Update fee label when duration type changes
+            const durationType = document.getElementById('duration_type');
+            const durationValue = document.getElementById('duration_value');
+            if (durationType) {
+                durationType.addEventListener('change', updateFeeLabel);
+            }
+            if (durationValue) {
+                durationValue.addEventListener('input', updateFeeLabel);
             }
         });
     </script>
