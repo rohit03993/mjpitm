@@ -14,6 +14,7 @@ class CourseCategory extends Model
         'name',
         'code',
         'description',
+        'image',
         'display_order',
         'status',
     ];

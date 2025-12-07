@@ -107,36 +107,6 @@
                             <x-input-error :messages="$errors->get('aadhaar_number')" class="mt-2" />
                         </div>
 
-                        <!-- Passport Number -->
-                        <div>
-                            <x-input-label for="passport_number" :value="__('Passport Number')" />
-                            <x-text-input id="passport_number" class="block mt-1 w-full" type="text" name="passport_number" :value="old('passport_number')" />
-                            <x-input-error :messages="$errors->get('passport_number')" class="mt-2" />
-                        </div>
-
-                        <!-- Are you employed? -->
-                        <div>
-                            <x-input-label for="is_employed" :value="__('Are you employed?')" />
-                            <select id="is_employed" name="is_employed" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" onchange="toggleEmploymentFields(this.value)">
-                                <option value="0" {{ old('is_employed') == '0' ? 'selected' : '' }}>No</option>
-                                <option value="1" {{ old('is_employed') == '1' ? 'selected' : '' }}>Yes</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('is_employed')" class="mt-2" />
-                        </div>
-
-                        <!-- Employer Name -->
-                        <div id="employer_name_field" style="display: none;">
-                            <x-input-label for="employer_name" :value="__('Employer Name')" />
-                            <x-text-input id="employer_name" class="block mt-1 w-full" type="text" name="employer_name" :value="old('employer_name')" />
-                            <x-input-error :messages="$errors->get('employer_name')" class="mt-2" />
-                        </div>
-
-                        <!-- Designation -->
-                        <div id="designation_field" style="display: none;">
-                            <x-input-label for="designation" :value="__('Designation')" />
-                            <x-text-input id="designation" class="block mt-1 w-full" type="text" name="designation" :value="old('designation')" />
-                            <x-input-error :messages="$errors->get('designation')" class="mt-2" />
-                        </div>
 
                         <!-- Photo Upload -->
                         <div class="md:col-span-2">
@@ -175,17 +145,12 @@
 
                 <!-- Communication Details Section -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6 bg-yellow-50 border-b border-yellow-200 flex items-center justify-between">
+                    <div class="p-6 bg-yellow-50 border-b border-yellow-200">
                         <h3 class="text-lg font-semibold text-yellow-900">Communication Details</h3>
-                        <p class="text-xs text-yellow-900 opacity-80">Keep at least one student contact and one guardian contact updated.</p>
                     </div>
                     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Student Contact -->
-                        <div class="md:col-span-2">
-                            <h4 class="text-sm font-semibold text-gray-800 mb-2">Student Contact</h4>
-                        </div>
                         <div>
-                            <x-input-label for="phone" :value="__('Student Mobile Number')" />
+                            <x-input-label for="phone" :value="__('Contact Number')" />
                             <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" :value="old('phone')" />
                             <x-input-error :messages="$errors->get('phone')" class="mt-2" />
                         </div>
@@ -197,19 +162,6 @@
                             <x-input-error :messages="$errors->get('email')" class="mt-2" />
                         </div>
 
-                        <!-- Father's Contact No -->
-                        <div>
-                            <x-input-label for="father_contact" :value="__('Father\'s Contact No')" />
-                            <x-text-input id="father_contact" class="block mt-1 w-full" type="tel" name="father_contact" :value="old('father_contact')" />
-                            <x-input-error :messages="$errors->get('father_contact')" class="mt-2" />
-                        </div>
-
-                        <!-- Mother's Contact No -->
-                        <div>
-                            <x-input-label for="mother_contact" :value="__('Mother\'s / Guardian\'s Contact No')" />
-                            <x-text-input id="mother_contact" class="block mt-1 w-full" type="tel" name="mother_contact" :value="old('mother_contact')" />
-                            <x-input-error :messages="$errors->get('mother_contact')" class="mt-2" />
-                        </div>
 
                         <!-- Country -->
                         <div>
@@ -232,7 +184,6 @@
                                 id="state"
                                 name="state"
                                 class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                                onchange="loadDistricts(this.value)"
                             >
                                 <option value="">Select a State</option>
                             </select>
@@ -242,13 +193,7 @@
                         <!-- District -->
                         <div>
                             <x-input-label for="district" :value="__('District')" />
-                            <select
-                                id="district"
-                                name="district"
-                                class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                            >
-                                <option value="">Select District</option>
-                            </select>
+                            <x-text-input id="district" class="block mt-1 w-full" type="text" name="district" :value="old('district')" placeholder="Enter district name" />
                             <x-input-error :messages="$errors->get('district')" class="mt-2" />
                         </div>
 
@@ -412,68 +357,20 @@
                             <x-input-error :messages="$errors->get('course_id')" class="mt-2" />
                         </div>
 
-                        <!-- Stream -->
-                        <div>
-                            <x-input-label for="stream" :value="__('Stream')" />
-                            <x-text-input id="stream" class="block mt-1 w-full" type="text" name="stream" :value="old('stream')" />
-                            <x-input-error :messages="$errors->get('stream')" class="mt-2" />
-                        </div>
-
-                        <!-- Year -->
-                        <div>
-                            <x-input-label for="admission_year" :value="__('Admission Year *')" />
-                            <x-text-input id="admission_year" class="block mt-1 w-full" type="text" name="admission_year" :value="old('admission_year', date('Y'))" required />
-                            <x-input-error :messages="$errors->get('admission_year')" class="mt-2" />
-                        </div>
-
                         <!-- Session -->
                         <div>
                             <x-input-label for="session" :value="__('Session')" />
                             <select id="session" name="session" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Select</option>
+                                @php
+                                    $currentYear = date('Y');
+                                    $defaultSession = $currentYear . '-' . ($currentYear + 1);
+                                @endphp
                                 @for($year = date('Y'); $year <= date('Y') + 2; $year++)
-                                    <option value="{{ $year }}-{{ $year + 1 }}" {{ old('session') == ($year . '-' . ($year + 1)) ? 'selected' : '' }}>{{ $year }}-{{ $year + 1 }}</option>
+                                    <option value="{{ $year }}-{{ $year + 1 }}" {{ old('session', $defaultSession) == ($year . '-' . ($year + 1)) ? 'selected' : '' }}>{{ $year }}-{{ $year + 1 }}</option>
                                 @endfor
                             </select>
                             <x-input-error :messages="$errors->get('session')" class="mt-2" />
-                        </div>
-
-                        <!-- Mode of Study -->
-                        <div>
-                            <x-input-label for="mode_of_study" :value="__('Mode of Study *')" />
-                            <select id="mode_of_study" name="mode_of_study" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
-                                <option value="regular" {{ old('mode_of_study') == 'regular' ? 'selected' : '' }}>Regular</option>
-                                <option value="distance" {{ old('mode_of_study') == 'distance' ? 'selected' : '' }}>Distance</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('mode_of_study')" class="mt-2" />
-                        </div>
-
-                        <!-- Admission Type -->
-                        <div>
-                            <x-input-label for="admission_type" :value="__('Admission Type *')" />
-                            <select id="admission_type" name="admission_type" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="Normal" {{ old('admission_type') == 'Normal' ? 'selected' : '' }}>Normal</option>
-                                <option value="Lateral" {{ old('admission_type') == 'Lateral' ? 'selected' : '' }}>Lateral</option>
-                                <option value="Direct" {{ old('admission_type') == 'Direct' ? 'selected' : '' }}>Direct</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('admission_type')" class="mt-2" />
-                        </div>
-
-                        <!-- Hostel Facility -->
-                        <div>
-                            <x-input-label for="hostel_facility_required" :value="__('Hostel Facility')" />
-                            <select id="hostel_facility" name="hostel_facility" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="0" {{ old('hostel_facility') == '0' ? 'selected' : '' }}>No Facility Required</option>
-                                <option value="1" {{ old('hostel_facility') == '1' ? 'selected' : '' }}>Hostel Required</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('hostel_facility_required')" class="mt-2" />
-                        </div>
-
-                        <!-- Current Semester -->
-                        <div>
-                            <x-input-label for="current_semester" :value="__('Current Semester')" />
-                            <x-text-input id="current_semester" class="block mt-1 w-full" type="number" name="current_semester" :value="old('current_semester', 1)" min="1" />
-                            <x-input-error :messages="$errors->get('current_semester')" class="mt-2" />
                         </div>
                     </div>
                 </div>
@@ -590,20 +487,6 @@
     </div>
 
     <script>
-        function toggleEmploymentFields(value) {
-            const employerNameField = document.getElementById('employer_name_field');
-            const designationField = document.getElementById('designation_field');
-            
-            if (value == '1') {
-                employerNameField.style.display = 'block';
-                designationField.style.display = 'block';
-            } else {
-                employerNameField.style.display = 'none';
-                designationField.style.display = 'none';
-                document.getElementById('employer_name').value = '';
-                document.getElementById('designation').value = '';
-            }
-        }
 
         function previewPhoto(input) {
             const preview = document.getElementById('photo_preview');
@@ -709,11 +592,6 @@
 
         // Initialize employment fields on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const isEmployedSelect = document.getElementById('is_employed');
-            if (isEmployedSelect) {
-                toggleEmploymentFields(isEmployedSelect.value);
-            }
-            
             // Initialize session and admission year
             updateSession();
             
@@ -940,28 +818,6 @@
             }
         }
 
-        // Load districts for a given state; optionally preselect a district
-        function loadDistricts(stateName, preselectDistrict = null) {
-            const districtSelect = document.getElementById('district');
-            if (!districtSelect) return;
-
-            // Clear existing options
-            districtSelect.innerHTML = '<option value=\"\">Select District</option>';
-
-            if (!stateName || !indianLocations[stateName]) {
-                return;
-            }
-
-            indianLocations[stateName].forEach(districtName => {
-                const option = document.createElement('option');
-                option.value = districtName;
-                option.textContent = districtName;
-                if (preselectDistrict && preselectDistrict === districtName) {
-                    option.selected = true;
-                }
-                districtSelect.appendChild(option);
-            });
-        }
         
         // Clear course fee display
         function clearFees() {
@@ -993,11 +849,9 @@
         // Populate states dropdown and pre-select old value if present
         function initStatesAndDistricts() {
             const stateSelect = document.getElementById('state');
-            const districtSelect = document.getElementById('district');
-            if (!stateSelect || !districtSelect) return;
+            if (!stateSelect) return;
 
             const oldState = @json(old('state'));
-            const oldDistrict = @json(old('district'));
 
             // Populate states
             Object.keys(indianLocations).sort().forEach(stateName => {
@@ -1009,11 +863,6 @@
                 }
                 stateSelect.appendChild(option);
             });
-
-            // If there is an old state, populate districts for it and select old district
-            if (oldState && indianLocations[oldState]) {
-                loadDistricts(oldState, oldDistrict);
-            }
         }
 
     </script>

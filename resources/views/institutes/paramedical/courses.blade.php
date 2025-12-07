@@ -7,20 +7,49 @@
         <p class="text-gray-600 text-lg">Explore our range of paramedical and health science programs</p>
     </div>
     
-    @if(isset($courses) && $courses->count() > 0)
+    @if(isset($categories) && $categories->count() > 0)
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($courses as $course)
-                <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6">
-                    <h3 class="text-xl font-semibold text-green-900 mb-2">{{ $course->name }}</h3>
-                    <p class="text-gray-600 mb-2">Code: {{ $course->code }}</p>
-                    <p class="text-gray-600 mb-4">Duration: {{ $course->formatted_duration }}</p>
-                    @if($course->description)
-                        <p class="text-gray-700 mb-4">{{ Str::limit($course->description, 100) }}</p>
-                    @endif
-                    <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                        {{ $course->status }}
-                    </span>
-                </div>
+            @foreach($categories as $category)
+                @if($category->active_courses_count > 0)
+                    <a href="{{ route('courses.category', Str::slug($category->name)) }}" 
+                       class="group bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-green-500 transform hover:-translate-y-2 overflow-hidden">
+                        <!-- Category Image -->
+                        @if($category->image)
+                            <div class="h-48 overflow-hidden">
+                                <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                            </div>
+                        @else
+                            <div class="h-48 bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                                <i class="fas fa-heartbeat text-6xl text-white opacity-80"></i>
+                            </div>
+                        @endif
+                        <div class="p-6">
+                            <!-- Category Header -->
+                            <div class="mb-4">
+                                <h2 class="text-2xl font-bold text-green-900 mb-2 group-hover:text-green-700 transition">{{ $category->name }}</h2>
+                            </div>
+                            
+                            <!-- Category Description -->
+                            <p class="text-gray-600 mb-4 text-sm leading-relaxed">
+                                @if($category->description)
+                                    {{ Str::limit($category->description, 120) }}
+                                @else
+                                    {!! \App\Http\Controllers\LandingPageController::getCategoryDescription($category->name) !!}
+                                @endif
+                            </p>
+                            
+                            <!-- Course Count -->
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                                <span class="text-green-600 font-semibold">
+                                    <i class="fas fa-book mr-2"></i>{{ $category->active_courses_count }} {{ $category->active_courses_count == 1 ? 'Course' : 'Courses' }}
+                                </span>
+                                <span class="text-green-600 group-hover:translate-x-2 transition-transform">
+                                    <i class="fas fa-arrow-right"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                @endif
             @endforeach
         </div>
     @else
@@ -30,3 +59,4 @@
     @endif
 </div>
 @endsection
+

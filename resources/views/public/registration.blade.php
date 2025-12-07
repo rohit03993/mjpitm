@@ -107,36 +107,6 @@
                         <x-input-error :messages="$errors->get('aadhaar_number')" class="mt-2" />
                     </div>
 
-                    <!-- Passport Number -->
-                    <div>
-                        <x-input-label for="passport_number" :value="__('Passport Number')" />
-                        <x-text-input id="passport_number" class="block mt-1 w-full" type="text" name="passport_number" :value="old('passport_number')" />
-                        <x-input-error :messages="$errors->get('passport_number')" class="mt-2" />
-                    </div>
-
-                    <!-- Are you employed? -->
-                    <div>
-                        <x-input-label for="is_employed" :value="__('Are you employed?')" />
-                        <select id="is_employed" name="is_employed" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" onchange="toggleEmploymentFields(this.value)">
-                            <option value="0" {{ old('is_employed') == '0' ? 'selected' : '' }}>No</option>
-                            <option value="1" {{ old('is_employed') == '1' ? 'selected' : '' }}>Yes</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('is_employed')" class="mt-2" />
-                    </div>
-
-                    <!-- Employer Name -->
-                    <div id="employer_name_field" style="display: none;">
-                        <x-input-label for="employer_name" :value="__('Employer Name')" />
-                        <x-text-input id="employer_name" class="block mt-1 w-full" type="text" name="employer_name" :value="old('employer_name')" />
-                        <x-input-error :messages="$errors->get('employer_name')" class="mt-2" />
-                    </div>
-
-                    <!-- Designation -->
-                    <div id="designation_field" style="display: none;">
-                        <x-input-label for="designation" :value="__('Designation')" />
-                        <x-text-input id="designation" class="block mt-1 w-full" type="text" name="designation" :value="old('designation')" />
-                        <x-input-error :messages="$errors->get('designation')" class="mt-2" />
-                    </div>
 
                     <!-- Photo Upload -->
                     <div class="md:col-span-2">
@@ -175,40 +145,22 @@
 
             <!-- Communication Details Section -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6 bg-yellow-50 border-b border-yellow-200 flex items-center justify-between">
+                <div class="p-6 bg-yellow-50 border-b border-yellow-200">
                     <h3 class="text-lg font-semibold text-yellow-900">Communication Details</h3>
-                    <p class="text-xs text-yellow-900 opacity-80">Keep at least one student contact and one guardian contact updated.</p>
                 </div>
                 <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Student Contact -->
-                    <div class="md:col-span-2">
-                        <h4 class="text-sm font-semibold text-gray-800 mb-2">Student Contact</h4>
-                    </div>
+                    <!-- Contact Number -->
                     <div>
-                        <x-input-label for="phone" :value="__('Student Mobile Number *')" />
-                        <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" :value="old('phone')" required />
+                        <x-input-label for="phone" :value="__('Contact Number')" />
+                        <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" :value="old('phone')" />
                         <x-input-error :messages="$errors->get('phone')" class="mt-2" />
                     </div>
 
                     <!-- Email Address -->
                     <div>
-                        <x-input-label for="email" :value="__('Email Address *')" />
-                        <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required />
+                        <x-input-label for="email" :value="__('Email Address')" />
+                        <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" />
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                    </div>
-
-                    <!-- Father's Contact No -->
-                    <div>
-                        <x-input-label for="father_contact" :value="__('Father\'s Contact No')" />
-                        <x-text-input id="father_contact" class="block mt-1 w-full" type="tel" name="father_contact" :value="old('father_contact')" />
-                        <x-input-error :messages="$errors->get('father_contact')" class="mt-2" />
-                    </div>
-
-                    <!-- Mother's Contact No -->
-                    <div>
-                        <x-input-label for="mother_contact" :value="__('Mother\'s / Guardian\'s Contact No')" />
-                        <x-text-input id="mother_contact" class="block mt-1 w-full" type="tel" name="mother_contact" :value="old('mother_contact')" />
-                        <x-input-error :messages="$errors->get('mother_contact')" class="mt-2" />
                     </div>
 
                     <!-- Country -->
@@ -232,7 +184,6 @@
                             id="state"
                             name="state"
                             class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                            onchange="loadDistricts(this.value)"
                             required
                         >
                             <option value="">Select a State</option>
@@ -242,15 +193,8 @@
         
                     <!-- District -->
                     <div>
-                        <x-input-label for="district" :value="__('District *')" />
-                        <select
-                            id="district"
-                            name="district"
-                            class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
-                            required
-                        >
-                            <option value="">Select District</option>
-                        </select>
+                        <x-input-label for="district" :value="__('District')" />
+                        <x-text-input id="district" class="block mt-1 w-full" type="text" name="district" :value="old('district')" placeholder="Enter district name" />
                         <x-input-error :messages="$errors->get('district')" class="mt-2" />
                     </div>
 
@@ -380,7 +324,7 @@
                             <option value="">All Categories (Select to filter courses)</option>
                             @if(isset($categories))
                             @foreach($categories as $category)
-                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                <option value="{{ $category->id }}" {{ (isset($selectedCategory) && $selectedCategory && $selectedCategory->id == $category->id) ? 'selected' : '' }}>{{ $category->name }}</option>
                             @endforeach
                             @endif
                         </select>
@@ -390,27 +334,13 @@
                     <!-- Course -->
                     <div class="md:col-span-2">
                         <x-input-label for="course_id" :value="__('Course *')" />
-                        <select id="course_id" name="course_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="loadCourseFees(this.value); updateSession();">
+                        <select id="course_id" name="course_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="if(this.value) { loadCourseFees(this.value); } else { clearFees(); } updateSession();">
                             <option value="">Select Course</option>
                             @foreach($courses as $course)
-                                <option value="{{ $course->id }}" data-category-id="{{ $course->category_id }}" {{ old('course_id') == $course->id ? 'selected' : '' }}>{{ $course->name }}@if($course->category) [{{ $course->category->name }}]@endif</option>
+                                <option value="{{ $course->id }}" data-category-id="{{ $course->category_id }}" {{ (old('course_id') == $course->id || (isset($selectedCourse) && $selectedCourse && $selectedCourse->id == $course->id)) ? 'selected' : '' }}>{{ $course->name }}@if($course->category) [{{ $course->category->name }}]@endif</option>
                             @endforeach
                         </select>
                         <x-input-error :messages="$errors->get('course_id')" class="mt-2" />
-                    </div>
-
-                    <!-- Stream -->
-                    <div>
-                        <x-input-label for="stream" :value="__('Stream')" />
-                        <x-text-input id="stream" class="block mt-1 w-full" type="text" name="stream" :value="old('stream')" />
-                        <x-input-error :messages="$errors->get('stream')" class="mt-2" />
-                    </div>
-
-                    <!-- Year -->
-                    <div>
-                        <x-input-label for="admission_year" :value="__('Admission Year *')" />
-                        <x-text-input id="admission_year" class="block mt-1 w-full" type="text" name="admission_year" :value="old('admission_year', date('Y'))" required />
-                        <x-input-error :messages="$errors->get('admission_year')" class="mt-2" />
                     </div>
 
                     <!-- Session -->
@@ -418,49 +348,15 @@
                         <x-input-label for="session" :value="__('Session *')" />
                         <select id="session" name="session" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
                             <option value="">Select</option>
+                            @php
+                                $currentYear = date('Y');
+                                $defaultSession = $currentYear . '-' . ($currentYear + 1);
+                            @endphp
                             @for($year = date('Y'); $year <= date('Y') + 2; $year++)
-                                <option value="{{ $year }}-{{ $year + 1 }}" {{ old('session') == ($year . '-' . ($year + 1)) ? 'selected' : '' }}>{{ $year }}-{{ $year + 1 }}</option>
+                                <option value="{{ $year }}-{{ $year + 1 }}" {{ old('session', $defaultSession) == ($year . '-' . ($year + 1)) ? 'selected' : '' }}>{{ $year }}-{{ $year + 1 }}</option>
                             @endfor
                         </select>
                         <x-input-error :messages="$errors->get('session')" class="mt-2" />
-                    </div>
-
-                    <!-- Mode of Study -->
-                    <div>
-                        <x-input-label for="mode_of_study" :value="__('Mode of Study *')" />
-                        <select id="mode_of_study" name="mode_of_study" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
-                            <option value="regular" {{ old('mode_of_study') == 'regular' ? 'selected' : '' }}>Regular</option>
-                            <option value="distance" {{ old('mode_of_study') == 'distance' ? 'selected' : '' }}>Distance</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('mode_of_study')" class="mt-2" />
-                    </div>
-
-                    <!-- Admission Type -->
-                    <div>
-                        <x-input-label for="admission_type" :value="__('Admission Type *')" />
-                        <select id="admission_type" name="admission_type" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="Normal" {{ old('admission_type') == 'Normal' ? 'selected' : '' }}>Normal</option>
-                            <option value="Lateral" {{ old('admission_type') == 'Lateral' ? 'selected' : '' }}>Lateral</option>
-                            <option value="Direct" {{ old('admission_type') == 'Direct' ? 'selected' : '' }}>Direct</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('admission_type')" class="mt-2" />
-                    </div>
-
-                    <!-- Hostel Facility -->
-                    <div>
-                        <x-input-label for="hostel_facility_required" :value="__('Hostel Facility')" />
-                        <select id="hostel_facility" name="hostel_facility" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="0" {{ old('hostel_facility') == '0' ? 'selected' : '' }}>No Facility Required</option>
-                            <option value="1" {{ old('hostel_facility') == '1' ? 'selected' : '' }}>Hostel Required</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('hostel_facility_required')" class="mt-2" />
-                    </div>
-
-                    <!-- Current Semester -->
-                    <div>
-                        <x-input-label for="current_semester" :value="__('Current Semester')" />
-                        <x-text-input id="current_semester" class="block mt-1 w-full" type="number" name="current_semester" :value="old('current_semester', 1)" min="1" />
-                        <x-input-error :messages="$errors->get('current_semester')" class="mt-2" />
                     </div>
                 </div>
             </div>
@@ -471,24 +367,33 @@
                     <h3 class="text-lg font-semibold text-yellow-900">Course Fee Information</h3>
                 </div>
                 <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Total Course Fee (from course) -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <!-- Tuition Fee -->
                         <div>
-                            <x-input-label for="course_total_fee" :value="__('Total Course Fee')" />
-                            <x-text-input id="course_total_fee" class="block mt-1 w-full bg-gray-100 font-semibold text-lg" type="text" readonly placeholder="Select a course" />
-                            <p class="mt-1 text-xs text-gray-500">Auto-filled from selected course</p>
+                            <x-input-label for="course_tuition_fee" :value="__('Tuition Fee')" />
+                            <x-text-input id="course_tuition_fee" class="block mt-1 w-full bg-gray-100 font-semibold" type="text" readonly placeholder="Select a course" />
+                            <p class="mt-1 text-xs text-gray-500">Auto-filled from course</p>
                         </div>
                         
-                        <!-- Fee Per Year -->
+                        <!-- Registration Fee -->
                         <div>
-                            <x-input-label for="course_fee_per_year" :value="__('Fee Per Year')" />
-                            <x-text-input id="course_fee_per_year" class="block mt-1 w-full bg-gray-100" type="text" readonly placeholder="—" />
+                            <x-input-label for="course_registration_fee" :value="__('Registration Fee')" />
+                            <x-text-input id="course_registration_fee" class="block mt-1 w-full bg-gray-100 font-semibold" type="text" readonly placeholder="—" />
+                            <p class="mt-1 text-xs text-gray-500">Auto-filled from course</p>
+                        </div>
+                        
+                        <!-- Total Fee -->
+                        <div>
+                            <x-input-label for="course_total_fee" :value="__('Total Fee')" />
+                            <x-text-input id="course_total_fee" class="block mt-1 w-full bg-green-100 font-bold text-lg border-green-300" type="text" readonly placeholder="—" />
+                            <p class="mt-1 text-xs text-gray-500">Tuition + Registration</p>
                         </div>
                         
                         <!-- Course Duration -->
                         <div>
                             <x-input-label for="course_duration" :value="__('Course Duration')" />
                             <x-text-input id="course_duration" class="block mt-1 w-full bg-gray-100" type="text" readonly placeholder="—" />
+                            <p class="mt-1 text-xs text-gray-500">Auto-filled from course</p>
                         </div>
                     </div>
                     
@@ -577,20 +482,6 @@
 </div>
 
 <script>
-    function toggleEmploymentFields(value) {
-        const employerNameField = document.getElementById('employer_name_field');
-        const designationField = document.getElementById('designation_field');
-        
-        if (value == '1') {
-            employerNameField.style.display = 'block';
-            designationField.style.display = 'block';
-        } else {
-            employerNameField.style.display = 'none';
-            designationField.style.display = 'none';
-            document.getElementById('employer_name').value = '';
-            document.getElementById('designation').value = '';
-        }
-    }
 
     function previewPhoto(input) {
         const preview = document.getElementById('photo_preview');
@@ -693,31 +584,65 @@
         }
     }
 
-    // Initialize employment fields on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const isEmployedSelect = document.getElementById('is_employed');
-        if (isEmployedSelect) {
-            toggleEmploymentFields(isEmployedSelect.value);
-        }
-        
-        // Initialize session and admission year
-        updateSession();
-        
-        // Load fees if course is already selected (from old input)
-        const courseSelect = document.getElementById('course_id');
-        if (courseSelect && courseSelect.value) {
-            loadCourseFees(courseSelect.value);
-        }
-
-        // Initialize Indian states and districts
-        initStatesAndDistricts();
-    });
-
-    // Courses data from server
+    // Courses data from server (defined BEFORE DOMContentLoaded to ensure availability)
     const coursesData = @json(isset($coursesJson) ? json_decode($coursesJson, true) : []);
     
     // Categories data from server
     const categoriesData = @json(isset($categoriesJson) ? json_decode($categoriesJson, true) : []);
+    
+    // Debug: Log coursesData to console
+    console.log('Courses Data Loaded:', coursesData.length, 'courses', coursesData);
+
+    // Initialize employment fields on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize session and admission year
+        updateSession();
+        
+        // Auto-select category and course from URL parameters
+        @if(isset($selectedCategory) && $selectedCategory)
+            const categoryFilter = document.getElementById('category_filter');
+            if (categoryFilter) {
+                categoryFilter.value = '{{ $selectedCategory->id }}';
+                filterCoursesByCategory('{{ $selectedCategory->id }}');
+            }
+        @endif
+        
+        // Load fees if course is already selected (from old input or URL)
+        // Use multiple attempts to ensure it loads
+        function attemptLoadFees() {
+            const courseSelect = document.getElementById('course_id');
+            if (!courseSelect) {
+                setTimeout(attemptLoadFees, 100);
+                return;
+            }
+            
+            let courseId = courseSelect.value;
+            
+            // If no course selected but we have a selectedCourse from URL, set it
+            @if(isset($selectedCourse) && $selectedCourse)
+                if (!courseId) {
+                    courseId = '{{ $selectedCourse->id }}';
+                    courseSelect.value = courseId;
+                }
+            @endif
+            
+            if (courseId && coursesData && coursesData.length > 0) {
+                console.log('Loading fees for course:', courseId);
+                loadCourseFees(courseId);
+            } else if (courseId) {
+                // Retry if coursesData not ready yet
+                setTimeout(attemptLoadFees, 200);
+            }
+        }
+        
+        // Try immediately, then retry if needed
+        attemptLoadFees();
+        setTimeout(attemptLoadFees, 300);
+        setTimeout(attemptLoadFees, 600);
+
+        // Initialize Indian states and districts
+        initStatesAndDistricts();
+    });
 
     // Indian states and union territories with representative districts
     const indianLocations = {
@@ -803,70 +728,96 @@
             return;
         }
         
+        // Check if coursesData is available
+        if (!coursesData || coursesData.length === 0) {
+            console.warn('coursesData is not available yet');
+            // Retry after a short delay
+            setTimeout(function() {
+                loadCourseFees(courseId);
+            }, 300);
+            return;
+        }
+        
         // Find course in coursesData
         const course = coursesData.find(c => String(c.id) === String(courseId));
         
-        if (course) {
-            // Display course fee info (read-only)
-            // Note: controller passes 'duration' field which maps to duration_years
-            const totalFee = parseFloat(course.tuition_fee) || 0;
-            const duration = parseInt(course.duration) || 1;
-            const feePerYear = duration > 0 ? (totalFee / duration) : totalFee;
-            
-            document.getElementById('course_total_fee').value = '₹ ' + totalFee.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('course_fee_per_year').value = '₹ ' + feePerYear.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('course_duration').value = duration + ' Year' + (duration > 1 ? 's' : '');
-        } else {
+        if (!course) {
+            console.warn('Course not found in coursesData:', courseId, 'Available courses:', coursesData.map(c => c.id));
             clearFees();
-        }
-    }
-
-    // Load districts for a given state; optionally preselect a district
-    function loadDistricts(stateName, preselectDistrict = null) {
-        const districtSelect = document.getElementById('district');
-        if (!districtSelect) return;
-
-        // Clear existing options
-        districtSelect.innerHTML = '<option value="">Select District</option>';
-
-        if (!stateName || !indianLocations[stateName]) {
             return;
         }
-
-        indianLocations[stateName].forEach(districtName => {
-            const option = document.createElement('option');
-            option.value = districtName;
-            option.textContent = districtName;
-            if (preselectDistrict && preselectDistrict === districtName) {
-                option.selected = true;
+        
+        // Get fees
+        const tuitionFee = parseFloat(course.tuition_fee) || 0;
+        const registrationFee = parseFloat(course.registration_fee) || 1000; // Default to 1000 if not set
+        const totalFee = tuitionFee + registrationFee;
+        
+        // Get duration (use formatted_duration if available, otherwise calculate from duration_months)
+        let durationText = '—';
+        if (course.formatted_duration) {
+            durationText = course.formatted_duration;
+        } else if (course.duration_months) {
+            const months = parseInt(course.duration_months) || 0;
+            if (months < 12) {
+                durationText = months + ' month' + (months > 1 ? 's' : '');
+            } else {
+                const years = Math.floor(months / 12);
+                const remainingMonths = months % 12;
+                if (remainingMonths > 0) {
+                    durationText = years + ' year' + (years > 1 ? 's' : '') + ' ' + remainingMonths + ' month' + (remainingMonths > 1 ? 's' : '');
+                } else {
+                    durationText = years + ' year' + (years > 1 ? 's' : '');
+                }
             }
-            districtSelect.appendChild(option);
-        });
+        }
+        
+        // Display fees - check if elements exist first
+        const tuitionFeeEl = document.getElementById('course_tuition_fee');
+        const registrationFeeEl = document.getElementById('course_registration_fee');
+        const totalFeeEl = document.getElementById('course_total_fee');
+        const durationEl = document.getElementById('course_duration');
+        
+        if (tuitionFeeEl) {
+            tuitionFeeEl.value = '₹ ' + tuitionFee.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        }
+        if (registrationFeeEl) {
+            registrationFeeEl.value = '₹ ' + registrationFee.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        }
+        if (totalFeeEl) {
+            totalFeeEl.value = '₹ ' + totalFee.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        }
+        if (durationEl) {
+            durationEl.value = durationText;
+        }
     }
+
     
     // Clear course fee display
     function clearFees() {
+        document.getElementById('course_tuition_fee').value = '';
+        document.getElementById('course_tuition_fee').placeholder = 'Select a course';
+        document.getElementById('course_registration_fee').value = '';
+        document.getElementById('course_registration_fee').placeholder = '—';
         document.getElementById('course_total_fee').value = '';
-        document.getElementById('course_total_fee').placeholder = 'Select a course';
-        document.getElementById('course_fee_per_year').value = '';
-        document.getElementById('course_fee_per_year').placeholder = '—';
+        document.getElementById('course_total_fee').placeholder = '—';
         document.getElementById('course_duration').value = '';
         document.getElementById('course_duration').placeholder = '—';
     }
     
-    // Auto-populate session based on current year
+    // Auto-populate session based on current year (always update to latest)
     function updateSession() {
         const currentYear = new Date().getFullYear();
         const sessionSelect = document.getElementById('session');
         const admissionYearInput = document.getElementById('admission_year');
         
-        if (sessionSelect && !sessionSelect.value) {
-            // Set default session to current year - next year
+        // Always set session to current year - next year (latest session)
+        if (sessionSelect) {
             const defaultSession = `${currentYear}-${currentYear + 1}`;
             sessionSelect.value = defaultSession;
         }
         
-        if (admissionYearInput && !admissionYearInput.value) {
+        // Always set admission year to current year
+        if (admissionYearInput) {
             admissionYearInput.value = currentYear;
         }
     }
@@ -874,11 +825,9 @@
     // Populate states dropdown and pre-select old value if present
     function initStatesAndDistricts() {
         const stateSelect = document.getElementById('state');
-        const districtSelect = document.getElementById('district');
-        if (!stateSelect || !districtSelect) return;
+        if (!stateSelect) return;
 
         const oldState = @json(old('state'));
-        const oldDistrict = @json(old('district'));
 
         // Populate states
         Object.keys(indianLocations).sort().forEach(stateName => {
@@ -890,11 +839,6 @@
             }
             stateSelect.appendChild(option);
         });
-
-        // If there is an old state, populate districts for it and select old district
-        if (oldState && indianLocations[oldState]) {
-            loadDistricts(oldState, oldDistrict);
-        }
     }
 
 </script>

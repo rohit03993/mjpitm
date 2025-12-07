@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\CourseCategory;
 use App\Models\Institute;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class CourseCategoryController extends Controller
@@ -71,6 +72,7 @@ class CourseCategoryController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'display_order' => ['nullable', 'integer', 'min:0'],
             'status' => ['required', 'in:active,inactive'],
         ]);
@@ -90,6 +92,11 @@ class CourseCategoryController extends Controller
         if (empty($validated['display_order'])) {
             $maxOrder = CourseCategory::where('institute_id', $validated['institute_id'])->max('display_order');
             $validated['display_order'] = ($maxOrder ?? 0) + 1;
+        }
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('categories', 'public');
         }
 
         CourseCategory::create($validated);
@@ -129,6 +136,7 @@ class CourseCategoryController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'display_order' => ['nullable', 'integer', 'min:0'],
             'status' => ['required', 'in:active,inactive'],
         ]);
@@ -143,6 +151,15 @@ class CourseCategoryController extends Controller
             return redirect()->back()
                 ->withErrors(['name' => 'A category with this name already exists for this institute.'])
                 ->withInput();
+        }
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($category->image) {
+                Storage::disk('public')->delete($category->image);
+            }
+            $validated['image'] = $request->file('image')->store('categories', 'public');
         }
 
         $category->update($validated);

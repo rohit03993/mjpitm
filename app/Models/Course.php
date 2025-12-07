@@ -16,6 +16,7 @@ class Course extends Model
         'code',
         'duration_months',
         'description',
+        'image',
         'status',
         'registration_fee',
         'entrance_fee',
@@ -109,5 +110,17 @@ class Course extends Model
     public function getTotalMonthsAttribute()
     {
         return $this->duration_months ?? 0;
+    }
+
+    /**
+     * Get total fee (tuition fee + registration fee)
+     * Registration fee defaults to ₹1000 if not set or is 0
+     */
+    public function getTotalFeeAttribute()
+    {
+        $tuitionFee = $this->tuition_fee ?? 0;
+        // Always use 1000 if registration_fee is null or 0
+        $registrationFee = ($this->registration_fee && $this->registration_fee > 0) ? $this->registration_fee : 1000;
+        return $tuitionFee + $registrationFee;
     }
 }

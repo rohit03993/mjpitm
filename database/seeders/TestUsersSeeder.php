@@ -119,7 +119,8 @@ class TestUsersSeeder extends Seeder
         $this->command->info('');
         $this->command->info('SUPER ADMIN:');
         $this->command->info('  Email: superadmin@gurukul.edu');
-        $this->command->info('  Password: password');
+        $this->command->info('  Password: password
+        ');
         $this->command->info('  Login URL: /superadmin/login');
         $this->command->info('');
         $this->command->info('STAFF (Tech Institute):');

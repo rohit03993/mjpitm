@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\Course;
 use App\Models\Qualification;
 use App\Models\CourseCategory;
+use App\Models\RegistrationNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -26,9 +27,12 @@ class StudentController extends Controller
 
         // Role-based visibility:
         // - Super Admin: sees all students (optional filters)
-        // - Normal Admin: sees only students they created
+        // - Normal Admin: sees all students from their institute (both website and guest registrations)
         if (!$user->isSuperAdmin()) {
-            $query->where('created_by', $user->id);
+            $instituteId = session('current_institute_id');
+            if ($instituteId) {
+                $query->where('institute_id', $instituteId);
+            }
         }
 
         // Filters
@@ -40,12 +44,23 @@ class StudentController extends Controller
             $query->where('status', $request->input('status'));
         }
 
+        // Filter by registration type (website or guest)
+        if ($request->filled('registration_type')) {
+            if ($request->input('registration_type') === 'website') {
+                $query->whereNull('created_by');
+            } elseif ($request->input('registration_type') === 'guest') {
+                $query->whereNotNull('created_by');
+            }
+        }
+
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('registration_number', 'like', "%{$search}%")
                     ->orWhere('roll_number', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -60,7 +75,95 @@ class StudentController extends Controller
             'rejected' => 'Rejected',
         ];
 
-        return view('admin.students.index', compact('students', 'institutes', 'statuses'));
+        // Count students by status
+        $statusCounts = [
+            'all' => Student::when(!$user->isSuperAdmin(), function($q) {
+                $instituteId = session('current_institute_id');
+                if ($instituteId) {
+                    $q->where('institute_id', $instituteId);
+                }
+            })->count(),
+            'active' => Student::when(!$user->isSuperAdmin(), function($q) {
+                $instituteId = session('current_institute_id');
+                if ($instituteId) {
+                    $q->where('institute_id', $instituteId);
+                }
+            })->where('status', 'active')->count(),
+            'pending' => Student::when(!$user->isSuperAdmin(), function($q) {
+                $instituteId = session('current_institute_id');
+                if ($instituteId) {
+                    $q->where('institute_id', $instituteId);
+                }
+            })->where('status', 'pending')->count(),
+        ];
+
+        return view('admin.students.index', compact('students', 'institutes', 'statuses', 'statusCounts'));
+    }
+
+    /**
+     * Display website registrations (students who registered themselves).
+     */
+    public function websiteRegistrations(Request $request)
+    {
+        $user = Auth::user();
+
+        // Only show website registrations (where created_by IS NULL)
+        $query = Student::with(['course', 'qualifications', 'institute'])
+            ->whereNull('created_by');
+
+        // Super Admin can see all, normal admin sees only their institute
+        if (!$user->isSuperAdmin()) {
+            $instituteId = session('current_institute_id');
+            if ($instituteId) {
+                $query->where('institute_id', $instituteId);
+            }
+        }
+
+        // Filters
+        if ($request->filled('institute_id')) {
+            $query->where('institute_id', $request->input('institute_id'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        } else {
+            // Default: show pending registrations
+            $query->where('status', 'pending');
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $students = $query->latest()->paginate(15)->withQueryString();
+
+        // For filters dropdowns
+        $institutes = \App\Models\Institute::where('status', 'active')->get(['id', 'name']);
+        $statuses = [
+            'active' => 'Active',
+            'pending' => 'Pending',
+            'inactive' => 'Inactive',
+            'rejected' => 'Rejected',
+        ];
+
+        // Count pending website registrations
+        $pendingCount = Student::whereNull('created_by')
+            ->where('status', 'pending')
+            ->when(!$user->isSuperAdmin(), function($q) {
+                $instituteId = session('current_institute_id');
+                if ($instituteId) {
+                    $q->where('institute_id', $instituteId);
+                }
+            })
+            ->count();
+
+        return view('admin.students.website-registrations', compact('students', 'institutes', 'statuses', 'pendingCount'));
     }
 
     /**
@@ -150,10 +253,6 @@ class StudentController extends Controller
             'gender' => ['required', 'in:male,female,other'],
             'category' => ['nullable', 'string', 'max:255'],
             'aadhaar_number' => ['nullable', 'string', 'max:255'],
-            'passport_number' => ['nullable', 'string', 'max:255'],
-            'is_employed' => ['nullable', 'boolean'],
-            'employer_name' => ['nullable', 'string', 'max:255'],
-            'designation' => ['nullable', 'string', 'max:255'],
             'photo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'signature' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'aadhar_front' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
@@ -166,8 +265,6 @@ class StudentController extends Controller
             // Communication Details
             'email' => ['nullable', 'email', 'max:255', 'unique:students,email'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'father_contact' => ['nullable', 'string', 'max:20'],
-            'mother_contact' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:255'],
             'nationality' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'max:255'],
@@ -179,12 +276,6 @@ class StudentController extends Controller
             'institute_id' => ['nullable', 'exists:institutes,id'], // For Super Admin
             'course_id' => ['required', 'exists:courses,id'],
             'session' => ['nullable', 'string', 'max:255'],
-            'mode_of_study' => ['required', 'in:regular,distance'],
-            'admission_type' => ['nullable', 'string', 'max:255'],
-            'hostel_facility_required' => ['nullable', 'boolean'],
-            'admission_year' => ['required', 'string', 'max:255'],
-            'current_semester' => ['nullable', 'integer', 'min:1'],
-            'stream' => ['nullable', 'string', 'max:255'],
             
             // Fee Details
             'registration_fee' => ['nullable', 'numeric', 'min:0'],
@@ -280,9 +371,18 @@ class StudentController extends Controller
         $validated['status'] = 'pending';
         $validated['declaration_accepted'] = true;
         
+        // Set admission_year from session field (e.g., "2025-26" -> "2025") or current year
+        if (!isset($validated['admission_year']) || empty($validated['admission_year'])) {
+            if (isset($validated['session']) && !empty($validated['session'])) {
+                // Extract year from session (e.g., "2025-26" -> "2025")
+                $sessionParts = explode('-', $validated['session']);
+                $validated['admission_year'] = $sessionParts[0] ?? date('Y');
+            } else {
+                $validated['admission_year'] = date('Y');
+            }
+        }
+        
         // Handle boolean fields
-        $validated['is_employed'] = $request->has('is_employed') && $request->is_employed == '1';
-        $validated['hostel_facility_required'] = $request->has('hostel_facility') && $request->hostel_facility == '1';
         $validated['pay_in_installment'] = $request->has('pay_in_installment') && $request->pay_in_installment == '1';
         
         // Generate a unique registration number for the student
@@ -312,13 +412,20 @@ class StudentController extends Controller
             }
         }
         
+        // Create notification for new guest registration
+        RegistrationNotification::create([
+            'student_id' => $student->id,
+            'institute_id' => $instituteId,
+            'registration_type' => 'guest',
+        ]);
+        
         // Create initial fee entry if total_deposit > 0
         if ($student->total_deposit && $student->total_deposit > 0) {
             $student->fees()->create([
                 'amount' => $student->total_deposit,
                 'payment_type' => 'registration',
                 'payment_mode' => $student->payment_mode ?? 'offline', // Default to offline
-                'semester' => $student->current_semester ?? 1,
+                'semester' => 1, // Default to semester 1 for new registrations
                 'status' => 'pending_verification',
                 'payment_date' => $student->deposit_date ?? now(),
                 'remarks' => 'Initial registration fee',
@@ -339,9 +446,21 @@ class StudentController extends Controller
 
         $student = Student::with(['institute', 'course', 'qualifications', 'creator'])->findOrFail($id);
 
-        // Normal admins (staff) can view only students they created
-        if (!$user->isSuperAdmin() && $student->created_by !== $user->id) {
-            abort(403, 'You are not authorized to view this student.');
+        // Normal admins (staff) can view only students they created OR website registrations from their institute
+        if (!$user->isSuperAdmin()) {
+            $instituteId = session('current_institute_id');
+            if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
+                abort(403, 'You are not authorized to view this student.');
+            }
+        }
+
+        // Mark notification as read if it exists
+        $notification = RegistrationNotification::where('student_id', $student->id)
+            ->whereNull('read_at')
+            ->first();
+        
+        if ($notification) {
+            $notification->markAsRead($user->id);
         }
 
         return view('admin.students.show', compact('student'));

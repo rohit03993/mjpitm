@@ -10,6 +10,7 @@ use App\Models\Institute;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class PublicRegistrationController extends Controller
@@ -26,6 +27,74 @@ class PublicRegistrationController extends Controller
         // If no institute detected, redirect to home
         if (!$institute || !$instituteId) {
             return redirect()->route('home')->with('error', 'Please access registration from the correct institute website.');
+        }
+
+        // Get category and course from URL parameters (if provided)
+        $categorySlug = $request->query('category');
+        $courseSlug = $request->query('course');
+        
+        $selectedCategory = null;
+        $selectedCourse = null;
+
+        // Find category by slug if provided (improved matching)
+        if ($categorySlug) {
+            $selectedCategory = CourseCategory::where('institute_id', $instituteId)
+                ->where('status', 'active')
+                ->get()
+                ->first(function($cat) use ($categorySlug) {
+                    // Try exact slug match
+                    $categorySlugMatch = Str::slug($cat->name);
+                    if ($categorySlugMatch === $categorySlug) {
+                        return true;
+                    }
+                    
+                    // Try case-insensitive name match
+                    $categoryNameLower = strtolower(str_replace(['/', '-'], ' ', $cat->name));
+                    $searchName = strtolower(str_replace('-', ' ', $categorySlug));
+                    if (strpos($categoryNameLower, $searchName) !== false || strpos($searchName, $categoryNameLower) !== false) {
+                        return true;
+                    }
+                    
+                    // Try code match
+                    if ($cat->code && strtolower($cat->code) === strtolower($categorySlug)) {
+                        return true;
+                    }
+                    
+                    return false;
+                });
+        }
+
+        // Find course by slug if provided (improved matching)
+        if ($courseSlug) {
+            $selectedCourse = Course::where('institute_id', $instituteId)
+                ->where('status', 'active')
+                ->get()
+                ->first(function($course) use ($courseSlug) {
+                    // Try exact slug match
+                    $courseSlugMatch = Str::slug($course->name);
+                    if ($courseSlugMatch === $courseSlug) {
+                        return true;
+                    }
+                    
+                    // Try case-insensitive name match
+                    $courseNameLower = strtolower(str_replace(['/', '-'], ' ', $course->name));
+                    $searchName = strtolower(str_replace('-', ' ', $courseSlug));
+                    if (strpos($courseNameLower, $searchName) !== false || strpos($searchName, $courseNameLower) !== false) {
+                        return true;
+                    }
+                    
+                    // Try code match
+                    if ($course->code && strtolower($course->code) === strtolower($courseSlug)) {
+                        return true;
+                    }
+                    
+                    return false;
+                });
+            
+            // If course found and category not set, get course's category
+            if ($selectedCourse && $selectedCourse->category_id && !$selectedCategory) {
+                $selectedCategory = CourseCategory::find($selectedCourse->category_id);
+            }
         }
 
         // Get courses for this institute only
@@ -47,7 +116,10 @@ class PublicRegistrationController extends Controller
                 'name' => $course->name,
                 'category_id' => $course->category_id,
                 'tuition_fee' => $course->tuition_fee ?? 0,
-                'duration' => $course->duration_years ?? 0,
+                'registration_fee' => ($course->registration_fee && $course->registration_fee > 0) ? $course->registration_fee : 1000,
+                'total_fee' => $course->total_fee,
+                'formatted_duration' => $course->formatted_duration,
+                'duration_months' => $course->duration_months ?? 0,
             ];
         })->toJson();
 
@@ -59,7 +131,16 @@ class PublicRegistrationController extends Controller
             ];
         })->toJson();
 
-        return view('public.registration', compact('courses', 'categories', 'coursesJson', 'categoriesJson', 'institute', 'instituteId'));
+        return view('public.registration', compact(
+            'courses', 
+            'categories', 
+            'coursesJson', 
+            'categoriesJson', 
+            'institute', 
+            'instituteId',
+            'selectedCategory',
+            'selectedCourse'
+        ));
     }
 
     /**
@@ -85,20 +166,16 @@ class PublicRegistrationController extends Controller
             'gender' => ['required', 'in:male,female,other'],
             'category' => ['nullable', 'string', 'max:255'],
             'aadhaar_number' => ['nullable', 'string', 'max:255'],
-            'passport_number' => ['nullable', 'string', 'max:255'],
-            'is_employed' => ['nullable', 'boolean'],
-            'employer_name' => ['nullable', 'string', 'max:255'],
-            'designation' => ['nullable', 'string', 'max:255'],
             'photo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'signature' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'aadhar_front' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'aadhar_back' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             
             // Contact Details
-            'email' => ['required', 'email', 'max:255', Rule::unique('students', 'email')],
-            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('students', 'email')],
+            'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['required', 'string', 'max:500'],
-            'district' => ['required', 'string', 'max:255'],
+            'district' => ['nullable', 'string', 'max:255'],
             'state' => ['required', 'string', 'max:255'],
             'pin_code' => ['required', 'string', 'max:10'],
             'country' => ['nullable', 'string', 'max:255'],
@@ -106,12 +183,7 @@ class PublicRegistrationController extends Controller
             
             // Course Details
             'course_id' => ['required', 'exists:courses,id'],
-            'stream' => ['nullable', 'string', 'max:255'],
             'session' => ['required', 'string', 'max:255'],
-            'mode_of_study' => ['required', 'in:regular,distance'],
-            'admission_type' => ['nullable', 'string', 'max:255'],
-            'hostel_facility' => ['nullable', 'boolean'],
-            'current_semester' => ['nullable', 'integer', 'min:1'],
             
             // Login Credentials
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -179,6 +251,17 @@ class PublicRegistrationController extends Controller
         $validated['institute_id'] = $instituteId;
         $validated['status'] = 'pending';
         $validated['created_by'] = null; // Public registration, no creator
+        
+        // Set admission_year from session field (e.g., "2025-26" -> "2025") or current year
+        if (!isset($validated['admission_year']) || empty($validated['admission_year'])) {
+            if (isset($validated['session']) && !empty($validated['session'])) {
+                // Extract year from session (e.g., "2025-26" -> "2025")
+                $sessionParts = explode('-', $validated['session']);
+                $validated['admission_year'] = $sessionParts[0] ?? date('Y');
+            } else {
+                $validated['admission_year'] = date('Y');
+            }
+        }
 
         // Generate registration number
         $validated['registration_number'] = $this->generateRegistrationNumber($instituteId);
@@ -190,6 +273,13 @@ class PublicRegistrationController extends Controller
 
         // Create student
         $student = Student::create($validated);
+
+        // Create notification for new website registration
+        \App\Models\RegistrationNotification::create([
+            'student_id' => $student->id,
+            'institute_id' => $instituteId,
+            'registration_type' => 'website',
+        ]);
 
         // Create qualifications
         if (!empty($qualifications)) {

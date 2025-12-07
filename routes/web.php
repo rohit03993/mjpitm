@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [LandingPageController::class, 'index'])->name('home');
 Route::get('/about', [LandingPageController::class, 'about'])->name('about');
 Route::get('/courses', [LandingPageController::class, 'courses'])->name('courses');
+Route::get('/course/{category}', [LandingPageController::class, 'categoryCourses'])->name('courses.category');
 
 // Public Registration Form Routes (for general access)
 Route::get('/registration-form', [\App\Http\Controllers\PublicRegistrationController::class, 'create'])->name('public.registration');
@@ -65,7 +66,7 @@ Route::middleware(['auth:student'])->group(function () {
 });
 
 // Staff Dashboard Routes (protected) - for Institute Admin/Staff only (NOT Super Admin)
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     // Staff dashboard - only accessible to non-super-admin users
     // The controller will redirect super admin to super admin dashboard
     Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])->name('staff.dashboard');
@@ -89,6 +90,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return redirect()->route('staff.dashboard');
     })->name('admin.dashboard');
     
+    // Website Registrations Route (MUST come BEFORE resource route to avoid conflicts)
+    Route::get('/admin/students/website-registrations', [\App\Http\Controllers\Admin\StudentController::class, 'websiteRegistrations'])->name('admin.students.website-registrations');
+
     // Student Management Routes
     // Staff: can list, create, store, and view students they created.
     // Super Admin: can also edit status / roll no (enforced in controller).
@@ -101,6 +105,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'update' => 'admin.students.update',
         'destroy' => 'admin.students.destroy',
     ]);
+
+    // Notification Routes
+    Route::get('/admin/notifications/unread', [\App\Http\Controllers\Admin\NotificationController::class, 'getUnread'])->name('admin.notifications.unread');
+    Route::post('/admin/notifications/{id}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('admin.notifications.read');
+    Route::post('/admin/notifications/read-all', [\App\Http\Controllers\Admin\NotificationController::class, 'markAllAsRead'])->name('admin.notifications.read-all');
 
     // Fee Management Routes - Accessible to both Super Admin and Institute Admin
     Route::resource('admin/fees', \App\Http\Controllers\Admin\FeeController::class)->names([
@@ -135,7 +144,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Super Admin Dashboard Routes (protected)
-Route::middleware(['auth', 'verified', EnsureUserIsSuperAdmin::class])->group(function () {
+Route::middleware(['auth', EnsureUserIsSuperAdmin::class])->group(function () {
     Route::get('/superadmin/dashboard', [SuperAdminDashboardController::class, 'index'])->name('superadmin.dashboard');
     Route::post('/superadmin/logout', [SuperAdminAuthController::class, 'logout'])->name('superadmin.logout');
 
@@ -150,7 +159,21 @@ Route::middleware(['auth', 'verified', EnsureUserIsSuperAdmin::class])->group(fu
         'destroy' => 'admin.categories.destroy',
     ]);
 
-    // Course Management Routes - ONLY Super Admin
+    // Course Bulk Import Routes - MUST come BEFORE resource route to avoid conflicts
+    Route::get('/admin/courses/import', [\App\Http\Controllers\Admin\CourseController::class, 'showImport'])->name('admin.courses.import');
+    Route::post('/admin/courses/import/preview', [\App\Http\Controllers\Admin\CourseController::class, 'previewImport'])->name('admin.courses.import.preview');
+    Route::post('/admin/courses/import/process', [\App\Http\Controllers\Admin\CourseController::class, 'processImport'])->name('admin.courses.import.process');
+
+    // Bulk Image Upload Routes
+    Route::get('/admin/bulk-image-upload', [\App\Http\Controllers\Admin\BulkImageUploadController::class, 'index'])->name('admin.bulk-image-upload');
+    Route::post('/admin/bulk-image-upload', [\App\Http\Controllers\Admin\BulkImageUploadController::class, 'upload'])->name('admin.bulk-image-upload.upload');
+
+    // Smart Image Assignment Routes
+    Route::get('/admin/smart-image-assignment', [\App\Http\Controllers\Admin\SmartImageController::class, 'index'])->name('admin.smart-image-assignment');
+    Route::post('/admin/smart-image-assignment', [\App\Http\Controllers\Admin\SmartImageController::class, 'assign'])->name('admin.smart-image-assignment.assign');
+    Route::post('/admin/smart-image-assignment/all', [\App\Http\Controllers\Admin\SmartImageController::class, 'assignAll'])->name('admin.smart-image-assignment.assign-all');
+
+    // Course Management Routes - ONLY Super Admin (must come AFTER import routes)
     Route::resource('admin/courses', \App\Http\Controllers\Admin\CourseController::class)->names([
         'index' => 'admin.courses.index',
         'create' => 'admin.courses.create',

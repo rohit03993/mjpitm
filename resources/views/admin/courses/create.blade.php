@@ -36,7 +36,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.courses.store') }}">
+            <form method="POST" action="{{ route('admin.courses.store') }}" enctype="multipart/form-data">
                 @csrf
 
                 <!-- Basic Course Details Section -->
@@ -114,6 +114,17 @@
                             <x-input-label for="description" :value="__('Description')" />
                             <textarea id="description" name="description" rows="3" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">{{ old('description') }}</textarea>
                             <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                        </div>
+
+                        <!-- Course Image -->
+                        <div class="md:col-span-2">
+                            <x-input-label for="image" :value="__('Course Image')" />
+                            <input id="image" class="block mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" type="file" name="image" accept="image/*" onchange="previewCourseImage(this)" />
+                            <div id="image_preview" class="mt-4" style="display: none;">
+                                <img id="image_preview_img" src="" alt="Course Image Preview" class="w-48 h-48 object-cover rounded-lg border border-gray-300">
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Upload an image related to this course (Max 2MB, JPG/PNG/GIF)</p>
+                            <x-input-error :messages="$errors->get('image')" class="mt-2" />
                         </div>
                     </div>
                 </div>
@@ -378,6 +389,22 @@
                 durationValue.addEventListener('input', updateFeeLabel);
             }
         });
+
+        function previewCourseImage(input) {
+            const preview = document.getElementById('image_preview');
+            const previewImg = document.getElementById('image_preview_img');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
     </script>
 </x-app-layout>
 

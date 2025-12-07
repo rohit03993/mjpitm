@@ -106,8 +106,22 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <a href="{{ route('admin.students.index') }}" class="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition">
-                            <h4 class="font-medium text-purple-900">Manage Students</h4>
-                            <p class="text-sm text-purple-700">View and manage all students</p>
+                            <h4 class="font-medium text-purple-900">Guest Registrations</h4>
+                            <p class="text-sm text-purple-700">Students registered by admin/staff</p>
+                        </a>
+                        <a href="{{ route('admin.students.website-registrations') }}" class="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition relative">
+                            <h4 class="font-medium text-orange-900">Website Registrations</h4>
+                            <p class="text-sm text-orange-700">Students who registered themselves</p>
+                            @php
+                                $pendingCount = \App\Models\Student::whereNull('created_by')
+                                    ->where('status', 'pending')
+                                    ->count();
+                            @endphp
+                            @if($pendingCount > 0)
+                                <span class="absolute top-2 right-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    {{ $pendingCount }} New
+                                </span>
+                            @endif
                         </a>
                         <a href="{{ route('admin.students.create') }}" class="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition">
                             <h4 class="font-medium text-green-900">Register Student</h4>
