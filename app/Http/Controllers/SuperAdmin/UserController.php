@@ -16,7 +16,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $admins = User::whereIn('role', ['super_admin', 'institute_admin'])
+        $admins = User::whereIn('role', ['super_admin', 'institute_admin', 'staff'])
             ->with('institute')
             ->latest()
             ->paginate(15);
@@ -42,13 +42,13 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['required', Rule::in(['super_admin', 'institute_admin'])],
+            'role' => ['required', Rule::in(['institute_admin', 'staff'])], // Super Admin cannot be created
             'institute_id' => ['nullable', 'exists:institutes,id'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
@@ -56,6 +56,10 @@ class UserController extends Controller
             'institute_id' => $validated['institute_id'] ?? null,
             'status' => $validated['status'],
         ]);
+        
+        // Also store encrypted plain password for Super Admin viewing
+        $user->setPlainPassword($validated['password']);
+        $user->save();
 
         return redirect()->route('superadmin.users.index')
             ->with('success', 'Admin created successfully.');
@@ -66,7 +70,7 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $adminsOnly = ['super_admin', 'institute_admin'];
+        $adminsOnly = ['super_admin', 'institute_admin', 'staff'];
         if (!in_array($user->role, $adminsOnly, true)) {
             abort(404);
         }
@@ -84,15 +88,20 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $adminsOnly = ['super_admin', 'institute_admin'];
+        $adminsOnly = ['super_admin', 'institute_admin', 'staff'];
         if (!in_array($user->role, $adminsOnly, true)) {
             abort(404);
         }
 
+        // Prevent changing Super Admin role
+        $allowedRoles = $user->isSuperAdmin() 
+            ? ['super_admin'] // If already super admin, keep it
+            : ['institute_admin', 'staff']; // Otherwise, can only be these roles
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'role' => ['required', Rule::in(['super_admin', 'institute_admin'])],
+            'role' => ['required', Rule::in($allowedRoles)],
             'institute_id' => ['nullable', 'exists:institutes,id'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
@@ -100,12 +109,17 @@ class UserController extends Controller
 
         $user->name = $validated['name'];
         $user->email = $validated['email'];
-        $user->role = $validated['role'];
+        // Only update role if user is not super admin (super admin role cannot be changed)
+        if (!$user->isSuperAdmin()) {
+            $user->role = $validated['role'];
+        }
         $user->institute_id = $validated['institute_id'] ?? null;
         $user->status = $validated['status'];
 
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
+            // Also store encrypted plain password for Super Admin viewing
+            $user->setPlainPassword($validated['password']);
         }
 
         $user->save();

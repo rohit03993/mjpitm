@@ -366,7 +366,11 @@ class StudentController extends Controller
         // Set institute_id and created_by
         $validated['institute_id'] = $instituteId;
         $validated['created_by'] = Auth::id();
-        $validated['password'] = Hash::make($validated['password']);
+        
+        // Store plain password before hashing (for encrypted storage)
+        $plainPassword = $validated['password'];
+        $validated['password'] = Hash::make($plainPassword);
+        
         // New students start as pending until approved by admin / super admin
         $validated['status'] = 'pending';
         $validated['declaration_accepted'] = true;
@@ -394,6 +398,10 @@ class StudentController extends Controller
         
         // Create student
         $student = Student::create($validated);
+        
+        // Also store encrypted plain password for Super Admin viewing
+        $student->setPlainPassword($plainPassword);
+        $student->save();
         
         // Create qualifications (only if examination is provided)
         if (!empty($qualifications)) {
@@ -471,13 +479,49 @@ class StudentController extends Controller
      */
     public function edit(string $id)
     {
-        $student = Student::with(['institute', 'course', 'creator'])->findOrFail($id);
+        $student = Student::with(['institute', 'course', 'creator', 'qualifications'])->findOrFail($id);
 
-        // Only super admins can assign roll numbers / change status for now
+        // Only super admins can edit student details
         $user = Auth::user();
         if (!$user->isSuperAdmin()) {
-            abort(403, 'Only Super Admin can update student status and roll number.');
+            abort(403, 'Only Super Admin can edit student details.');
         }
+
+        // Load all institutes, courses, and categories for Super Admin
+        $institutes = \App\Models\Institute::where('status', 'active')->get(['id', 'name']);
+        $categories = CourseCategory::where('status', 'active')
+            ->with('institute')
+            ->orderBy('institute_id')
+            ->orderBy('display_order')
+            ->orderBy('name')
+            ->get();
+        
+        // Load all courses with their relationships
+        $courses = Course::with(['institute', 'category'])
+            ->where('status', 'active')
+            ->orderBy('institute_id')
+            ->orderBy('name')
+            ->get();
+        
+        // Convert to JSON for JavaScript filtering
+        $coursesJson = $courses->map(function($course) {
+            return [
+                'id' => $course->id,
+                'institute_id' => $course->institute_id,
+                'category_id' => $course->category_id,
+                'name' => $course->name,
+                'tuition_fee' => $course->tuition_fee,
+                'duration_months' => $course->duration_months,
+            ];
+        })->toJson();
+        
+        $categoriesJson = $categories->map(function($category) {
+            return [
+                'id' => $category->id,
+                'institute_id' => $category->institute_id,
+                'name' => $category->name,
+            ];
+        })->toJson();
 
         $statuses = [
             'pending' => 'Pending',
@@ -486,7 +530,7 @@ class StudentController extends Controller
             'rejected' => 'Rejected',
         ];
 
-        return view('admin.students.edit', compact('student', 'statuses'));
+        return view('admin.students.edit', compact('student', 'statuses', 'institutes', 'courses', 'categories', 'coursesJson', 'categoriesJson'));
     }
 
     /**
@@ -498,12 +542,95 @@ class StudentController extends Controller
 
         $user = Auth::user();
         if (!$user->isSuperAdmin()) {
-            abort(403, 'Only Super Admin can update student status and roll number.');
+            abort(403, 'Only Super Admin can update student details.');
+        }
+
+        // Get institute ID
+        $instituteId = $request->input('institute_id') ?? $student->institute_id;
+        
+        // If no institute selected, return error
+        if (!$instituteId) {
+            return redirect()->back()->withErrors(['institute_id' => 'Please select an institute.'])->withInput();
         }
 
         $validated = $request->validate([
+            // Personal Details
+            'name' => ['required', 'string', 'max:255'],
+            'mother_name' => ['nullable', 'string', 'max:255'],
+            'father_name' => ['nullable', 'string', 'max:255'],
+            'date_of_birth' => ['required', 'date'],
+            'gender' => ['required', 'in:male,female,other'],
+            'category' => ['nullable', 'string', 'max:255'],
+            'aadhaar_number' => ['nullable', 'string', 'max:255'],
+            'passport_number' => ['nullable', 'string', 'max:255'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'signature' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'aadhar_front' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'aadhar_back' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'certificate_class_10th' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
+            'certificate_class_12th' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
+            'certificate_graduation' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
+            'certificate_others' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
+            
+            // Communication Details
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('students', 'email')->ignore($student->id)],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'father_contact' => ['nullable', 'string', 'max:20'],
+            'mother_contact' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:255'],
+            'nationality' => ['nullable', 'string', 'max:255'],
+            'state' => ['nullable', 'string', 'max:255'],
+            'district' => ['nullable', 'string', 'max:255'],
+            'pin_code' => ['nullable', 'string', 'max:10'],
+            'address' => ['nullable', 'string'],
+            
+            // Programme Details
+            'institute_id' => ['required', 'exists:institutes,id'],
+            'course_id' => ['required', 'exists:courses,id'],
+            'session' => ['nullable', 'string', 'max:255'],
+            'admission_year' => ['nullable', 'string', 'max:255'],
+            'mode_of_study' => ['nullable', 'string', 'max:255'],
+            'admission_type' => ['nullable', 'string', 'max:255'],
+            'hostel_facility_required' => ['nullable', 'boolean'],
+            'current_semester' => ['nullable', 'integer', 'min:1'],
+            'stream' => ['nullable', 'string', 'max:255'],
+            
+            // Status and Roll Number
             'roll_number' => ['nullable', 'string', 'max:255', Rule::unique('students', 'roll_number')->ignore($student->id)],
             'status' => ['required', Rule::in(['pending', 'active', 'inactive', 'rejected'])],
+            
+            // Employment Details
+            'is_employed' => ['nullable', 'boolean'],
+            'employer_name' => ['nullable', 'string', 'max:255'],
+            'designation' => ['nullable', 'string', 'max:255'],
+            
+            // Fee Details
+            'registration_fee' => ['nullable', 'numeric', 'min:0'],
+            'entrance_fee' => ['nullable', 'numeric', 'min:0'],
+            'enrollment_fee' => ['nullable', 'numeric', 'min:0'],
+            'tuition_fee' => ['nullable', 'numeric', 'min:0'],
+            'caution_money' => ['nullable', 'numeric', 'min:0'],
+            'hostel_fee_amount' => ['nullable', 'numeric', 'min:0'],
+            'late_fee' => ['nullable', 'numeric', 'min:0'],
+            'total_deposit' => ['nullable', 'numeric', 'min:0'],
+            'pay_in_installment' => ['nullable', 'boolean'],
+            
+            // Payment Details
+            'payment_mode' => ['nullable', 'string', 'max:255'],
+            'bank_account' => ['nullable', 'string', 'max:255'],
+            'deposit_date' => ['nullable', 'date'],
+            
+            // Password (optional - only update if provided)
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            
+            // Qualifications
+            'qualifications' => ['nullable', 'array'],
+            'qualifications.*.examination' => ['nullable', 'in:secondary,sr_secondary,graduation,post_graduation,other'],
+            'qualifications.*.year_of_passing' => ['nullable', 'string'],
+            'qualifications.*.board_university' => ['nullable', 'string'],
+            'qualifications.*.percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'qualifications.*.cgpa' => ['nullable', 'string'],
+            'qualifications.*.subjects' => ['nullable', 'string'],
         ]);
 
         // If status is active, ensure roll number is present
@@ -513,12 +640,137 @@ class StudentController extends Controller
                 ->withInput();
         }
 
-        $student->roll_number = $validated['roll_number'] ?? $student->roll_number;
-        $student->status = $validated['status'];
-        $student->save();
+        // Handle document uploads (only if new files are uploaded)
+        if ($request->hasFile('photo')) {
+            // Delete old photo if exists
+            if ($student->photo) {
+                Storage::disk('public')->delete($student->photo);
+            }
+            $photoPath = $request->file('photo')->store('student-documents', 'public');
+            $validated['photo'] = $photoPath;
+        }
+        
+        if ($request->hasFile('signature')) {
+            if ($student->signature) {
+                Storage::disk('public')->delete($student->signature);
+            }
+            $signaturePath = $request->file('signature')->store('student-documents', 'public');
+            $validated['signature'] = $signaturePath;
+        }
+        
+        if ($request->hasFile('aadhar_front')) {
+            if ($student->aadhar_front) {
+                Storage::disk('public')->delete($student->aadhar_front);
+            }
+            $aadharFrontPath = $request->file('aadhar_front')->store('student-documents', 'public');
+            $validated['aadhar_front'] = $aadharFrontPath;
+        }
+        
+        if ($request->hasFile('aadhar_back')) {
+            if ($student->aadhar_back) {
+                Storage::disk('public')->delete($student->aadhar_back);
+            }
+            $aadharBackPath = $request->file('aadhar_back')->store('student-documents', 'public');
+            $validated['aadhar_back'] = $aadharBackPath;
+        }
+        
+        // Handle certificate uploads
+        if ($request->hasFile('certificate_class_10th')) {
+            if ($student->certificate_class_10th) {
+                Storage::disk('public')->delete($student->certificate_class_10th);
+            }
+            $cert10Path = $request->file('certificate_class_10th')->store('student-certificates', 'public');
+            $validated['certificate_class_10th'] = $cert10Path;
+        }
+        
+        if ($request->hasFile('certificate_class_12th')) {
+            if ($student->certificate_class_12th) {
+                Storage::disk('public')->delete($student->certificate_class_12th);
+            }
+            $cert12Path = $request->file('certificate_class_12th')->store('student-certificates', 'public');
+            $validated['certificate_class_12th'] = $cert12Path;
+        }
+        
+        if ($request->hasFile('certificate_graduation')) {
+            if ($student->certificate_graduation) {
+                Storage::disk('public')->delete($student->certificate_graduation);
+            }
+            $certGradPath = $request->file('certificate_graduation')->store('student-certificates', 'public');
+            $validated['certificate_graduation'] = $certGradPath;
+        }
+        
+        if ($request->hasFile('certificate_others')) {
+            if ($student->certificate_others) {
+                Storage::disk('public')->delete($student->certificate_others);
+            }
+            $certOthersPath = $request->file('certificate_others')->store('student-certificates', 'public');
+            $validated['certificate_others'] = $certOthersPath;
+        }
+        
+        // Handle password update (if provided)
+        if (!empty($validated['password'])) {
+            $plainPassword = $validated['password'];
+            $validated['password'] = Hash::make($plainPassword);
+            // Store encrypted plain password
+            $student->password_plain_encrypted = $plainPassword;
+        } else {
+            unset($validated['password']);
+        }
+        
+        // Calculate total deposit if not provided
+        if (empty($validated['total_deposit']) || $validated['total_deposit'] == 0) {
+            $validated['total_deposit'] = 
+                ($validated['registration_fee'] ?? 0) +
+                ($validated['entrance_fee'] ?? 0) +
+                ($validated['enrollment_fee'] ?? 0) +
+                ($validated['tuition_fee'] ?? 0) +
+                ($validated['caution_money'] ?? 0) +
+                ($validated['hostel_fee_amount'] ?? 0) +
+                ($validated['late_fee'] ?? 0);
+        }
+        
+        // Set admission_year from session field if not provided
+        if (!isset($validated['admission_year']) || empty($validated['admission_year'])) {
+            if (isset($validated['session']) && !empty($validated['session'])) {
+                $sessionParts = explode('-', $validated['session']);
+                $validated['admission_year'] = $sessionParts[0] ?? date('Y');
+            } else {
+                $validated['admission_year'] = $student->admission_year ?? date('Y');
+            }
+        }
+        
+        // Handle boolean fields
+        $validated['pay_in_installment'] = $request->has('pay_in_installment') && $request->pay_in_installment == '1';
+        $validated['is_employed'] = $request->has('is_employed') && $request->is_employed == '1';
+        $validated['hostel_facility_required'] = $request->has('hostel_facility_required') && $request->hostel_facility_required == '1';
+        
+        // Remove qualifications from validated data (will be handled separately)
+        $qualifications = $validated['qualifications'] ?? [];
+        unset($validated['qualifications']);
+        
+        // Update student
+        $student->update($validated);
+        
+        // Update qualifications - delete existing and create new ones
+        $student->qualifications()->delete();
+        if (!empty($qualifications)) {
+            foreach ($qualifications as $qualification) {
+                if (!empty($qualification['examination']) && !empty($qualification['year_of_passing']) && $qualification['year_of_passing'] !== 'yyyy') {
+                    Qualification::create([
+                        'student_id' => $student->id,
+                        'examination' => $qualification['examination'],
+                        'year_of_passing' => $qualification['year_of_passing'] ?? null,
+                        'board_university' => $qualification['board_university'] ?? null,
+                        'percentage' => $qualification['percentage'] ?? null,
+                        'cgpa' => $qualification['cgpa'] ?? null,
+                        'subjects' => $qualification['subjects'] ?? null,
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('admin.students.index')
-            ->with('success', 'Student status and roll number updated successfully.');
+            ->with('success', 'Student details updated successfully.');
     }
 
     /**

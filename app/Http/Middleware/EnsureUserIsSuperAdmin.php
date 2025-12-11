@@ -15,8 +15,11 @@ class EnsureUserIsSuperAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || !auth()->user()->isSuperAdmin()) {
-            abort(403, 'Unauthorized. Super Admin access required.');
+        $user = auth()->user();
+        
+        // Allow both Super Admin and Staff to access Super Admin routes
+        if (!auth()->check() || (!$user->isSuperAdmin() && !$user->isStaff())) {
+            abort(403, 'Unauthorized. Admin or Staff access required.');
         }
 
         return $next($request);

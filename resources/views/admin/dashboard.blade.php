@@ -100,15 +100,11 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Everyone: student registration & list (staff sees only their own students) -->
-                        <a href="{{ route('admin.students.index') }}" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
-                            <h4 class="font-medium text-blue-900">Guest Registrations</h4>
-                            <p class="text-sm text-blue-700">Students registered by admin/staff</p>
-                        </a>
-                        <a href="{{ route('admin.students.website-registrations') }}" class="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition relative">
-                            <h4 class="font-medium text-orange-900">Website Registrations</h4>
-                            <p class="text-sm text-orange-700">Students who registered themselves</p>
+                        <a href="{{ route('admin.students.index') }}" class="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition relative">
+                            <h4 class="font-medium text-blue-900">All Students</h4>
+                            <p class="text-sm text-blue-700">View and manage all students (with filters for type, status, etc.)</p>
                             @php
                                 $pendingCount = \App\Models\Student::whereNull('created_by')
                                     ->where('status', 'pending')
@@ -122,7 +118,7 @@
                             @endphp
                             @if($pendingCount > 0)
                                 <span class="absolute top-2 right-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    {{ $pendingCount }} New
+                                    {{ $pendingCount }} Pending
                                 </span>
                             @endif
                         </a>

@@ -44,11 +44,11 @@ class StaffAuthController extends Controller
 
         $user = Auth::guard('web')->user();
 
-        // Check if user is NOT admin (staff/institute admin only)
-        if ($user->isSuperAdmin()) {
+        // Check if user is NOT admin (institute admin only - Staff and Super Admin use Admin Login)
+        if ($user->canAccessAdminLogin()) {
             Auth::guard('web')->logout();
             throw ValidationException::withMessages([
-                'email' => __('Admin should use Admin Login.'),
+                'email' => __('Admin/Staff should use Admin Login.'),
             ]);
         }
 

@@ -65,56 +65,59 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     @if($categories->count() > 0)
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Institute</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($categories as $category)
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $category->display_order }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-gray-900">{{ $category->name }}</div>
-                                                @if($category->code)
-                                                    <div class="text-xs text-gray-500">{{ $category->code }}</div>
-                                                @endif
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $category->institute->name ?? 'N/A' }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                    {{ $category->courses_count }} courses
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $category->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                        <!-- Categories Card View (All Screens) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            @foreach($categories as $category)
+                                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <h4 class="text-base font-semibold text-gray-900">{{ $category->name }}</h4>
+                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full flex-shrink-0 {{ $category->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                                     {{ ucfirst($category->status) }}
                                                 </span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <a href="{{ route('admin.categories.show', $category) }}" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                                                <a href="{{ route('admin.categories.edit', $category) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                                                <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this category?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                            </div>
+                                            @if($category->code)
+                                                <p class="text-xs font-medium text-indigo-600 mb-1">Code: {{ $category->code }}</p>
+                                            @endif
+                                            <p class="text-xs text-gray-500">Order: {{ $category->display_order }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-2 mb-4">
+                                        <div class="flex items-start">
+                                            <span class="text-xs font-medium text-gray-500 w-20 flex-shrink-0">Institute:</span>
+                                            <span class="text-sm text-gray-900 flex-1">{{ $category->institute->name ?? 'N/A' }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                                            <span class="text-xs font-medium text-gray-500">Total Courses:</span>
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {{ $category->courses_count }} courses
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="pt-3 border-t border-gray-200">
+                                        <div class="flex flex-wrap gap-2">
+                                            <a href="{{ route('admin.categories.show', $category) }}" 
+                                               class="flex-1 px-3 py-2 text-xs font-medium text-center text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition">
+                                                View
+                                            </a>
+                                            <a href="{{ route('admin.categories.edit', $category) }}" 
+                                               class="flex-1 px-3 py-2 text-xs font-medium text-center text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 transition">
+                                                Edit
+                                            </a>
+                                            <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="flex-1" onsubmit="return confirm('Are you sure you want to delete this category?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="w-full px-3 py-2 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
 
                         <div class="mt-4">

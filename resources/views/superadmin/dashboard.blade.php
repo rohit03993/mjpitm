@@ -91,9 +91,9 @@
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                        <a href="{{ route('superadmin.users.index') }}" class="p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
-                            <h4 class="font-medium text-indigo-900">Manage Admins</h4>
-                            <p class="text-sm text-indigo-700">Create and manage admin accounts</p>
+                        <a href="{{ route('superadmin.manage-users.index') }}" class="p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
+                            <h4 class="font-medium text-indigo-900">Manage Users</h4>
+                            <p class="text-sm text-indigo-700">View and manage Staff, Institute Admin, and Students with password control</p>
                         </a>
                         <a href="{{ route('admin.categories.index') }}" class="p-4 bg-pink-50 rounded-lg hover:bg-pink-100 transition">
                             <h4 class="font-medium text-pink-900">Manage Categories</h4>
@@ -104,14 +104,10 @@
                             <p class="text-sm text-blue-700">Add, edit, or view courses</p>
                         </a>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <a href="{{ route('admin.students.index') }}" class="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition">
-                            <h4 class="font-medium text-purple-900">Guest Registrations</h4>
-                            <p class="text-sm text-purple-700">Students registered by admin/staff</p>
-                        </a>
-                        <a href="{{ route('admin.students.website-registrations') }}" class="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition relative">
-                            <h4 class="font-medium text-orange-900">Website Registrations</h4>
-                            <p class="text-sm text-orange-700">Students who registered themselves</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <a href="{{ route('admin.students.index') }}" class="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition relative">
+                            <h4 class="font-medium text-purple-900">All Students</h4>
+                            <p class="text-sm text-purple-700">View and manage all students (with filters for type, status, etc.)</p>
                             @php
                                 $pendingCount = \App\Models\Student::whereNull('created_by')
                                     ->where('status', 'pending')
@@ -119,7 +115,7 @@
                             @endphp
                             @if($pendingCount > 0)
                                 <span class="absolute top-2 right-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    {{ $pendingCount }} New
+                                    {{ $pendingCount }} Pending
                                 </span>
                             @endif
                         </a>
@@ -143,25 +139,35 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Institutes</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                    
+                    <!-- Desktop Table View (hidden on mobile) -->
+                    <div class="hidden lg:block overflow-hidden">
+                        <table class="w-full divide-y divide-gray-200 table-auto">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($institutes as $institute)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $institute->name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $institute->domain }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $institute->students_count }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $institute->courses_count }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                            <div class="max-w-xs truncate" title="{{ $institute->name }}">
+                                                {{ $institute->name }}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                            <div class="max-w-xs truncate" title="{{ $institute->domain }}">
+                                                {{ $institute->domain }}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">{{ $institute->students_count }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">{{ $institute->courses_count }}</td>
+                                        <td class="px-4 py-3">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $institute->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                                 {{ ucfirst($institute->status) }}
                                             </span>
@@ -175,30 +181,79 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile/Tablet Card View (visible on mobile/tablet, hidden on desktop) -->
+                    <div class="block lg:hidden space-y-4">
+                        @forelse($institutes as $institute)
+                            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2 mb-1">
+                                            <h4 class="text-base font-semibold text-gray-900">{{ $institute->name }}</h4>
+                                            <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $institute->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ ucfirst($institute->status) }}
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-gray-500">Domain: {{ $institute->domain }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <div class="flex items-start">
+                                        <span class="text-xs font-medium text-gray-500 w-24 flex-shrink-0">Students:</span>
+                                        <span class="text-sm text-gray-900">{{ $institute->students_count }}</span>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <span class="text-xs font-medium text-gray-500 w-24 flex-shrink-0">Courses:</span>
+                                        <span class="text-sm text-gray-900">{{ $institute->courses_count }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-8 text-sm text-gray-500">
+                                No institutes found.
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
 
             <!-- Recent Users -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Admins</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Recent Admins</h3>
+                        <a href="{{ route('superadmin.users.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900">
+                            View All →
+                        </a>
+                    </div>
+                    
+                    <!-- Desktop Table View (hidden on mobile) -->
+                    <div class="hidden lg:block overflow-hidden">
+                        <table class="w-full divide-y divide-gray-200 table-auto">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($recentUsers as $user)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $user->name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $user->email }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst(str_replace('_', ' ', $user->role)) }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                            <div class="max-w-xs truncate" title="{{ $user->name }}">
+                                                {{ $user->name }}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">
+                                            <div class="max-w-xs truncate" title="{{ $user->email }}">
+                                                {{ $user->email }}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">{{ ucfirst(str_replace('_', ' ', $user->role)) }}</td>
+                                        <td class="px-4 py-3">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $user->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                                 {{ ucfirst($user->status) }}
                                             </span>
@@ -211,6 +266,36 @@
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Mobile/Tablet Card View (visible on mobile/tablet, hidden on desktop) -->
+                    <div class="block lg:hidden space-y-4">
+                        @forelse($recentUsers as $user)
+                            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2 mb-1">
+                                            <h4 class="text-base font-semibold text-gray-900">{{ $user->name }}</h4>
+                                            <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $user->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ ucfirst($user->status) }}
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-gray-500">{{ ucfirst(str_replace('_', ' ', $user->role)) }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <div class="flex items-start">
+                                        <span class="text-xs font-medium text-gray-500 w-20 flex-shrink-0">Email:</span>
+                                        <span class="text-sm text-gray-900 break-all">{{ $user->email }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-8 text-sm text-gray-500">
+                                No users found.
+                            </div>
+                        @endforelse
                     </div>
                 </div>
             </div>

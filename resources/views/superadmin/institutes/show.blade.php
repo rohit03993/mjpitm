@@ -78,23 +78,28 @@
                     <h3 class="text-lg font-semibold text-purple-900">Courses ({{ $institute->courses->count() }})</h3>
                 </div>
                 <div class="p-6">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                    <!-- Desktop Table View (hidden on mobile) -->
+                    <div class="hidden lg:block overflow-hidden">
+                        <table class="w-full divide-y divide-gray-200 table-auto">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($institute->courses->take(10) as $course)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $course->code }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $course->name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $course->formatted_duration }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $course->code }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                            <div class="max-w-xs truncate" title="{{ $course->name }}">
+                                                {{ $course->name }}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">{{ $course->formatted_duration }}</td>
+                                        <td class="px-4 py-3">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $course->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                                 {{ ucfirst($course->status) }}
                                             </span>
@@ -103,6 +108,32 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Mobile/Tablet Card View (visible on mobile/tablet, hidden on desktop) -->
+                    <div class="block lg:hidden space-y-4">
+                        @foreach($institute->courses->take(10) as $course)
+                            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2 mb-1">
+                                            <h4 class="text-base font-semibold text-gray-900">{{ $course->name }}</h4>
+                                            <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $course->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ ucfirst($course->status) }}
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-gray-500">Code: {{ $course->code }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <div class="flex items-start">
+                                        <span class="text-xs font-medium text-gray-500 w-24 flex-shrink-0">Duration:</span>
+                                        <span class="text-sm text-gray-900">{{ $course->formatted_duration }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>

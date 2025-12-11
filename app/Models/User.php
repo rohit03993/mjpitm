@@ -20,6 +20,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'password_plain_encrypted',
         'role',
         'institute_id',
         'center',
@@ -79,5 +80,45 @@ class User extends Authenticatable
     public function isInstituteAdmin(): bool
     {
         return $this->role === 'institute_admin';
+    }
+
+    /**
+     * Check if user is staff (helper created by Super Admin)
+     */
+    public function isStaff(): bool
+    {
+        return $this->role === 'staff';
+    }
+
+    /**
+     * Check if user can access admin login (Super Admin or Staff)
+     */
+    public function canAccessAdminLogin(): bool
+    {
+        return $this->isSuperAdmin() || $this->isStaff();
+    }
+
+    /**
+     * Get the decrypted plain password (only for Super Admin viewing)
+     */
+    public function getPlainPasswordAttribute(): ?string
+    {
+        if (!$this->password_plain_encrypted) {
+            return null;
+        }
+        
+        try {
+            return decrypt($this->password_plain_encrypted);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Set and encrypt the plain password
+     */
+    public function setPlainPassword(string $password): void
+    {
+        $this->password_plain_encrypted = encrypt($password);
     }
 }

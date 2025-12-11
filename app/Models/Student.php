@@ -45,6 +45,7 @@ class Student extends Authenticatable
         'district',
         'pin_code',
         'password',
+        'password_plain_encrypted',
         'admission_year',
         'session',
         'mode_of_study',
@@ -141,5 +142,29 @@ class Student extends Authenticatable
     public function qualifications()
     {
         return $this->hasMany(Qualification::class);
+    }
+
+    /**
+     * Get the decrypted plain password (only for Super Admin viewing)
+     */
+    public function getPlainPasswordAttribute(): ?string
+    {
+        if (!$this->password_plain_encrypted) {
+            return null;
+        }
+        
+        try {
+            return decrypt($this->password_plain_encrypted);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Set and encrypt the plain password
+     */
+    public function setPlainPassword(string $password): void
+    {
+        $this->password_plain_encrypted = encrypt($password);
     }
 }

@@ -244,8 +244,9 @@ class PublicRegistrationController extends Controller
             $validated['certificate_others'] = $request->file('certificate_others')->store('students/certificates', 'public');
         }
 
-        // Set password
-        $validated['password'] = Hash::make($validated['password']);
+        // Store plain password before hashing (for encrypted storage)
+        $plainPassword = $validated['password'];
+        $validated['password'] = Hash::make($plainPassword);
 
         // Set institute and status
         $validated['institute_id'] = $instituteId;
@@ -273,6 +274,10 @@ class PublicRegistrationController extends Controller
 
         // Create student
         $student = Student::create($validated);
+        
+        // Also store encrypted plain password for Super Admin viewing
+        $student->setPlainPassword($plainPassword);
+        $student->save();
 
         // Create notification for new website registration
         \App\Models\RegistrationNotification::create([

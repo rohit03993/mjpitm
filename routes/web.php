@@ -210,6 +210,15 @@ Route::middleware(['auth', EnsureUserIsSuperAdmin::class])->group(function () {
         'update' => 'superadmin.users.update',
     ]);
 
+    // Super Admin - Manage Users (with password management)
+    Route::get('/superadmin/manage-users', [\App\Http\Controllers\SuperAdmin\ManageUsersController::class, 'index'])->name('superadmin.manage-users.index');
+    Route::get('/superadmin/manage-users/user/{user}/view-password', [\App\Http\Controllers\SuperAdmin\ManageUsersController::class, 'viewUserPassword'])->name('superadmin.manage-users.view-user-password');
+    Route::get('/superadmin/manage-users/student/{student}/view-password', [\App\Http\Controllers\SuperAdmin\ManageUsersController::class, 'viewStudentPassword'])->name('superadmin.manage-users.view-student-password');
+    Route::post('/superadmin/manage-users/user/{user}/generate-password', [\App\Http\Controllers\SuperAdmin\ManageUsersController::class, 'generateUserPassword'])->name('superadmin.manage-users.generate-user-password');
+    Route::post('/superadmin/manage-users/student/{student}/generate-password', [\App\Http\Controllers\SuperAdmin\ManageUsersController::class, 'generateStudentPassword'])->name('superadmin.manage-users.generate-student-password');
+    Route::post('/superadmin/manage-users/user/{user}/update-password', [\App\Http\Controllers\SuperAdmin\ManageUsersController::class, 'updateUserPassword'])->name('superadmin.manage-users.update-user-password');
+    Route::post('/superadmin/manage-users/student/{student}/update-password', [\App\Http\Controllers\SuperAdmin\ManageUsersController::class, 'updateStudentPassword'])->name('superadmin.manage-users.update-student-password');
+
     // Super Admin - Institute Management
     Route::resource('superadmin/institutes', \App\Http\Controllers\SuperAdmin\InstituteController::class)->names([
         'index' => 'superadmin.institutes.index',

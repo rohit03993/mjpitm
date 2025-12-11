@@ -44,11 +44,11 @@ class SuperAdminAuthController extends Controller
 
         $user = Auth::guard('web')->user();
 
-        // Check if user is admin (super admin)
-        if (!$user->isSuperAdmin()) {
+        // Check if user can access admin login (super admin or staff)
+        if (!$user->canAccessAdminLogin()) {
             Auth::guard('web')->logout();
             throw ValidationException::withMessages([
-                'email' => __('You do not have Admin access. Please use Staff Login.'),
+                'email' => __('You do not have Admin access. Please use Guest Login.'),
             ]);
         }
 
