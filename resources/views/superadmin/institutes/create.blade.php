@@ -51,6 +51,14 @@
                             <x-input-error :messages="$errors->get('name')" class="mt-2" />
                         </div>
 
+                        <!-- Institute Code -->
+                        <div>
+                            <x-input-label for="institute_code" :value="__('Institute Code')" />
+                            <x-text-input id="institute_code" class="block mt-1 w-full uppercase" type="text" name="institute_code" :value="old('institute_code')" placeholder="e.g., MJPITM" maxlength="10" />
+                            <x-input-error :messages="$errors->get('institute_code')" class="mt-2" />
+                            <p class="mt-1 text-xs text-gray-500">Code used in roll number generation (e.g., MJPITM, MJPIPS). Uppercase letters and numbers only.</p>
+                        </div>
+
                         <!-- Domain -->
                         <div>
                             <x-input-label for="domain" :value="__('Domain *')" />

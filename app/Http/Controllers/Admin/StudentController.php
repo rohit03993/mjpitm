@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\Qualification;
 use App\Models\CourseCategory;
 use App\Models\RegistrationNotification;
+use App\Services\RollNumberGenerator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -633,8 +634,48 @@ class StudentController extends Controller
             'qualifications.*.subjects' => ['nullable', 'string'],
         ]);
 
-        // If status is active, ensure roll number is present
-        if ($validated['status'] === 'active' && empty($validated['roll_number'])) {
+        // Auto-generate roll number when status is active and roll_number is empty
+        // Handle both null and empty string cases
+        $rollNumberEmpty = empty($validated['roll_number']) || trim($validated['roll_number'] ?? '') === '';
+        
+        if ($validated['status'] === 'active' && $rollNumberEmpty) {
+            try {
+                // Reload student with relationships for roll number generation
+                $student->load(['institute', 'course.category']);
+                
+                // Check if institute has institute_code set
+                if (empty($student->institute->institute_code)) {
+                    return back()
+                        ->withErrors(['roll_number' => 'Cannot generate roll number: Institute code is not set. Please set institute_code for the institute first.'])
+                        ->withInput();
+                }
+                
+                // Check if course has category
+                if (!$student->course) {
+                    return back()
+                        ->withErrors(['roll_number' => 'Cannot generate roll number: Student must have a course assigned.'])
+                        ->withInput();
+                }
+                
+                // Check if category has roll_number_code
+                if (!$student->course->category || empty($student->course->category->roll_number_code)) {
+                    return back()
+                        ->withErrors(['roll_number' => 'Cannot generate roll number: Course category does not have a roll number code. Please set roll_number_code for the category first.'])
+                        ->withInput();
+                }
+                
+                // Auto-generate roll number
+                $validated['roll_number'] = RollNumberGenerator::generate($student);
+            } catch (\Exception $e) {
+                return back()
+                    ->withErrors(['roll_number' => 'Failed to generate roll number: ' . $e->getMessage()])
+                    ->withInput();
+            }
+        }
+        
+        // If status is active and still no roll number, return error
+        $rollNumberStillEmpty = empty($validated['roll_number']) || trim($validated['roll_number'] ?? '') === '';
+        if ($validated['status'] === 'active' && $rollNumberStillEmpty) {
             return back()
                 ->withErrors(['roll_number' => 'Roll number is required when activating a student.'])
                 ->withInput();

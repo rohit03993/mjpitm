@@ -35,6 +35,7 @@ class CourseCategoryController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('roll_number_code', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
             });
         }
@@ -71,6 +72,7 @@ class CourseCategoryController extends Controller
             'institute_id' => ['required', 'exists:institutes,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:50'],
+            'roll_number_code' => ['nullable', 'string', 'max:3', 'regex:/^[0-9]{2,3}$/'],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'display_order' => ['nullable', 'integer', 'min:0'],
@@ -135,6 +137,7 @@ class CourseCategoryController extends Controller
             'institute_id' => ['required', 'exists:institutes,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:50'],
+            'roll_number_code' => ['nullable', 'string', 'max:3', 'regex:/^[0-9]{2,3}$/'],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'display_order' => ['nullable', 'integer', 'min:0'],

@@ -42,6 +42,15 @@
                             <h4 class="text-sm font-medium text-gray-500">Display Order</h4>
                             <p class="mt-1 text-lg text-gray-900">{{ $category->display_order }}</p>
                         </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500">Roll Number Code</h4>
+                            @if($category->roll_number_code)
+                                <p class="mt-1 text-lg font-bold text-purple-600">{{ $category->roll_number_code }}</p>
+                            @else
+                                <p class="mt-1 text-lg font-bold text-red-600">⚠ Not Set</p>
+                                <p class="mt-1 text-xs text-gray-500">Required for roll number generation</p>
+                            @endif
+                        </div>
                         <div class="md:col-span-2">
                             <h4 class="text-sm font-medium text-gray-500">Description</h4>
                             <p class="mt-1 text-gray-900">{{ $category->description ?? 'No description provided.' }}</p>

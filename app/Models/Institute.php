@@ -11,6 +11,7 @@ class Institute extends Model
 
     protected $fillable = [
         'name',
+        'institute_code',
         'domain',
         'description',
         'status',

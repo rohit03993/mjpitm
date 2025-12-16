@@ -290,6 +290,11 @@
                                 </div>
                             </div>
                             
+                            <div class="info-row" style="margin-top: 5px;">
+                                <span class="info-label">Duration: </span>
+                                <span class="info-value">{{ $student->course->formatted_duration ?? '3 Years' }}</span>
+                            </div>
+                            
                             <div class="info-row">
                                 <span class="info-label">Father's Name: </span>
                                 <span class="info-value">{{ $student->father_name ?? 'N/A' }}</span>
@@ -304,13 +309,6 @@
                                 <span class="info-label">Session: </span>
                                 <span class="info-value">{{ $student->session ?? ($student->admission_year . '-' . ($student->admission_year + 1)) }}</span>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Footer -->
-                    <div class="card-footer">
-                        <div class="validity">
-                            <strong>Duration:</strong> {{ $student->course->formatted_duration ?? '3 Years' }}
                         </div>
                     </div>
                     </div><!-- end card-content -->

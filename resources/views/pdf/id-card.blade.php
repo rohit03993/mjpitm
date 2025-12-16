@@ -263,6 +263,11 @@
                         </tr>
                     </table>
                     
+                    <div class="info-row" style="margin-top: 1.5mm;">
+                        <span class="info-label">Duration: </span>
+                        <span class="info-value">{{ $student->course->formatted_duration ?? '3 Years' }}</span>
+                    </div>
+                    
                     <div class="info-row">
                         <span class="info-label">Father's Name: </span>
                         <span class="info-value">{{ $student->father_name ?? 'N/A' }}</span>
@@ -280,13 +285,6 @@
                 </td>
             </tr>
         </table>
-        
-        <!-- Footer -->
-        <div class="card-footer">
-            <div class="validity-cell">
-                <strong>Duration:</strong> {{ $student->course->formatted_duration ?? '3 Years' }}
-            </div>
-        </div>
         </div><!-- end card-content -->
     </div>
 </body>

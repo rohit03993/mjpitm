@@ -36,6 +36,7 @@ class InstituteController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'institute_code' => ['nullable', 'string', 'max:10', 'regex:/^[A-Z0-9]+$/'],
             'domain' => ['required', 'string', 'max:255', 'unique:institutes,domain'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'in:active,inactive'],
@@ -73,6 +74,7 @@ class InstituteController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'institute_code' => ['nullable', 'string', 'max:10', 'regex:/^[A-Z0-9]+$/'],
             'domain' => ['required', 'string', 'max:255', Rule::unique('institutes', 'domain')->ignore($institute->id)],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'in:active,inactive'],

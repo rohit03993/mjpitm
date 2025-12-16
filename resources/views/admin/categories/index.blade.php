@@ -80,6 +80,11 @@
                                             @if($category->code)
                                                 <p class="text-xs font-medium text-indigo-600 mb-1">Code: {{ $category->code }}</p>
                                             @endif
+                                            @if($category->roll_number_code)
+                                                <p class="text-xs font-medium text-purple-600 mb-1">Roll Number Code: <span class="font-bold">{{ $category->roll_number_code }}</span></p>
+                                            @else
+                                                <p class="text-xs font-medium text-red-600 mb-1">⚠ Roll Number Code: <span class="font-bold">Not Set</span></p>
+                                            @endif
                                             <p class="text-xs text-gray-500">Order: {{ $category->display_order }}</p>
                                         </div>
                                     </div>

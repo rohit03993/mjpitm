@@ -70,6 +70,14 @@
                             <x-input-error :messages="$errors->get('code')" class="mt-2" />
                         </div>
 
+                        <!-- Roll Number Code -->
+                        <div>
+                            <x-input-label for="roll_number_code" :value="__('Roll Number Code')" />
+                            <x-text-input id="roll_number_code" class="block mt-1 w-full" type="text" name="roll_number_code" :value="old('roll_number_code')" placeholder="e.g., 01" maxlength="3" pattern="[0-9]{2,3}" />
+                            <p class="mt-1 text-xs text-gray-500">2-3 digit code for roll number generation (auto-generated if not provided)</p>
+                            <x-input-error :messages="$errors->get('roll_number_code')" class="mt-2" />
+                        </div>
+
                         <!-- Display Order -->
                         <div>
                             <x-input-label for="display_order" :value="__('Display Order')" />
