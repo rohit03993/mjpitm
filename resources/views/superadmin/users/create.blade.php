@@ -1,7 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Create Admin') }}
+            @if(isset($preselectedRole) && $preselectedRole === 'institute_admin')
+                {{ __('Create Institute Admin') }}
+            @elseif(isset($preselectedRole) && $preselectedRole === 'staff')
+                {{ __('Create Staff') }}
+            @else
+                {{ __('Create Admin') }}
+            @endif
         </h2>
     </x-slot>
 
@@ -26,18 +32,40 @@
                             </div>
 
                             <div>
-                                <x-input-label for="role" :value="__('Role *')" />
-                                <select id="role" name="role" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
-                                    <option value="">Select Role</option>
-                                    <option value="institute_admin" {{ old('role') === 'institute_admin' ? 'selected' : '' }}>Institute Admin (Guest)</option>
-                                    <option value="staff" {{ old('role') === 'staff' ? 'selected' : '' }}>Staff (Helper)</option>
-                                </select>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    <strong>Institute Admin:</strong> Uses Guest Login, manages own institute<br>
-                                    <strong>Staff:</strong> Uses Admin Login, helps Super Admin with tasks<br>
-                                    <em>Note: Super Admin role cannot be created through this interface.</em>
-                                </p>
-                                <x-input-error :messages="$errors->get('role')" class="mt-2" />
+                                @if(isset($preselectedRole) && in_array($preselectedRole, ['institute_admin', 'staff']))
+                                    {{-- Show role as read-only when preselected --}}
+                                    <x-input-label for="role" :value="__('Role *')" />
+                                    <input type="hidden" name="role" value="{{ $preselectedRole }}">
+                                    <div class="block mt-1 w-full rounded-md border-gray-300 bg-gray-50 px-3 py-2 text-gray-900">
+                                        @if($preselectedRole === 'institute_admin')
+                                            Institute Admin (Guest)
+                                        @else
+                                            Staff (Helper)
+                                        @endif
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        @if($preselectedRole === 'institute_admin')
+                                            <strong>Institute Admin:</strong> Uses Guest Login, manages own institute
+                                        @else
+                                            <strong>Staff:</strong> Uses Admin Login, helps Super Admin with tasks
+                                        @endif
+                                    </p>
+                                    <x-input-error :messages="$errors->get('role')" class="mt-2" />
+                                @else
+                                    {{-- Show role dropdown when no role is preselected --}}
+                                    <x-input-label for="role" :value="__('Role *')" />
+                                    <select id="role" name="role" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
+                                        <option value="">Select Role</option>
+                                        <option value="institute_admin" {{ old('role') === 'institute_admin' ? 'selected' : '' }}>Institute Admin (Guest)</option>
+                                        <option value="staff" {{ old('role') === 'staff' ? 'selected' : '' }}>Staff (Helper)</option>
+                                    </select>
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        <strong>Institute Admin:</strong> Uses Guest Login, manages own institute<br>
+                                        <strong>Staff:</strong> Uses Admin Login, helps Super Admin with tasks<br>
+                                        <em>Note: Super Admin role cannot be created through this interface.</em>
+                                    </p>
+                                    <x-input-error :messages="$errors->get('role')" class="mt-2" />
+                                @endif
                             </div>
 
                             <div>
@@ -80,7 +108,13 @@
                                 ← Back to Admins
                             </a>
                             <x-primary-button>
-                                {{ __('Create Admin') }}
+                                @if(isset($preselectedRole) && $preselectedRole === 'institute_admin')
+                                    {{ __('Create Institute Admin') }}
+                                @elseif(isset($preselectedRole) && $preselectedRole === 'staff')
+                                    {{ __('Create Staff') }}
+                                @else
+                                    {{ __('Create Admin') }}
+                                @endif
                             </x-primary-button>
                         </div>
                     </form>

@@ -27,11 +27,12 @@ class UserController extends Controller
     /**
      * Show the form for creating a new admin.
      */
-    public function create()
+    public function create(Request $request)
     {
         $institutes = Institute::where('status', 'active')->get(['id', 'name']);
+        $preselectedRole = $request->get('role'); // Get role from query parameter
 
-        return view('superadmin.users.create', compact('institutes'));
+        return view('superadmin.users.create', compact('institutes', 'preselectedRole'));
     }
 
     /**
@@ -61,8 +62,10 @@ class UserController extends Controller
         $user->setPlainPassword($validated['password']);
         $user->save();
 
-        return redirect()->route('superadmin.users.index')
-            ->with('success', 'Admin created successfully.');
+        // Redirect to manage-users page with appropriate tab
+        $tab = $validated['role'] === 'institute_admin' ? 'institute_admin' : 'staff';
+        return redirect()->route('superadmin.manage-users.index', ['tab' => $tab])
+            ->with('success', ucfirst(str_replace('_', ' ', $validated['role'])) . ' created successfully.');
     }
 
     /**
