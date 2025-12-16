@@ -402,6 +402,32 @@
                             </div>
                         </div>
                         
+                        @if(auth()->user()->isInstituteAdmin())
+                        <!-- Institute Admin Fee (Only visible to Institute Admins) -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                                <h4 class="text-md font-semibold text-purple-900 mb-3">Amount You Need to Pay to Institute</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <x-input-label for="institute_admin_fee" :value="__('Amount to Pay')" />
+                                        <x-text-input id="institute_admin_fee" class="block mt-1 w-full bg-purple-100 font-bold text-lg text-purple-900" type="text" readonly placeholder="Select a course" />
+                                        <p class="mt-1 text-xs text-purple-700">Based on course duration</p>
+                                    </div>
+                                    <div>
+                                        <x-input-label for="institute_admin_fee_breakdown" :value="__('Fee Breakdown')" />
+                                        <x-text-input id="institute_admin_fee_breakdown" class="block mt-1 w-full bg-purple-100 text-sm text-purple-800" type="text" readonly placeholder="—" />
+                                    </div>
+                                </div>
+                                <div class="mt-3 p-3 bg-purple-100 rounded border border-purple-300">
+                                    <p class="text-xs text-purple-800">
+                                        <strong>Note:</strong> This is the amount you need to pay to the institute for this student enrollment. 
+                                        The student will pay their regular course fees to you separately.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        
                         <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                             <p class="text-sm text-blue-800">
                                 <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -813,11 +839,47 @@
                 document.getElementById('course_total_fee').value = '₹ ' + totalFee.toLocaleString('en-IN', {minimumFractionDigits: 2});
                 document.getElementById('course_fee_per_year').value = '₹ ' + feePerYear.toLocaleString('en-IN', {minimumFractionDigits: 2});
                 document.getElementById('course_duration').value = durationText;
+                
+                // Calculate and display institute admin fee (only for institute admins)
+                @if(auth()->user()->isInstituteAdmin())
+                calculateInstituteAdminFee(totalMonths);
+                @endif
             } else {
                 clearFees();
             }
         }
 
+        // Calculate institute admin fee based on course duration
+        function calculateInstituteAdminFee(durationMonths) {
+            const feeInput = document.getElementById('institute_admin_fee');
+            const breakdownInput = document.getElementById('institute_admin_fee_breakdown');
+            
+            if (!feeInput || !breakdownInput) return;
+            
+            let fee = 0;
+            let breakdown = '';
+            
+            if (durationMonths <= 6) {
+                // 3-6 months: ₹2,500 (₹2,000 fees + ₹500 registration)
+                fee = 2500;
+                breakdown = '₹2,000 (Fees) + ₹500 (Registration)';
+            } else if (durationMonths <= 12) {
+                // 1 year (up to 12 months): ₹3,500 (₹3,000 fees + ₹500 registration)
+                fee = 3500;
+                breakdown = '₹3,000 (Fees) + ₹500 (Registration)';
+            } else if (durationMonths <= 24) {
+                // 2 years (up to 24 months): ₹4,500 (₹4,000 fees + ₹500 registration)
+                fee = 4500;
+                breakdown = '₹4,000 (Fees) + ₹500 (Registration)';
+            } else {
+                // For courses longer than 2 years, use 2-year rate
+                fee = 4500;
+                breakdown = '₹4,000 (Fees) + ₹500 (Registration)';
+            }
+            
+            feeInput.value = '₹ ' + fee.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            breakdownInput.value = breakdown;
+        }
         
         // Clear course fee display
         function clearFees() {
@@ -827,6 +889,19 @@
             document.getElementById('course_fee_per_year').placeholder = '—';
             document.getElementById('course_duration').value = '';
             document.getElementById('course_duration').placeholder = '—';
+            
+            @if(auth()->user()->isInstituteAdmin())
+            const feeInput = document.getElementById('institute_admin_fee');
+            const breakdownInput = document.getElementById('institute_admin_fee_breakdown');
+            if (feeInput) {
+                feeInput.value = '';
+                feeInput.placeholder = 'Select a course';
+            }
+            if (breakdownInput) {
+                breakdownInput.value = '';
+                breakdownInput.placeholder = '—';
+            }
+            @endif
         }
         
         // Auto-populate session based on current year

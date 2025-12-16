@@ -29,8 +29,8 @@
                                 <x-input-label for="role" :value="__('Role *')" />
                                 <select id="role" name="role" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
                                     <option value="">Select Role</option>
-                                    <option value="institute_admin" {{ old('role') === 'institute_admin' ? 'selected' : '' }}>Institute Admin (Guest)</option>
-                                    <option value="staff" {{ old('role') === 'staff' ? 'selected' : '' }}>Staff (Helper)</option>
+                                    <option value="institute_admin" {{ old('role', $preselectedRole ?? '') === 'institute_admin' ? 'selected' : '' }}>Institute Admin (Guest)</option>
+                                    <option value="staff" {{ old('role', $preselectedRole ?? '') === 'staff' ? 'selected' : '' }}>Staff (Helper)</option>
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500">
                                     <strong>Institute Admin:</strong> Uses Guest Login, manages own institute<br>

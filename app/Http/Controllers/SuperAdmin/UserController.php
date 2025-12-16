@@ -27,11 +27,14 @@ class UserController extends Controller
     /**
      * Show the form for creating a new admin.
      */
-    public function create()
+    public function create(Request $request)
     {
         $institutes = Institute::where('status', 'active')->get(['id', 'name']);
+        
+        // Get role from query parameter (if coming from manage-users page)
+        $preselectedRole = $request->get('role', old('role'));
 
-        return view('superadmin.users.create', compact('institutes'));
+        return view('superadmin.users.create', compact('institutes', 'preselectedRole'));
     }
 
     /**

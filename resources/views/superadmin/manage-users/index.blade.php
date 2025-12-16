@@ -1,8 +1,23 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Manage Users') }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Manage Users') }}
+            </h2>
+            <div class="flex gap-2">
+                @if($tab === 'staff' || $tab === 'institute_admin')
+                    <a href="{{ route('superadmin.users.create', ['role' => $tab === 'staff' ? 'staff' : 'institute_admin']) }}" 
+                       class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        + Add {{ $tab === 'staff' ? 'Staff' : 'Institute Admin' }}
+                    </a>
+                @elseif($tab === 'students')
+                    <a href="{{ route('admin.students.create') }}" 
+                       class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                        + Add Student
+                    </a>
+                @endif
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-12">
@@ -94,17 +109,32 @@
             <!-- Users Table -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <div class="mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">
-                            @if($tab === 'staff')
-                                Staff Users
-                            @elseif($tab === 'institute_admin')
-                                Institute Admin (Guest) Users
-                            @else
-                                Students
+                    <div class="mb-4 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                @if($tab === 'staff')
+                                    Staff Users
+                                @elseif($tab === 'institute_admin')
+                                    Institute Admin (Guest) Users
+                                @else
+                                    Students
+                                @endif
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-1">Manage user accounts and passwords</p>
+                        </div>
+                        <div>
+                            @if($tab === 'staff' || $tab === 'institute_admin')
+                                <a href="{{ route('superadmin.users.create', ['role' => $tab === 'staff' ? 'staff' : 'institute_admin']) }}" 
+                                   class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                    + Add {{ $tab === 'staff' ? 'Staff' : 'Institute Admin' }}
+                                </a>
+                            @elseif($tab === 'students')
+                                <a href="{{ route('admin.students.create') }}" 
+                                   class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                                    + Add Student
+                                </a>
                             @endif
-                        </h3>
-                        <p class="text-sm text-gray-500 mt-1">Manage user accounts and passwords</p>
+                        </div>
                     </div>
 
                     <!-- Desktop Table View (hidden on mobile) -->
@@ -192,8 +222,23 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="{{ $tab === 'students' ? '8' : '7' }}" class="px-6 py-4 text-center text-sm text-gray-500">
-                                            No users found.
+                                        <td colspan="{{ $tab === 'students' ? '8' : '7' }}" class="px-6 py-4 text-center">
+                                            <div class="text-sm text-gray-500 mb-4">
+                                                No {{ $tab === 'staff' ? 'staff' : ($tab === 'institute_admin' ? 'institute admin' : 'students') }} found.
+                                            </div>
+                                            <div>
+                                                @if($tab === 'staff' || $tab === 'institute_admin')
+                                                    <a href="{{ route('superadmin.users.create', ['role' => $tab === 'staff' ? 'staff' : 'institute_admin']) }}" 
+                                                       class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                                                        + Add {{ $tab === 'staff' ? 'Staff' : 'Institute Admin' }}
+                                                    </a>
+                                                @elseif($tab === 'students')
+                                                    <a href="{{ route('admin.students.create') }}" 
+                                                       class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                                                        + Add Student
+                                                    </a>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforelse
@@ -270,8 +315,23 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="text-center py-8 text-sm text-gray-500">
-                                No users found.
+                            <div class="text-center py-8">
+                                <p class="text-sm text-gray-500 mb-4">
+                                    No {{ $tab === 'staff' ? 'staff' : ($tab === 'institute_admin' ? 'institute admin' : 'students') }} found.
+                                </p>
+                                <div>
+                                    @if($tab === 'staff' || $tab === 'institute_admin')
+                                        <a href="{{ route('superadmin.users.create', ['role' => $tab === 'staff' ? 'staff' : 'institute_admin']) }}" 
+                                           class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                                            + Add {{ $tab === 'staff' ? 'Staff' : 'Institute Admin' }}
+                                        </a>
+                                    @elseif($tab === 'students')
+                                        <a href="{{ route('admin.students.create') }}" 
+                                           class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                                            + Add Student
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
                         @endforelse
                     </div>

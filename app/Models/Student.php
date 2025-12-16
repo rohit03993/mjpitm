@@ -61,6 +61,7 @@ class Student extends Authenticatable
         'hostel_fee_amount',
         'late_fee',
         'total_deposit',
+        'institute_admin_fee',
         'pay_in_installment',
         'payment_mode',
         'bank_account',
@@ -93,6 +94,7 @@ class Student extends Authenticatable
             'hostel_fee_amount' => 'decimal:2',
             'late_fee' => 'decimal:2',
             'total_deposit' => 'decimal:2',
+            'institute_admin_fee' => 'decimal:2',
         ];
     }
 

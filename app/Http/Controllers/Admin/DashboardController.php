@@ -81,10 +81,23 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        // Calculate total amount owed by institute admin (sum of institute_admin_fee)
+        $totalAmountOwed = 0;
+        $totalRegistrations = 0;
+        if (!$user->isSuperAdmin()) {
+            $totalAmountOwed = Student::where('created_by', $user->id)
+                ->whereNotNull('institute_admin_fee')
+                ->sum('institute_admin_fee');
+            
+            $totalRegistrations = Student::where('created_by', $user->id)->count();
+        }
+
         return view('admin.dashboard', compact(
             'techStats',
             'paramedicalStats',
-            'recentStudents'
+            'recentStudents',
+            'totalAmountOwed',
+            'totalRegistrations'
         ));
     }
 }

@@ -96,6 +96,51 @@
                 </div>
             </div>
 
+            @if(auth()->user()->isInstituteAdmin())
+            <!-- Institute Admin Earnings/Owed Amount -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border-2 border-purple-200">
+                <div class="p-6 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+                    <h3 class="text-lg font-semibold text-purple-900">Your Registration Summary</h3>
+                    <p class="text-sm text-purple-700 mt-1">Amount you need to pay to the institute</p>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-purple-50 rounded-lg p-6 border-2 border-purple-200">
+                            <div class="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2">Total Registrations</div>
+                            <div class="text-4xl font-bold text-purple-900">
+                                {{ $totalRegistrations }}
+                            </div>
+                            <div class="text-sm text-purple-600 mt-2">Students registered by you</div>
+                        </div>
+                        <div class="bg-purple-100 rounded-lg p-6 border-2 border-purple-300">
+                            <div class="text-xs font-semibold text-purple-800 uppercase tracking-wide mb-2">Total Amount Owed</div>
+                            <div class="text-4xl font-bold text-purple-900">
+                                ₹{{ number_format($totalAmountOwed, 2) }}
+                            </div>
+                            <div class="text-sm text-purple-700 mt-2">Based on course durations</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-6 border-2 border-purple-200">
+                            <div class="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2">Fee Structure</div>
+                            <div class="text-sm text-purple-800 space-y-1">
+                                <div>3-6 months: ₹2,500</div>
+                                <div>1 year: ₹3,500</div>
+                                <div>2 years: ₹4,500</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <p class="text-sm text-purple-800">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <strong>Note:</strong> This is the total amount you need to pay to the institute for all students you have registered. 
+                            The amount is calculated based on each course's duration at the time of registration.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Quick Actions -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">

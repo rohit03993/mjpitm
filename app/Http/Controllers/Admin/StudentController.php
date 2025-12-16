@@ -10,6 +10,7 @@ use App\Models\Qualification;
 use App\Models\CourseCategory;
 use App\Models\RegistrationNotification;
 use App\Services\RollNumberGenerator;
+use App\Services\InstituteAdminFeeCalculator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -392,6 +393,14 @@ class StudentController extends Controller
         
         // Generate a unique registration number for the student
         $validated['registration_number'] = $this->generateRegistrationNumber($instituteId);
+
+        // Calculate and store institute admin fee (only if student is created by an admin, not website registration)
+        if ($validated['created_by']) {
+            $course = Course::find($validated['course_id']);
+            if ($course && $course->duration_months) {
+                $validated['institute_admin_fee'] = InstituteAdminFeeCalculator::calculate($course->duration_months);
+            }
+        }
 
         // Remove qualifications from validated data (will be handled separately)
         $qualifications = $validated['qualifications'] ?? [];
