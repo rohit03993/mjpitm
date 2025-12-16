@@ -29,8 +29,13 @@ class StudentController extends Controller
 
         // Role-based visibility:
         // - Super Admin: sees all students (optional filters)
-        // - Normal Admin: sees all students from their institute (both website and guest registrations)
-        if (!$user->isSuperAdmin()) {
+        // - Institute Admin (Guest): sees ONLY students they created (created_by = their user ID)
+        // - Staff/Regular Admin: sees all students from their institute (both website and guest registrations)
+        if ($user->isInstituteAdmin()) {
+            // Institute Admin (Guest) can only see students they registered
+            $query->where('created_by', $user->id);
+        } elseif (!$user->isSuperAdmin()) {
+            // Regular admin/staff sees all students from their institute
             $instituteId = session('current_institute_id');
             if ($instituteId) {
                 $query->where('institute_id', $instituteId);
@@ -79,19 +84,27 @@ class StudentController extends Controller
 
         // Count students by status
         $statusCounts = [
-            'all' => Student::when(!$user->isSuperAdmin(), function($q) {
+            'all' => Student::when($user->isInstituteAdmin(), function($q) use ($user) {
+                // Institute Admin: only their students
+                $q->where('created_by', $user->id);
+            })->when(!$user->isSuperAdmin() && !$user->isInstituteAdmin(), function($q) {
+                // Regular admin/staff: all students from their institute
                 $instituteId = session('current_institute_id');
                 if ($instituteId) {
                     $q->where('institute_id', $instituteId);
                 }
             })->count(),
-            'active' => Student::when(!$user->isSuperAdmin(), function($q) {
+            'active' => Student::when($user->isInstituteAdmin(), function($q) use ($user) {
+                $q->where('created_by', $user->id);
+            })->when(!$user->isSuperAdmin() && !$user->isInstituteAdmin(), function($q) {
                 $instituteId = session('current_institute_id');
                 if ($instituteId) {
                     $q->where('institute_id', $instituteId);
                 }
             })->where('status', 'active')->count(),
-            'pending' => Student::when(!$user->isSuperAdmin(), function($q) {
+            'pending' => Student::when($user->isInstituteAdmin(), function($q) use ($user) {
+                $q->where('created_by', $user->id);
+            })->when(!$user->isSuperAdmin() && !$user->isInstituteAdmin(), function($q) {
                 $instituteId = session('current_institute_id');
                 if ($instituteId) {
                     $q->where('institute_id', $instituteId);

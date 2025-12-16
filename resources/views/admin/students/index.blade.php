@@ -70,15 +70,19 @@
                             <div class="flex items-center justify-between mb-2">
                                 <label class="block text-sm font-semibold text-gray-700">Quick Filter: Website Registrations</label>
                                 @php
-                                    $pendingWebsiteCount = \App\Models\Student::whereNull('created_by')
-                                        ->where('status', 'pending')
-                                        ->when(!auth()->user() || !auth()->user()->isSuperAdmin(), function($q) {
-                                            $instituteId = session('current_institute_id');
-                                            if ($instituteId) {
-                                                $q->where('institute_id', $instituteId);
-                                            }
-                                        })
-                                        ->count();
+                                    $pendingWebsiteCount = 0;
+                                    // Institute admins don't see website registrations (they only see their own students)
+                                    if (auth()->user() && !auth()->user()->isInstituteAdmin()) {
+                                        $pendingWebsiteCount = \App\Models\Student::whereNull('created_by')
+                                            ->where('status', 'pending')
+                                            ->when(!auth()->user()->isSuperAdmin(), function($q) {
+                                                $instituteId = session('current_institute_id');
+                                                if ($instituteId) {
+                                                    $q->where('institute_id', $instituteId);
+                                                }
+                                            })
+                                            ->count();
+                                    }
                                 @endphp
                                 @if($pendingWebsiteCount > 0)
                                     <a href="{{ route('admin.students.index', ['registration_type' => 'website', 'status' => 'pending']) }}" 
@@ -87,7 +91,13 @@
                                     </a>
                                 @endif
                             </div>
-                            <p class="text-xs text-gray-600">Use the filters below to view all students, or filter by registration type (Website/Guest), status, and institute.</p>
+                            <p class="text-xs text-gray-600">
+                                @if(auth()->user() && auth()->user()->isInstituteAdmin())
+                                    View and manage students you have registered.
+                                @else
+                                    Use the filters below to view all students, or filter by registration type (Website/Guest), status, and institute.
+                                @endif
+                            </p>
                         </div>
                         <div class="flex flex-col md:flex-row gap-4 items-end">
                             <div class="flex-1">

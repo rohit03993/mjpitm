@@ -129,7 +129,7 @@
             <div class="bg-white overflow-hidden shadow-md sm:rounded-lg mb-4 sm:mb-6 border border-gray-100">
                 <div class="p-4 sm:p-6">
                     <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-5">Quick Actions</h3>
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         <a href="{{ route('admin.students.create') }}" class="group p-4 sm:p-5 bg-blue-50 rounded-xl hover:bg-blue-100 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] border border-blue-100 hover:border-blue-200">
                             <div class="flex flex-col items-center text-center">
                                 <div class="w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 rounded-xl flex items-center justify-center mb-3 group-hover:bg-blue-600 transition-colors shadow-sm">
@@ -150,17 +150,6 @@
                                 </div>
                                 <h4 class="text-xs sm:text-sm font-bold text-green-900 mb-1">View My Students</h4>
                                 <p class="text-xs text-green-700 leading-tight">See all students you added</p>
-                            </div>
-                        </a>
-                        <a href="{{ route('admin.students.create') }}" class="group p-4 sm:p-5 bg-amber-50 rounded-xl hover:bg-amber-100 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] border border-amber-100 hover:border-amber-200">
-                            <div class="flex flex-col items-center text-center">
-                                <div class="w-12 h-12 sm:w-14 sm:h-14 bg-amber-500 rounded-xl flex items-center justify-center mb-3 group-hover:bg-amber-600 transition-colors shadow-sm">
-                                    <svg class="h-6 w-6 sm:h-7 sm:w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                </div>
-                                <h4 class="text-xs sm:text-sm font-bold text-amber-900 mb-1">Registration Form</h4>
-                                <p class="text-xs text-amber-700 leading-tight">Download & share with students</p>
                             </div>
                         </a>
                         <a href="{{ route('admin.fees.index') }}" class="group p-4 sm:p-5 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] border border-indigo-100 hover:border-indigo-200">
