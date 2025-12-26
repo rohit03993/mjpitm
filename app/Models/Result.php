@@ -12,10 +12,13 @@ class Result extends Model
     protected $fillable = [
         'student_id',
         'subject_id',
+        'semester_result_id',
         'exam_type',
         'semester',
         'academic_year',
         'marks_obtained',
+        'theory_marks_obtained',
+        'practical_marks_obtained',
         'total_marks',
         'percentage',
         'grade',
@@ -31,6 +34,8 @@ class Result extends Model
     {
         return [
             'marks_obtained' => 'decimal:2',
+            'theory_marks_obtained' => 'decimal:2',
+            'practical_marks_obtained' => 'decimal:2',
             'total_marks' => 'decimal:2',
             'percentage' => 'decimal:2',
             'verified_at' => 'datetime',
@@ -71,6 +76,14 @@ class Result extends Model
     }
 
     /**
+     * Get the semester result this belongs to
+     */
+    public function semesterResult()
+    {
+        return $this->belongsTo(SemesterResult::class);
+    }
+
+    /**
      * Calculate percentage automatically
      */
     protected static function boot()
@@ -78,23 +91,16 @@ class Result extends Model
         parent::boot();
 
         static::saving(function ($result) {
+            // Auto-calculate marks_obtained from theory + practical if not set
+            if ($result->theory_marks_obtained !== null || $result->practical_marks_obtained !== null) {
+                $theory = $result->theory_marks_obtained ?? 0;
+                $practical = $result->practical_marks_obtained ?? 0;
+                $result->marks_obtained = $theory + $practical;
+            }
+            
             if ($result->marks_obtained && $result->total_marks) {
                 $result->percentage = ($result->marks_obtained / $result->total_marks) * 100;
-                
-                // Calculate grade
-                if ($result->percentage >= 90) {
-                    $result->grade = 'A+';
-                } elseif ($result->percentage >= 80) {
-                    $result->grade = 'A';
-                } elseif ($result->percentage >= 70) {
-                    $result->grade = 'B+';
-                } elseif ($result->percentage >= 60) {
-                    $result->grade = 'B';
-                } elseif ($result->percentage >= 50) {
-                    $result->grade = 'C';
-                } else {
-                    $result->grade = 'F';
-                }
+                // Grade calculation removed - not needed
             }
         });
     }

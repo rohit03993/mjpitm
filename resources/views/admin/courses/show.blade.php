@@ -124,6 +124,52 @@
                 </div>
             </div>
 
+            <!-- Semester Subjects Management -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6 bg-indigo-50 border-b border-indigo-200">
+                    <h3 class="text-lg font-semibold text-indigo-900">Manage Semester Subjects</h3>
+                    <p class="text-sm text-indigo-700 mt-1">Add or edit subjects for each semester of this course</p>
+                </div>
+                <div class="p-6">
+                    @php
+                        $semesters = $course->subjects()->distinct()->pluck('semester')->sort()->values();
+                        $nextSemester = $semesters->count() > 0 ? $semesters->max() + 1 : 1;
+                    @endphp
+                    
+                    @if($semesters->count() > 0)
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+                            @foreach($semesters as $sem)
+                                @php
+                                    $subjectCount = $course->subjects()->where('semester', $sem)->count();
+                                @endphp
+                                <a href="{{ route('admin.courses.semester.subjects', [$course->id, $sem]) }}" 
+                                   class="block p-4 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-center transition">
+                                    <div class="text-lg font-bold text-indigo-900">Semester {{ $sem }}</div>
+                                    <div class="text-sm text-indigo-600 mt-1">{{ $subjectCount }} {{ $subjectCount == 1 ? 'Subject' : 'Subjects' }}</div>
+                                </a>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                            <p class="text-gray-600 mb-3">No semesters added yet. Start by adding Semester 1.</p>
+                        </div>
+                    @endif
+                    
+                    <!-- Add New Semester Button -->
+                    <div class="mt-4">
+                        <a href="{{ route('admin.courses.semester.subjects', [$course->id, $nextSemester]) }}" 
+                           class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition">
+                            <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Semester {{ $nextSemester }}
+                        </a>
+                    </div>
+                    
+                    <p class="text-xs text-gray-500 mt-4">Click on any semester to add or edit subjects, or add a new semester</p>
+                </div>
+            </div>
+
             <!-- Students List (if any) -->
             @if($course->students->count() > 0)
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

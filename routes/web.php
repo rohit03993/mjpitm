@@ -63,6 +63,9 @@ Route::middleware(['auth:student'])->group(function () {
     // Student ID Card preview and download (for students - their own card)
     Route::get('/student/view/id-card', [\App\Http\Controllers\IdCardController::class, 'studentPreview'])->name('student.documents.view.idcard');
     Route::get('/student/download/id-card', [\App\Http\Controllers\IdCardController::class, 'studentDownload'])->name('student.documents.download.idcard');
+    
+    // Student semester result download
+    Route::get('/student/semester-result/{semesterResult}/download', [\App\Http\Controllers\Admin\SemesterResultController::class, 'studentDownload'])->name('student.semester-result.download');
 });
 
 // Staff Dashboard Routes (protected) - for Institute Admin/Staff only (NOT Super Admin)
@@ -133,6 +136,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/results/{result}/verify', [\App\Http\Controllers\Admin\ResultController::class, 'verify'])->name('admin.results.verify');
     Route::post('/admin/results/{result}/reject', [\App\Http\Controllers\Admin\ResultController::class, 'reject'])->name('admin.results.reject');
     Route::post('/admin/results/{result}/publish', [\App\Http\Controllers\Admin\ResultController::class, 'publish'])->name('admin.results.publish');
+
+    // Semester Result Management Routes - Accessible to both Super Admin and Institute Admin
+    Route::get('/admin/courses/{course}/semester/{semester}/subjects', [\App\Http\Controllers\Admin\CourseController::class, 'manageSemesterSubjects'])->name('admin.courses.semester.subjects');
+    Route::post('/admin/courses/{course}/semester/{semester}/subjects', [\App\Http\Controllers\Admin\CourseController::class, 'storeSemesterSubjects'])->name('admin.courses.semester.subjects.store');
+    Route::get('/admin/students/{student}/generate-semester-result', [\App\Http\Controllers\Admin\SemesterResultController::class, 'create'])->name('admin.students.generate-semester-result');
+    Route::post('/admin/students/{student}/generate-semester-result', [\App\Http\Controllers\Admin\SemesterResultController::class, 'store'])->name('admin.students.generate-semester-result.store');
+    Route::get('/admin/semester-results/{semesterResult}', [\App\Http\Controllers\Admin\SemesterResultController::class, 'show'])->name('admin.semester-results.show');
+    Route::post('/admin/semester-results/{semesterResult}/publish', [\App\Http\Controllers\Admin\SemesterResultController::class, 'publish'])->name('admin.semester-results.publish');
+    Route::get('/admin/semester-results/{semesterResult}/download', [\App\Http\Controllers\Admin\SemesterResultController::class, 'downloadPdf'])->name('admin.semester-results.download');
 
     // ID Card generation (for both Super Admin and Staff - controller handles permission)
     Route::get('/admin/view/id-card/{student}', [\App\Http\Controllers\IdCardController::class, 'view'])->name('admin.documents.view.idcard');

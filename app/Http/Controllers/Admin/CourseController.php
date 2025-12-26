@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Models\Institute;
 use App\Models\CourseCategory;
+use App\Models\Subject;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,13 +19,27 @@ class CourseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // For all admins, load all courses with institute and category relationships
-        $courses = Course::with(['institute', 'category'])
-            ->withCount('students')
-            ->latest()
-            ->paginate(15);
+        $query = Course::with(['institute', 'category'])
+            ->withCount('students');
+
+        // Search functionality - search across name, code, institute, and category
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhereHas('institute', function ($iq) use ($search) {
+                      $iq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('category', function ($cq) use ($search) {
+                      $cq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $courses = $query->latest()->paginate(15)->withQueryString();
         
         return view('admin.courses.index', compact('courses'));
     }
@@ -703,5 +718,73 @@ class CourseController extends Controller
         }
 
         return ['years' => $years, 'months' => $months];
+    }
+
+    /**
+     * Show form to manage subjects for a specific course semester
+     */
+    public function manageSemesterSubjects(Course $course, $semester)
+    {
+        $user = Auth::user();
+        
+        // Check permission
+        if (!$user->isSuperAdmin() && $course->institute_id !== $user->institute_id) {
+            abort(403, 'You are not authorized to manage subjects for this course.');
+        }
+
+        // Get existing subjects for this semester
+        $subjects = Subject::where('course_id', $course->id)
+            ->where('semester', $semester)
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.courses.manage-semester-subjects', compact('course', 'semester', 'subjects'));
+    }
+
+    /**
+     * Store subjects for a specific course semester
+     */
+    public function storeSemesterSubjects(Request $request, Course $course, $semester)
+    {
+        $user = Auth::user();
+        
+        // Check permission
+        if (!$user->isSuperAdmin() && $course->institute_id !== $user->institute_id) {
+            abort(403, 'You are not authorized to manage subjects for this course.');
+        }
+
+        $validated = $request->validate([
+            'subjects' => ['required', 'array', 'min:1'],
+            'subjects.*.name' => ['required', 'string', 'max:255'],
+            'subjects.*.code' => ['required', 'string', 'max:255'],
+            'subjects.*.theory_marks' => ['required', 'numeric', 'min:0'],
+            'subjects.*.practical_marks' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        // Delete existing subjects for this semester (optional - you might want to keep them)
+        // Subject::where('course_id', $course->id)->where('semester', $semester)->delete();
+
+        // Create or update subjects
+        foreach ($validated['subjects'] as $subjectData) {
+            $totalMarks = $subjectData['theory_marks'] + $subjectData['practical_marks'];
+            
+            Subject::updateOrCreate(
+                [
+                    'course_id' => $course->id,
+                    'semester' => $semester,
+                    'code' => $subjectData['code'],
+                ],
+                [
+                    'name' => $subjectData['name'],
+                    'theory_marks' => $subjectData['theory_marks'],
+                    'practical_marks' => $subjectData['practical_marks'],
+                    'total_marks' => $totalMarks,
+                    'status' => 'active',
+                ]
+            );
+        }
+
+        return redirect()->route('admin.courses.show', $course)
+            ->with('success', "Subjects for Semester {$semester} saved successfully.");
     }
 }

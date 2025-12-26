@@ -338,60 +338,49 @@
                     </div>
                 </div>
 
-                <!-- Published Results Section -->
+                <!-- Published Semester Results Section -->
                 <div id="results-section" class="bg-white overflow-hidden shadow-lg sm:rounded-lg mb-6">
                     <div class="p-6 border-b border-gray-200">
                         <div class="flex justify-between items-center">
-                            <h3 class="text-xl font-semibold text-gray-900">Published Results</h3>
-                            <span class="text-sm text-gray-500">{{ $publishedResults->count() }} result(s) published</span>
+                            <h3 class="text-xl font-semibold text-gray-900">My Semester Results</h3>
+                            <span class="text-sm text-gray-500">{{ $publishedSemesterResults->count() }} semester(s) published</span>
                         </div>
                     </div>
                     <div class="p-6">
-                        @if($publishedResults->count() > 0)
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exam Type</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marks</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        @foreach($publishedResults as $result)
-                                            <tr>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm font-medium text-gray-900">{{ $result->subject->name ?? 'N/A' }}</div>
-                                                    <div class="text-xs text-gray-500">{{ $result->subject->code ?? 'N/A' }}</div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {{ ucfirst($result->exam_type ?? 'N/A') }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    Sem {{ $result->semester }} ({{ $result->academic_year }})
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    <span class="font-semibold">{{ $result->marks_obtained ?? 'N/A' }}</span>
-                                                    <span class="text-gray-500">/ {{ $result->total_marks ?? 'N/A' }}</span>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                                                    {{ $result->percentage ?? 'N/A' }}%
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                        {{ $result->grade ?? 'N/A' }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                        @if($publishedSemesterResults->count() > 0)
+                            <div class="space-y-4">
+                                @foreach($publishedSemesterResults as $semesterResult)
+                                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div>
+                                                <h4 class="text-lg font-semibold text-gray-900">Semester {{ $semesterResult->semester }}</h4>
+                                                <p class="text-sm text-gray-500">{{ $semesterResult->academic_year }} | Published: {{ $semesterResult->published_at->format('d M Y') }}</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-2xl font-bold text-gray-900">{{ $semesterResult->overall_percentage }}%</div>
+                                                <div class="text-lg font-bold text-indigo-600">{{ $semesterResult->overall_grade }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <p class="text-sm text-gray-700">
+                                                <strong>Total:</strong> {{ $semesterResult->total_marks_obtained }} / {{ $semesterResult->total_max_marks }} marks
+                                                | <strong>Subjects:</strong> {{ $semesterResult->total_subjects }}
+                                            </p>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <a href="{{ route('student.semester-result.download', $semesterResult->id) }}" 
+                                               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm inline-flex items-center">
+                                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                Download PDF
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         @else
-                            <p class="text-center text-gray-500 py-8">No published results available yet.</p>
+                            <p class="text-center text-gray-500 py-8">No published semester results available yet.</p>
                         @endif
                     </div>
                 </div>

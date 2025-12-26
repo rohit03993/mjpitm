@@ -73,6 +73,22 @@ class Course extends Model
     }
 
     /**
+     * Get subjects for a specific semester
+     */
+    public function subjectsForSemester($semester)
+    {
+        return $this->subjects()->where('semester', $semester)->where('status', 'active');
+    }
+
+    /**
+     * Get semester results for this course
+     */
+    public function semesterResults()
+    {
+        return $this->hasMany(SemesterResult::class);
+    }
+
+    /**
      * Get formatted duration string (e.g., "2 months", "1 year", "2 years 6 months")
      */
     public function getFormattedDurationAttribute()

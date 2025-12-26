@@ -16,16 +16,24 @@ class DashboardController extends Controller
         $student = Auth::guard('student')->user();
         
         // Load relationships
-        $student->load(['course', 'course.institute', 'results.subject']);
+        $student->load(['course', 'course.institute', 'results.subject', 'semesterResults.results.subject']);
 
-        // Get only published results (students can only see published results)
+        // Get published semester results (new system)
+        $publishedSemesterResults = $student->semesterResults()
+            ->where('status', 'published')
+            ->with(['results.subject'])
+            ->orderBy('semester')
+            ->get();
+
+        // Get only published individual results (old system - for backward compatibility)
         $publishedResults = $student->results()
             ->where('status', 'published')
+            ->whereNull('semester_result_id') // Only show old results that aren't part of semester results
             ->with('subject')
             ->latest('academic_year')
             ->latest('semester')
             ->get();
 
-        return view('student.dashboard', compact('student', 'publishedResults'));
+        return view('student.dashboard', compact('student', 'publishedResults', 'publishedSemesterResults'));
     }
 }

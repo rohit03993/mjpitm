@@ -15,8 +15,20 @@ class Subject extends Model
         'code',
         'credits',
         'semester',
+        'theory_marks',
+        'practical_marks',
+        'total_marks',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'theory_marks' => 'decimal:2',
+            'practical_marks' => 'decimal:2',
+            'total_marks' => 'decimal:2',
+        ];
+    }
 
     /**
      * Get the course this subject belongs to

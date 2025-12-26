@@ -38,11 +38,37 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <!-- Search and Filter -->
-                    <div class="mb-6 flex flex-col md:flex-row gap-4">
-                        <div class="flex-1">
-                            <input type="text" id="search" placeholder="Search by course name, code, or institute..." class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
+                    <form method="GET" action="{{ route('admin.courses.index') }}" class="mb-6">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1">
+                                <input type="text" 
+                                       name="search" 
+                                       id="search" 
+                                       value="{{ request('search') }}" 
+                                       placeholder="Search by course name, code, institute, or category..." 
+                                       class="block w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-md">
+                                    Search
+                                </button>
+                                @if(request('search'))
+                                    <a href="{{ route('admin.courses.index') }}" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-md">
+                                        Clear
+                                    </a>
+                                @endif
+                            </div>
                         </div>
-                    </div>
+                    </form>
+                    
+                    @if(request('search'))
+                        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p class="text-sm text-blue-800">
+                                <strong>Search results for:</strong> "{{ request('search') }}" 
+                                <span class="text-blue-600">({{ $courses->total() }} {{ $courses->total() == 1 ? 'course found' : 'courses found' }})</span>
+                            </p>
+                        </div>
+                    @endif
 
                     <!-- Courses Card View (All Screens) -->
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

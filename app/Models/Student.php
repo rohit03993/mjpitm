@@ -139,6 +139,14 @@ class Student extends Authenticatable
     }
 
     /**
+     * Get semester results for this student
+     */
+    public function semesterResults()
+    {
+        return $this->hasMany(SemesterResult::class);
+    }
+
+    /**
      * Get qualifications for this student
      */
     public function qualifications()
