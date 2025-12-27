@@ -739,15 +739,10 @@ class CourseController extends Controller
                 abort(404, 'Invalid semester number.');
             }
             
-            // Ensure course is loaded
-            if (!$course || !$course->exists) {
-                abort(404, 'Course not found.');
-            }
-            
             // Check permission
             if (!$user->isSuperAdmin()) {
                 $userInstituteId = $user->institute_id ?? session('current_institute_id');
-                $courseInstituteId = $course->institute_id;
+                $courseInstituteId = $course->institute_id ?? null;
                 
                 if ($userInstituteId != $courseInstituteId) {
                     abort(403, 'You are not authorized to manage subjects for this course.');
@@ -762,15 +757,25 @@ class CourseController extends Controller
 
             return view('admin.courses.manage-semester-subjects', compact('course', 'semester', 'subjects'));
             
-        } catch (\Exception $e) {
-            \Log::error('Error in manageSemesterSubjects: ' . $e->getMessage(), [
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Database error in manageSemesterSubjects: ' . $e->getMessage(), [
                 'course_id' => $course->id ?? null,
                 'semester' => $semester ?? null,
                 'user_id' => Auth::id(),
+                'sql' => $e->getSql() ?? null,
+            ]);
+            abort(500, 'Database error occurred. Please check the logs.');
+        } catch (\Exception $e) {
+            Log::error('Error in manageSemesterSubjects: ' . $e->getMessage(), [
+                'course_id' => $course->id ?? null,
+                'semester' => $semester ?? null,
+                'user_id' => Auth::id(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
             
-            abort(500, 'An error occurred while loading the page. Please check the logs for details.');
+            abort(500, 'An error occurred: ' . $e->getMessage());
         }
     }
 
