@@ -9,6 +9,7 @@ use App\Models\Institute;
 use App\Models\CourseCategory;
 use App\Models\Subject;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -725,20 +726,52 @@ class CourseController extends Controller
      */
     public function manageSemesterSubjects(Course $course, $semester)
     {
-        $user = Auth::user();
-        
-        // Check permission
-        if (!$user->isSuperAdmin() && $course->institute_id !== $user->institute_id) {
-            abort(403, 'You are not authorized to manage subjects for this course.');
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                abort(401, 'You must be logged in to access this page.');
+            }
+            
+            // Validate semester is a positive integer
+            $semester = (int) $semester;
+            if ($semester < 1) {
+                abort(404, 'Invalid semester number.');
+            }
+            
+            // Ensure course is loaded
+            if (!$course || !$course->exists) {
+                abort(404, 'Course not found.');
+            }
+            
+            // Check permission
+            if (!$user->isSuperAdmin()) {
+                $userInstituteId = $user->institute_id ?? session('current_institute_id');
+                $courseInstituteId = $course->institute_id;
+                
+                if ($userInstituteId != $courseInstituteId) {
+                    abort(403, 'You are not authorized to manage subjects for this course.');
+                }
+            }
+
+            // Get existing subjects for this semester
+            $subjects = Subject::where('course_id', $course->id)
+                ->where('semester', $semester)
+                ->orderBy('name')
+                ->get();
+
+            return view('admin.courses.manage-semester-subjects', compact('course', 'semester', 'subjects'));
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in manageSemesterSubjects: ' . $e->getMessage(), [
+                'course_id' => $course->id ?? null,
+                'semester' => $semester ?? null,
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            abort(500, 'An error occurred while loading the page. Please check the logs for details.');
         }
-
-        // Get existing subjects for this semester
-        $subjects = Subject::where('course_id', $course->id)
-            ->where('semester', $semester)
-            ->orderBy('name')
-            ->get();
-
-        return view('admin.courses.manage-semester-subjects', compact('course', 'semester', 'subjects'));
     }
 
     /**
