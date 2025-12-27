@@ -9,6 +9,7 @@ use App\Models\Institute;
 use App\Models\CourseCategory;
 use App\Models\Subject;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -799,27 +800,55 @@ class CourseController extends Controller
             'subjects.*.practical_marks' => ['required', 'numeric', 'min:0'],
         ]);
 
-        // Delete existing subjects for this course and semester first
-        // This prevents duplicate code errors since code has a unique constraint
-        Subject::where('course_id', $course->id)
-            ->where('semester', $semester)
-            ->delete();
+        // Use database transaction to ensure data consistency
+        DB::beginTransaction();
+        
+        try {
+            // Delete existing subjects for this course and semester first
+            Subject::where('course_id', $course->id)
+                ->where('semester', $semester)
+                ->delete();
 
-        // Create new subjects
-        foreach ($validated['subjects'] as $subjectData) {
-            $totalMarks = $subjectData['theory_marks'] + $subjectData['practical_marks'];
+            // Also check and delete any subjects with the same codes globally
+            // (since code has a unique constraint, we need to remove duplicates)
+            $codesToCreate = collect($validated['subjects'])->pluck('code')->toArray();
+            Subject::whereIn('code', $codesToCreate)
+                ->where(function($query) use ($course, $semester) {
+                    $query->where('course_id', '!=', $course->id)
+                          ->orWhere('semester', '!=', $semester);
+                })
+                ->delete();
+
+            // Create new subjects
+            foreach ($validated['subjects'] as $subjectData) {
+                $totalMarks = $subjectData['theory_marks'] + $subjectData['practical_marks'];
+                
+                Subject::create([
+                    'course_id' => $course->id,
+                    'semester' => $semester,
+                    'name' => $subjectData['name'],
+                    'code' => $subjectData['code'],
+                    'theory_marks' => $subjectData['theory_marks'],
+                    'practical_marks' => $subjectData['practical_marks'],
+                    'total_marks' => $totalMarks,
+                    'credits' => 0, // Default to 0 as credits are removed
+                    'status' => 'active',
+                ]);
+            }
             
-            Subject::create([
+            DB::commit();
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error saving semester subjects: ' . $e->getMessage(), [
                 'course_id' => $course->id,
                 'semester' => $semester,
-                'name' => $subjectData['name'],
-                'code' => $subjectData['code'],
-                'theory_marks' => $subjectData['theory_marks'],
-                'practical_marks' => $subjectData['practical_marks'],
-                'total_marks' => $totalMarks,
-                'credits' => 0, // Default to 0 as credits are removed
-                'status' => 'active',
+                'user_id' => Auth::id(),
             ]);
+            
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to save subjects: ' . $e->getMessage()])
+                ->withInput();
         }
 
         return redirect()->route('admin.courses.show', $course)
