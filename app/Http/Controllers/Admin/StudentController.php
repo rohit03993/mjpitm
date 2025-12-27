@@ -485,6 +485,13 @@ class StudentController extends Controller
             }
         }
 
+        // Load published semester results
+        $publishedSemesterResults = \App\Models\SemesterResult::where('student_id', $student->id)
+            ->where('status', 'published')
+            ->with(['results.subject', 'enteredBy', 'verifiedBy'])
+            ->orderBy('semester')
+            ->get();
+
         // Mark notification as read if it exists
         $notification = RegistrationNotification::where('student_id', $student->id)
             ->whereNull('read_at')
@@ -494,7 +501,7 @@ class StudentController extends Controller
             $notification->markAsRead($user->id);
         }
 
-        return view('admin.students.show', compact('student'));
+        return view('admin.students.show', compact('student', 'publishedSemesterResults'));
     }
 
     /**

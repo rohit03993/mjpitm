@@ -34,14 +34,14 @@
     <div class="py-12">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
             @if(session('error'))
-                <div class="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div class="flex">
-                        <svg class="h-5 w-5 text-red-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg class="h-5 w-5 text-yellow-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                         <div>
-                            <h3 class="text-sm font-medium text-red-800">Error</h3>
-                            <p class="mt-1 text-sm text-red-700">{{ session('error') }}</p>
+                            <h3 class="text-sm font-medium text-yellow-800">Notice</h3>
+                            <p class="mt-1 text-sm text-yellow-700">{{ session('error') }}</p>
                         </div>
                     </div>
                 </div>
@@ -343,6 +343,67 @@
                                         @endforeach
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Past Results Section --}}
+                    @if(isset($publishedSemesterResults) && $publishedSemesterResults->count() > 0)
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Published Semester Results</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                @foreach($publishedSemesterResults as $semesterResult)
+                                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div>
+                                                <h4 class="text-lg font-bold text-gray-900">Semester {{ $semesterResult->semester }}</h4>
+                                                <p class="text-xs text-gray-600 mt-1">Academic Year: {{ $semesterResult->academic_year }}</p>
+                                            </div>
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                Published
+                                            </span>
+                                        </div>
+                                        <div class="mb-3">
+                                            <p class="text-sm text-gray-700">
+                                                <strong>Overall Percentage:</strong> 
+                                                <span class="text-lg font-bold text-indigo-600">{{ number_format($semesterResult->overall_percentage ?? 0, 2) }}%</span>
+                                            </p>
+                                            <p class="text-xs text-gray-600 mt-1">
+                                                Total Marks: {{ number_format($semesterResult->total_marks_obtained, 2) }} / {{ number_format($semesterResult->total_max_marks, 2) }}
+                                            </p>
+                                            <p class="text-xs text-gray-600">
+                                                Subjects: {{ $semesterResult->total_subjects }}
+                                            </p>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <a href="{{ route('admin.semester-results.show', $semesterResult->id) }}" 
+                                               class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-3 rounded text-center transition">
+                                                View Details
+                                            </a>
+                                            @if($semesterResult->pdf_path)
+                                                <a href="{{ route('admin.semester-results.download', $semesterResult->id) }}" 
+                                                   class="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 px-3 rounded text-center transition inline-flex items-center justify-center">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                    Download PDF
+                                                </a>
+                                            @endif
+                                        </div>
+                                        @if($semesterResult->published_at)
+                                            <p class="text-xs text-gray-500 mt-2">
+                                                Published on {{ $semesterResult->published_at->format('d M Y, h:i A') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Published Semester Results</h3>
+                            <div class="border border-gray-200 rounded-lg p-6 bg-gray-50 text-center">
+                                <p class="text-gray-500">No published results available for this student yet.</p>
                             </div>
                         </div>
                     @endif
