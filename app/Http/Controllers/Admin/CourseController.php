@@ -761,27 +761,27 @@ class CourseController extends Controller
             'subjects.*.practical_marks' => ['required', 'numeric', 'min:0'],
         ]);
 
-        // Delete existing subjects for this semester (optional - you might want to keep them)
-        // Subject::where('course_id', $course->id)->where('semester', $semester)->delete();
+        // Delete existing subjects for this course and semester first
+        // This prevents duplicate code errors since code has a unique constraint
+        Subject::where('course_id', $course->id)
+            ->where('semester', $semester)
+            ->delete();
 
-        // Create or update subjects
+        // Create new subjects
         foreach ($validated['subjects'] as $subjectData) {
             $totalMarks = $subjectData['theory_marks'] + $subjectData['practical_marks'];
             
-            Subject::updateOrCreate(
-                [
-                    'course_id' => $course->id,
-                    'semester' => $semester,
-                    'code' => $subjectData['code'],
-                ],
-                [
-                    'name' => $subjectData['name'],
-                    'theory_marks' => $subjectData['theory_marks'],
-                    'practical_marks' => $subjectData['practical_marks'],
-                    'total_marks' => $totalMarks,
-                    'status' => 'active',
-                ]
-            );
+            Subject::create([
+                'course_id' => $course->id,
+                'semester' => $semester,
+                'name' => $subjectData['name'],
+                'code' => $subjectData['code'],
+                'theory_marks' => $subjectData['theory_marks'],
+                'practical_marks' => $subjectData['practical_marks'],
+                'total_marks' => $totalMarks,
+                'credits' => 0, // Default to 0 as credits are removed
+                'status' => 'active',
+            ]);
         }
 
         return redirect()->route('admin.courses.show', $course)
