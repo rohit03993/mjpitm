@@ -175,21 +175,7 @@ Route::middleware(['auth', EnsureUserIsSuperAdmin::class])->group(function () {
     Route::get('/admin/categories/{category}/move', [\App\Http\Controllers\Admin\CourseCategoryController::class, 'move'])->name('admin.categories.move');
     Route::post('/admin/categories/{category}/move', [\App\Http\Controllers\Admin\CourseCategoryController::class, 'processMove'])->name('admin.categories.move.process');
 
-    // Course Bulk Import Routes - MUST come BEFORE resource route to avoid conflicts
-    Route::get('/admin/courses/import', [\App\Http\Controllers\Admin\CourseController::class, 'showImport'])->name('admin.courses.import');
-    Route::post('/admin/courses/import/preview', [\App\Http\Controllers\Admin\CourseController::class, 'previewImport'])->name('admin.courses.import.preview');
-    Route::post('/admin/courses/import/process', [\App\Http\Controllers\Admin\CourseController::class, 'processImport'])->name('admin.courses.import.process');
-
-    // Bulk Image Upload Routes
-    Route::get('/admin/bulk-image-upload', [\App\Http\Controllers\Admin\BulkImageUploadController::class, 'index'])->name('admin.bulk-image-upload');
-    Route::post('/admin/bulk-image-upload', [\App\Http\Controllers\Admin\BulkImageUploadController::class, 'upload'])->name('admin.bulk-image-upload.upload');
-
-    // Smart Image Assignment Routes
-    Route::get('/admin/smart-image-assignment', [\App\Http\Controllers\Admin\SmartImageController::class, 'index'])->name('admin.smart-image-assignment');
-    Route::post('/admin/smart-image-assignment', [\App\Http\Controllers\Admin\SmartImageController::class, 'assign'])->name('admin.smart-image-assignment.assign');
-    Route::post('/admin/smart-image-assignment/all', [\App\Http\Controllers\Admin\SmartImageController::class, 'assignAll'])->name('admin.smart-image-assignment.assign-all');
-
-    // Course Management Routes - ONLY Super Admin (must come AFTER import routes)
+    // Course Management Routes - ONLY Super Admin
     Route::resource('admin/courses', \App\Http\Controllers\Admin\CourseController::class)->names([
         'index' => 'admin.courses.index',
         'create' => 'admin.courses.create',

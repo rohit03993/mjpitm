@@ -5,15 +5,6 @@
                 {{ __('Courses') }}
             </h2>
             <div class="flex gap-3 flex-wrap">
-                <a href="{{ route('admin.courses.import') }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                    📥 Bulk Import
-                </a>
-                <a href="{{ route('admin.smart-image-assignment') }}" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
-                    ✨ Smart Image Assignment
-                </a>
-                <a href="{{ route('admin.bulk-image-upload') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    📸 Manual Upload
-                </a>
                 <a href="{{ route('admin.courses.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
                     + Add New Course
                 </a>
