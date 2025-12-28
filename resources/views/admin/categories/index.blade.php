@@ -112,6 +112,10 @@
                                                class="flex-1 px-3 py-2 text-xs font-medium text-center text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 transition">
                                                 Edit
                                             </a>
+                                            <a href="{{ route('admin.categories.move', $category) }}" 
+                                               class="flex-1 px-3 py-2 text-xs font-medium text-center text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 transition">
+                                                Move
+                                            </a>
                                             <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="flex-1" onsubmit="return confirm('Are you sure you want to delete this category?');">
                                                 @csrf
                                                 @method('DELETE')

@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\CourseCategory;
 use App\Models\Institute;
+use App\Models\Student;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -169,6 +172,102 @@ class CourseCategoryController extends Controller
 
         return redirect()->route('admin.categories.index')
             ->with('success', 'Course category updated successfully.');
+    }
+
+    /**
+     * Show the form for moving a category to another institute.
+     */
+    public function move(CourseCategory $category)
+    {
+        $category->load(['institute', 'courses']);
+        
+        // Get all active institutes except the current one
+        $institutes = Institute::where('status', 'active')
+            ->where('id', '!=', $category->institute_id)
+            ->get();
+        
+        // Count students enrolled in courses of this category
+        $studentsCount = Student::whereIn('course_id', $category->courses->pluck('id'))->count();
+        
+        return view('admin.categories.move', compact('category', 'institutes', 'studentsCount'));
+    }
+
+    /**
+     * Process moving a category to another institute.
+     */
+    public function processMove(Request $request, CourseCategory $category)
+    {
+        $validated = $request->validate([
+            'target_institute_id' => ['required', 'exists:institutes,id', 'different:current_institute_id'],
+        ], [
+            'target_institute_id.different' => 'The target institute must be different from the current institute.',
+        ]);
+
+        $targetInstituteId = $validated['target_institute_id'];
+        
+        // Check if category name already exists in target institute
+        $existingCategory = CourseCategory::where('institute_id', $targetInstituteId)
+            ->where('name', $category->name)
+            ->first();
+
+        if ($existingCategory) {
+            return redirect()->back()
+                ->withErrors(['target_institute_id' => "A category with the name '{$category->name}' already exists in the target institute. Please rename the category first or choose a different institute."])
+                ->withInput();
+        }
+
+        // Load relationships
+        $category->load(['courses']);
+        $courses = $category->courses;
+        $courseIds = $courses->pluck('id');
+
+        // Count students that will be affected
+        $studentsCount = Student::whereIn('course_id', $courseIds)->count();
+        
+        // Store old institute ID for logging
+        $oldInstituteId = $category->institute_id;
+
+        // Use database transaction to ensure data consistency
+        DB::beginTransaction();
+        
+        try {
+            // 1. Update category's institute_id
+            $category->update(['institute_id' => $targetInstituteId]);
+
+            // 2. Update all courses in this category to new institute
+            $category->courses()->update(['institute_id' => $targetInstituteId]);
+
+            // 3. Update all students enrolled in those courses to new institute
+            Student::whereIn('course_id', $courseIds)
+                ->update(['institute_id' => $targetInstituteId]);
+
+            DB::commit();
+
+            Log::info('Category moved successfully', [
+                'category_id' => $category->id,
+                'category_name' => $category->name,
+                'old_institute_id' => $oldInstituteId,
+                'new_institute_id' => $targetInstituteId,
+                'courses_moved' => $courses->count(),
+                'students_moved' => $studentsCount,
+            ]);
+
+            return redirect()->route('admin.categories.index')
+                ->with('success', "Category '{$category->name}' and {$courses->count()} course(s) with {$studentsCount} student(s) have been successfully moved to the new institute.");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error moving category', [
+                'category_id' => $category->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to move category: ' . $e->getMessage()])
+                ->withInput();
+        }
     }
 
     /**

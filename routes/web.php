@@ -170,6 +170,10 @@ Route::middleware(['auth', EnsureUserIsSuperAdmin::class])->group(function () {
         'update' => 'admin.categories.update',
         'destroy' => 'admin.categories.destroy',
     ]);
+    
+    // Category Move Routes
+    Route::get('/admin/categories/{category}/move', [\App\Http\Controllers\Admin\CourseCategoryController::class, 'move'])->name('admin.categories.move');
+    Route::post('/admin/categories/{category}/move', [\App\Http\Controllers\Admin\CourseCategoryController::class, 'processMove'])->name('admin.categories.move.process');
 
     // Course Bulk Import Routes - MUST come BEFORE resource route to avoid conflicts
     Route::get('/admin/courses/import', [\App\Http\Controllers\Admin\CourseController::class, 'showImport'])->name('admin.courses.import');
