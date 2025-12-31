@@ -21,9 +21,9 @@ class SemesterResultController extends Controller
     {
         $user = Auth::user();
         
-        // Check permission
-        if (!$user->isSuperAdmin() && $student->institute_id !== $user->institute_id) {
-            abort(403, 'You are not authorized to generate results for this student.');
+        // Only Super Admin can generate results
+        if (!$user->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can generate results.');
         }
 
         $student->load(['course', 'institute']);
@@ -83,9 +83,9 @@ class SemesterResultController extends Controller
     {
         $user = Auth::user();
         
-        // Check permission
-        if (!$user->isSuperAdmin() && $student->institute_id !== $user->institute_id) {
-            abort(403, 'You are not authorized to generate results for this student.');
+        // Only Super Admin can generate results
+        if (!$user->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can generate results.');
         }
 
         $validated = $request->validate([
