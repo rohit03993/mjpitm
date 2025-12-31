@@ -201,17 +201,7 @@
             </tr>
             <tr>
                 <td>Academic Year:</td>
-                <td>{{ $semesterResult->academic_year }}</td>
-                <td>Date of Issue:</td>
-                <td>
-                    @if($semesterResult->date_of_issue)
-                        {{ \Carbon\Carbon::parse($semesterResult->date_of_issue)->format('d M Y') }}
-                    @elseif($semesterResult->published_at)
-                        {{ $semesterResult->published_at->format('d M Y') }}
-                    @else
-                        {{ now()->format('d M Y') }}
-                    @endif
-                </td>
+                <td colspan="3">{{ $semesterResult->academic_year }}</td>
             </tr>
         </table>
     </div>
