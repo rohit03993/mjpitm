@@ -487,9 +487,10 @@ class StudentController extends Controller
             }
         }
 
-        // Load published semester results
+        // Load published semester results (only truly published ones)
         $publishedSemesterResults = \App\Models\SemesterResult::where('student_id', $student->id)
             ->where('status', 'published')
+            ->whereNotNull('published_at') // Ensure it's actually published (has published_at timestamp)
             ->with(['results.subject', 'enteredBy', 'verifiedBy'])
             ->orderBy('semester')
             ->get();

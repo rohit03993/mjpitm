@@ -69,14 +69,13 @@ class SemesterResultController extends Controller
         }
 
         // Get academic year from student's session (format: YYYY-YY)
-        // If student has a session, use it; otherwise use current year
-        if ($student->session) {
-            $academicYear = $student->session;
-        } else {
-            $currentYear = date('Y');
-            $nextYear = $currentYear + 1;
-            $academicYear = "{$currentYear}-{$nextYear}";
+        // ALWAYS use student's session - it's required, so it should exist
+        if (empty($student->session)) {
+            return redirect()->route('admin.students.show', $student)
+                ->with('error', 'Student session is not set. Please update the student profile with a valid session.');
         }
+        
+        $academicYear = $student->session;
 
         return view('admin.semester-results.create', compact('student', 'nextSemester', 'subjects', 'academicYear'));
     }
