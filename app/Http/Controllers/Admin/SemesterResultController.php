@@ -207,9 +207,17 @@ class SemesterResultController extends Controller
     {
         $user = Auth::user();
         
-        // Check permission
-        if (!$user->isSuperAdmin() && $semesterResult->student->institute_id !== $user->institute_id) {
-            abort(403, 'You are not authorized to view this result.');
+        // Check permission - match the same logic as StudentController@show
+        if (!$user->isSuperAdmin()) {
+            $student = $semesterResult->student;
+            $instituteId = session('current_institute_id');
+            
+            // Institute Admin can view if:
+            // 1. They created the student, OR
+            // 2. Student is from their institute (website registration - created_by is null)
+            if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
+                abort(403, 'You are not authorized to view this result.');
+            }
         }
 
         $semesterResult->load(['student.course', 'student.institute', 'results.subject', 'enteredBy', 'verifiedBy']);
@@ -224,9 +232,17 @@ class SemesterResultController extends Controller
     {
         $user = Auth::user();
         
-        // Check permission
-        if (!$user->isSuperAdmin() && $semesterResult->student->institute_id !== $user->institute_id) {
-            abort(403, 'You are not authorized to publish this result.');
+        // Check permission - match the same logic as StudentController@show
+        if (!$user->isSuperAdmin()) {
+            $student = $semesterResult->student;
+            $instituteId = session('current_institute_id');
+            
+            // Institute Admin can publish if:
+            // 1. They created the student, OR
+            // 2. Student is from their institute (website registration - created_by is null)
+            if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
+                abort(403, 'You are not authorized to publish this result.');
+            }
         }
 
         if ($semesterResult->status === 'published') {
@@ -286,9 +302,17 @@ class SemesterResultController extends Controller
     {
         $user = Auth::user();
         
-        // Check permission
-        if (!$user->isSuperAdmin() && $semesterResult->student->institute_id !== $user->institute_id) {
-            abort(403, 'You are not authorized to download this result.');
+        // Check permission - match the same logic as StudentController@show
+        if (!$user->isSuperAdmin()) {
+            $student = $semesterResult->student;
+            $instituteId = session('current_institute_id');
+            
+            // Institute Admin can download if:
+            // 1. They created the student, OR
+            // 2. Student is from their institute (website registration - created_by is null)
+            if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
+                abort(403, 'You are not authorized to download this result.');
+            }
         }
 
         if (!$semesterResult->pdf_path || !\Storage::disk('public')->exists($semesterResult->pdf_path)) {
