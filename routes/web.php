@@ -29,23 +29,35 @@ Route::get('/login-options', function () {
     return view('auth.login-options');
 })->name('login.options');
 
-// Super Admin Authentication Routes (with rate limiting: 5 attempts per minute)
-Route::middleware(['guest', 'throttle:5,1'])->group(function () {
+// Super Admin Authentication Routes
+// GET route (viewing form) - no rate limit
+Route::middleware(['guest'])->group(function () {
     Route::get('/superadmin/login', [SuperAdminAuthController::class, 'showLoginForm'])->name('superadmin.login');
+});
+// POST route (login attempt) - rate limited to 10 attempts per minute
+Route::middleware(['guest', 'throttle:10,1'])->group(function () {
     Route::post('/superadmin/login', [SuperAdminAuthController::class, 'login']);
 });
 
-// Staff Authentication Routes (with rate limiting: 5 attempts per minute)
-Route::middleware(['guest', 'throttle:5,1'])->group(function () {
+// Staff Authentication Routes
+// GET route (viewing form) - no rate limit
+Route::middleware(['guest'])->group(function () {
     Route::get('/staff/login', [StaffAuthController::class, 'showLoginForm'])->name('staff.login');
+});
+// POST route (login attempt) - rate limited to 10 attempts per minute
+Route::middleware(['guest', 'throttle:10,1'])->group(function () {
     Route::post('/staff/login', [StaffAuthController::class, 'login']);
 });
 
-// Student Authentication Routes (with rate limiting: 5 attempts per minute)
-Route::middleware(['guest', 'throttle:5,1'])->group(function () {
+// Student Authentication Routes
+// GET routes (viewing forms) - no rate limit
+Route::middleware(['guest'])->group(function () {
     Route::get('/student/login', [StudentAuthController::class, 'showLoginForm'])->name('student.login');
-    Route::post('/student/login', [StudentAuthController::class, 'login']);
     Route::get('/student/forgot-password', [StudentAuthController::class, 'showPasswordRequestForm'])->name('student.password.request');
+});
+// POST routes (login/password reset attempts) - rate limited to 10 attempts per minute
+Route::middleware(['guest', 'throttle:10,1'])->group(function () {
+    Route::post('/student/login', [StudentAuthController::class, 'login']);
     Route::post('/student/forgot-password', [StudentAuthController::class, 'sendPasswordResetLink'])->name('student.password.email');
 });
 

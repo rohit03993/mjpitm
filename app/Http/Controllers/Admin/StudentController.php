@@ -25,6 +25,7 @@ class StudentController extends Controller
     {
         $user = Auth::user();
 
+        // Load relationships - handle missing/deleted records gracefully
         $query = Student::with(['course', 'qualifications', 'institute', 'creator']);
 
         // Role-based visibility:
@@ -854,19 +855,55 @@ class StudentController extends Controller
     /**
      * Generate a unique registration number for a new student.
      *
-     * Format example: REG-2025-00123 or REG-2025-TECH-00123 (we can refine later)
+     * Format: REG-2025-00001 (consistent with PublicRegistrationController format)
      */
     protected function generateRegistrationNumber(int $instituteId): string
     {
         $year = date('Y');
-
-        // Count existing students for this year (optional per institute)
-        $sequence = Student::whereYear('created_at', $year)
-            ->where('institute_id', $instituteId)
-            ->count() + 1;
-
-        $sequencePadded = str_pad($sequence, 5, '0', STR_PAD_LEFT);
-
-        return "REG-{$year}-{$sequencePadded}";
+        $prefix = 'REG';
+        
+        // Get the last registration number for this institute and year
+        $lastStudent = Student::where('institute_id', $instituteId)
+            ->where('registration_number', 'like', $prefix . '-' . $year . '%')
+            ->orderBy('registration_number', 'desc')
+            ->first();
+        
+        if ($lastStudent && $lastStudent->registration_number) {
+            // Extract the sequence number from the last registration number
+            // Format: REG-2025-00001 -> extract 00001
+            $parts = explode('-', $lastStudent->registration_number);
+            if (count($parts) >= 3) {
+                $lastNumber = (int) $parts[2]; // Get the sequence part
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+        } else {
+            $newNumber = 1;
+        }
+        
+        // Ensure uniqueness by checking if the number already exists
+        // This handles race conditions where multiple registrations happen simultaneously
+        $maxAttempts = 100; // Safety limit
+        $attempts = 0;
+        
+        do {
+            $sequencePadded = str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+            $registrationNumber = "{$prefix}-{$year}-{$sequencePadded}";
+            
+            // Check if this registration number already exists
+            $exists = Student::where('registration_number', $registrationNumber)->exists();
+            
+            if (!$exists) {
+                return $registrationNumber;
+            }
+            
+            $newNumber++;
+            $attempts++;
+        } while ($attempts < $maxAttempts);
+        
+        // Fallback: use timestamp-based number if we can't find a unique sequence
+        $timestamp = time();
+        return "{$prefix}-{$year}-" . substr($timestamp, -5);
     }
 }
