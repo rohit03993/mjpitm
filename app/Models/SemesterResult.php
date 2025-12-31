@@ -14,6 +14,7 @@ class SemesterResult extends Model
         'course_id',
         'semester',
         'academic_year',
+        'date_of_issue',
         'total_subjects',
         'total_marks_obtained',
         'total_max_marks',
@@ -34,6 +35,7 @@ class SemesterResult extends Model
             'total_marks_obtained' => 'decimal:2',
             'total_max_marks' => 'decimal:2',
             'overall_percentage' => 'decimal:2',
+            'date_of_issue' => 'date',
             'verified_at' => 'datetime',
             'published_at' => 'datetime',
         ];

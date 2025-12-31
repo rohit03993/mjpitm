@@ -860,6 +860,10 @@ class StudentController extends Controller
             // Update admission_year to match new session
             $validated['admission_year'] = $newYear;
             
+            // Update academic_year in all existing semester results to match new session
+            \App\Models\SemesterResult::where('student_id', $student->id)
+                ->update(['academic_year' => $newSession]);
+            
             // Delete old PDFs (they will regenerate with new numbers on next view)
             $this->deleteStudentPDFs($student);
         }

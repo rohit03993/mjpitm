@@ -68,10 +68,15 @@ class SemesterResultController extends Controller
                 ->with('error', "No subjects found for Semester {$nextSemester}. Please add subjects first.");
         }
 
-        // Get current academic year (format: YYYY-YY)
-        $currentYear = date('Y');
-        $nextYear = $currentYear + 1;
-        $academicYear = "{$currentYear}-{$nextYear}";
+        // Get academic year from student's session (format: YYYY-YY)
+        // If student has a session, use it; otherwise use current year
+        if ($student->session) {
+            $academicYear = $student->session;
+        } else {
+            $currentYear = date('Y');
+            $nextYear = $currentYear + 1;
+            $academicYear = "{$currentYear}-{$nextYear}";
+        }
 
         return view('admin.semester-results.create', compact('student', 'nextSemester', 'subjects', 'academicYear'));
     }

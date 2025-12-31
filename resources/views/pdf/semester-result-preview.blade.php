@@ -213,7 +213,15 @@
                 </div>
                 <div class="info-item">
                     <span class="info-label">Date of Issue</span>
-                    <span class="info-value">{{ $semesterResult->published_at->format('d M Y') }}</span>
+                    <span class="info-value">
+                        @if($semesterResult->date_of_issue)
+                            {{ \Carbon\Carbon::parse($semesterResult->date_of_issue)->format('d M Y') }}
+                        @elseif($semesterResult->published_at)
+                            {{ $semesterResult->published_at->format('d M Y') }}
+                        @else
+                            {{ now()->format('d M Y') }}
+                        @endif
+                    </span>
                 </div>
             </div>
         </div>
