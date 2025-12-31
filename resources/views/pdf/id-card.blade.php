@@ -280,7 +280,15 @@
                     
                     <div class="info-row">
                         <span class="info-label">Session: </span>
-                        <span class="info-value">{{ $student->session ?? ($student->admission_year . '-' . ($student->admission_year + 1)) }}</span>
+                        <span class="info-value">
+                            @if($student->session)
+                                {{ $student->session }}
+                            @elseif($student->admission_year)
+                                {{ $student->admission_year }}-{{ substr($student->admission_year + 1, -2) }}
+                            @else
+                                N/A
+                            @endif
+                        </span>
                     </div>
                 </td>
             </tr>

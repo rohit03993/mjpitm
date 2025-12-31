@@ -360,7 +360,7 @@
                         <!-- Session -->
                         <div>
                             <x-input-label for="session" :value="__('Session')" />
-                            <select id="session" name="session" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
+                            <select id="session" name="session" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
                                 <option value="">Select</option>
                                 @php
                                     $currentYear = date('Y');
@@ -908,19 +908,27 @@
             @endif
         }
         
-        // Auto-populate session based on current year
+        // Auto-populate session based on current year (only if empty)
         function updateSession() {
             const currentYear = new Date().getFullYear();
             const sessionSelect = document.getElementById('session');
             const admissionYearInput = document.getElementById('admission_year');
             
+            // Only set default session if user hasn't selected one
             if (sessionSelect && !sessionSelect.value) {
-                // Set default session to current year - next year
-                const defaultSession = `${currentYear}-${currentYear + 1}`;
+                const defaultSession = `${currentYear}-${String(currentYear + 1).slice(-2)}`;
                 sessionSelect.value = defaultSession;
             }
             
-            if (admissionYearInput && !admissionYearInput.value) {
+            // Update admission year based on selected session
+            if (sessionSelect && sessionSelect.value) {
+                const selectedSession = sessionSelect.value;
+                const year = selectedSession.split('-')[0];
+                if (admissionYearInput) {
+                    admissionYearInput.value = year;
+                }
+            } else if (admissionYearInput && !admissionYearInput.value) {
+                // Only set default if admission year is also empty
                 admissionYearInput.value = currentYear;
             }
         }

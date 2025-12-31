@@ -808,20 +808,27 @@
         document.getElementById('course_duration').placeholder = '—';
     }
     
-    // Auto-populate session based on current year (always update to latest)
+    // Auto-populate session based on current year (only if empty)
     function updateSession() {
         const currentYear = new Date().getFullYear();
         const sessionSelect = document.getElementById('session');
         const admissionYearInput = document.getElementById('admission_year');
         
-        // Always set session to current year - next year (latest session)
-        if (sessionSelect) {
-            const defaultSession = `${currentYear}-${currentYear + 1}`;
+        // Only set default session if user hasn't selected one
+        if (sessionSelect && !sessionSelect.value) {
+            const defaultSession = `${currentYear}-${String(currentYear + 1).slice(-2)}`;
             sessionSelect.value = defaultSession;
         }
         
-        // Always set admission year to current year
-        if (admissionYearInput) {
+        // Update admission year based on selected session
+        if (sessionSelect && sessionSelect.value) {
+            const selectedSession = sessionSelect.value;
+            const year = selectedSession.split('-')[0];
+            if (admissionYearInput) {
+                admissionYearInput.value = year;
+            }
+        } else if (admissionYearInput && !admissionYearInput.value) {
+            // Only set default if admission year is also empty
             admissionYearInput.value = currentYear;
         }
     }

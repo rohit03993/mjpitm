@@ -292,7 +292,7 @@ class StudentController extends Controller
             // Programme Details
             'institute_id' => ['nullable', 'exists:institutes,id'], // For Super Admin
             'course_id' => ['required', 'exists:courses,id'],
-            'session' => ['nullable', 'string', 'max:255'],
+            'session' => ['required', 'string', 'max:255'],
             
             // Fee Details
             'registration_fee' => ['nullable', 'numeric', 'min:0'],

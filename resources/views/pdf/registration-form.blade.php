@@ -297,7 +297,15 @@
         <table>
             <tr>
                 <td class="course-label">SESSION:</td>
-                <td>{{ $student->session ?? $student->admission_year ?? 'N/A' }}</td>
+                <td>
+                    @if($student->session)
+                        {{ $student->session }}
+                    @elseif($student->admission_year)
+                        {{ $student->admission_year }}-{{ substr($student->admission_year + 1, -2) }}
+                    @else
+                        N/A
+                    @endif
+                </td>
             </tr>
             <tr>
                 <td class="course-label">COURSE:</td>
