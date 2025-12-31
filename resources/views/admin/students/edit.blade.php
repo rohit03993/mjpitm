@@ -449,11 +449,12 @@
                             <x-input-label for="session" :value="__('Session')" />
                             <select id="session" name="session" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Select</option>
-                                @php
-                                    $currentYear = date('Y');
-                                @endphp
-                                @for($year = date('Y'); $year <= date('Y') + 2; $year++)
-                                    <option value="{{ $year }}-{{ $year + 1 }}" {{ old('session', $student->session) == ($year . '-' . ($year + 1)) ? 'selected' : '' }}>{{ $year }}-{{ $year + 1 }}</option>
+                                @for($year = 2020; $year <= 2030; $year++)
+                                    @php
+                                        $sessionValue = $year . '-' . substr($year + 1, -2);
+                                        $sessionDisplay = $year . '-' . substr($year + 1, -2);
+                                    @endphp
+                                    <option value="{{ $sessionValue }}" {{ old('session', $student->session) == $sessionValue ? 'selected' : '' }}>{{ $sessionDisplay }}</option>
                                 @endfor
                             </select>
                             <x-input-error :messages="$errors->get('session')" class="mt-2" />

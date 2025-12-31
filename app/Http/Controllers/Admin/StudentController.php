@@ -14,6 +14,7 @@ use App\Services\InstituteAdminFeeCalculator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class StudentController extends Controller
@@ -810,6 +811,59 @@ class StudentController extends Controller
             }
         }
         
+        // Check if session changed - if so, regenerate registration and roll numbers
+        $sessionChanged = false;
+        if (isset($validated['session']) && $validated['session'] !== $student->session) {
+            $sessionChanged = true;
+            $newSession = $validated['session'];
+            $newYear = explode('-', $newSession)[0]; // Extract year (e.g., "2022-23" -> "2022")
+            
+            // Regenerate Registration Number
+            try {
+                $instituteId = $validated['institute_id'] ?? $student->institute_id;
+                $newRegNumber = $this->generateRegistrationNumberForYear($instituteId, $newYear, $student->id);
+                $validated['registration_number'] = $newRegNumber;
+            } catch (\Exception $e) {
+                return back()
+                    ->withErrors(['session' => 'Failed to generate new registration number: ' . $e->getMessage()])
+                    ->withInput();
+            }
+            
+            // Regenerate Roll Number (if student is active and has roll number)
+            if ($student->status === 'active' && $student->roll_number) {
+                try {
+                    // Reload student with relationships for roll number generation
+                    $student->load(['institute', 'course.category']);
+                    
+                    // Check prerequisites
+                    if (empty($student->institute->institute_code)) {
+                        return back()
+                            ->withErrors(['session' => 'Cannot generate roll number: Institute code is not set.'])
+                            ->withInput();
+                    }
+                    
+                    if (!$student->course || !$student->course->category || empty($student->course->category->roll_number_code)) {
+                        return back()
+                            ->withErrors(['session' => 'Cannot generate roll number: Course category does not have a roll number code.'])
+                            ->withInput();
+                    }
+                    
+                    $newRollNumber = RollNumberGenerator::generateForYear($student, $newYear);
+                    $validated['roll_number'] = $newRollNumber;
+                } catch (\Exception $e) {
+                    return back()
+                        ->withErrors(['session' => 'Failed to generate new roll number: ' . $e->getMessage()])
+                        ->withInput();
+                }
+            }
+            
+            // Update admission_year to match new session
+            $validated['admission_year'] = $newYear;
+            
+            // Delete old PDFs (they will regenerate with new numbers on next view)
+            $this->deleteStudentPDFs($student);
+        }
+        
         // Handle boolean fields
         $validated['pay_in_installment'] = $request->has('pay_in_installment') && $request->pay_in_installment == '1';
         $validated['is_employed'] = $request->has('is_employed') && $request->is_employed == '1';
@@ -840,8 +894,18 @@ class StudentController extends Controller
             }
         }
 
+        // Prepare success message
+        $successMessage = 'Student details updated successfully.';
+        if ($sessionChanged) {
+            $successMessage .= ' Registration number updated to: ' . $validated['registration_number'];
+            if (isset($validated['roll_number'])) {
+                $successMessage .= ', Roll number updated to: ' . $validated['roll_number'];
+            }
+            $successMessage .= '. Old PDFs have been deleted and will regenerate with new numbers on next view.';
+        }
+        
         return redirect()->route('admin.students.index')
-            ->with('success', 'Student details updated successfully.');
+            ->with('success', $successMessage);
     }
 
     /**
@@ -905,5 +969,93 @@ class StudentController extends Controller
         // Fallback: use timestamp-based number if we can't find a unique sequence
         $timestamp = time();
         return "{$prefix}-{$year}-" . substr($timestamp, -5);
+    }
+
+    /**
+     * Generate registration number for a specific year (used when session changes)
+     * Excludes current student from uniqueness check
+     */
+    protected function generateRegistrationNumberForYear(int $instituteId, string $year, int $excludeStudentId = null): string
+    {
+        $prefix = 'REG';
+        
+        // Get the last registration number for this institute and year
+        $query = Student::where('institute_id', $instituteId)
+            ->where('registration_number', 'like', $prefix . '-' . $year . '%');
+        
+        // Exclude current student from check
+        if ($excludeStudentId) {
+            $query->where('id', '!=', $excludeStudentId);
+        }
+        
+        $lastStudent = $query->orderBy('registration_number', 'desc')->first();
+        
+        if ($lastStudent && $lastStudent->registration_number) {
+            // Extract the sequence number from the last registration number
+            // Format: REG-2022-00001 -> extract 00001
+            $parts = explode('-', $lastStudent->registration_number);
+            if (count($parts) >= 3) {
+                $lastNumber = (int) $parts[2]; // Get the sequence part
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+        } else {
+            $newNumber = 1;
+        }
+        
+        // Ensure uniqueness by checking if the number already exists
+        $maxAttempts = 100; // Safety limit
+        $attempts = 0;
+        
+        do {
+            $sequencePadded = str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+            $registrationNumber = "{$prefix}-{$year}-{$sequencePadded}";
+            
+            // Check if this registration number already exists (excluding current student)
+            $existsQuery = Student::where('registration_number', $registrationNumber);
+            if ($excludeStudentId) {
+                $existsQuery->where('id', '!=', $excludeStudentId);
+            }
+            $exists = $existsQuery->exists();
+            
+            if (!$exists) {
+                return $registrationNumber;
+            }
+            
+            $newNumber++;
+            $attempts++;
+        } while ($attempts < $maxAttempts);
+        
+        // Fallback: use timestamp-based number if we can't find a unique sequence
+        $timestamp = time();
+        return "{$prefix}-{$year}-" . substr($timestamp, -5);
+    }
+
+    /**
+     * Delete all PDFs associated with a student when session changes
+     */
+    protected function deleteStudentPDFs(Student $student)
+    {
+        try {
+            // Delete semester result PDFs
+            $semesterResults = $student->semesterResults()->whereNotNull('pdf_path')->get();
+            foreach ($semesterResults as $result) {
+                if ($result->pdf_path && \Storage::disk('public')->exists($result->pdf_path)) {
+                    \Storage::disk('public')->delete($result->pdf_path);
+                }
+                // Clear pdf_path in database (will regenerate on next view)
+                $result->update(['pdf_path' => null]);
+            }
+            
+            // Delete entire results directory if exists
+            $resultsDir = 'results/' . $student->id;
+            if (\Storage::disk('public')->exists($resultsDir)) {
+                \Storage::disk('public')->deleteDirectory($resultsDir);
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail the update
+            Log::warning('Failed to delete PDFs for student ' . $student->id . ': ' . $e->getMessage());
+        }
     }
 }

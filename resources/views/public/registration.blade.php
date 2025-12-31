@@ -350,10 +350,14 @@
                             <option value="">Select</option>
                             @php
                                 $currentYear = date('Y');
-                                $defaultSession = $currentYear . '-' . ($currentYear + 1);
+                                $defaultSession = $currentYear . '-' . substr($currentYear + 1, -2);
                             @endphp
-                            @for($year = date('Y'); $year <= date('Y') + 2; $year++)
-                                <option value="{{ $year }}-{{ $year + 1 }}" {{ old('session', $defaultSession) == ($year . '-' . ($year + 1)) ? 'selected' : '' }}>{{ $year }}-{{ $year + 1 }}</option>
+                            @for($year = 2020; $year <= 2030; $year++)
+                                @php
+                                    $sessionValue = $year . '-' . substr($year + 1, -2);
+                                    $sessionDisplay = $year . '-' . substr($year + 1, -2);
+                                @endphp
+                                <option value="{{ $sessionValue }}" {{ old('session', $defaultSession) == $sessionValue ? 'selected' : '' }}>{{ $sessionDisplay }}</option>
                             @endfor
                         </select>
                         <x-input-error :messages="$errors->get('session')" class="mt-2" />
