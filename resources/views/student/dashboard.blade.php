@@ -357,8 +357,7 @@
                                                 <p class="text-sm text-gray-500">{{ $semesterResult->academic_year }} | Published: {{ $semesterResult->published_at->format('d M Y') }}</p>
                                             </div>
                                             <div class="text-right">
-                                                <div class="text-2xl font-bold text-gray-900">{{ $semesterResult->overall_percentage }}%</div>
-                                                <div class="text-lg font-bold text-indigo-600">{{ $semesterResult->overall_grade }}</div>
+                                                <div class="text-2xl font-bold text-gray-900">{{ number_format($semesterResult->overall_percentage ?? 0, 2) }}%</div>
                                             </div>
                                         </div>
                                         <div class="mb-3">
@@ -368,12 +367,21 @@
                                             </p>
                                         </div>
                                         <div class="flex gap-2">
+                                            <a href="{{ route('student.semester-result.view', $semesterResult->id) }}" 
+                                               target="_blank"
+                                               class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm inline-flex items-center justify-center">
+                                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                View PDF
+                                            </a>
                                             <a href="{{ route('student.semester-result.download', $semesterResult->id) }}" 
-                                               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm inline-flex items-center">
+                                               class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm inline-flex items-center justify-center">
                                                 <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                 </svg>
-                                                Download PDF
+                                                Download
                                             </a>
                                         </div>
                                     </div>

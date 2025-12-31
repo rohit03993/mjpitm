@@ -296,6 +296,31 @@ class SemesterResultController extends Controller
     }
 
     /**
+     * View PDF in browser (HTML preview)
+     */
+    public function viewPdf(SemesterResult $semesterResult)
+    {
+        $user = Auth::user();
+        
+        // Check permission - match the same logic as StudentController@show
+        if (!$user->isSuperAdmin()) {
+            $student = $semesterResult->student;
+            $instituteId = session('current_institute_id');
+            
+            // Institute Admin can view if:
+            // 1. They created the student, OR
+            // 2. Student is from their institute (website registration - created_by is null)
+            if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
+                abort(403, 'You are not authorized to view this result.');
+            }
+        }
+
+        $semesterResult->load(['student.institute', 'student.course', 'results.subject', 'enteredBy', 'verifiedBy']);
+
+        return view('pdf.semester-result-preview', compact('semesterResult'));
+    }
+
+    /**
      * Download PDF (Admin)
      */
     public function downloadPdf(SemesterResult $semesterResult)
@@ -322,6 +347,28 @@ class SemesterResultController extends Controller
         }
 
         return \Storage::disk('public')->download($semesterResult->pdf_path);
+    }
+
+    /**
+     * View PDF (Student - their own results only)
+     */
+    public function studentView(SemesterResult $semesterResult)
+    {
+        $student = Auth::guard('student')->user();
+        
+        // Check if this result belongs to the logged-in student
+        if ($semesterResult->student_id !== $student->id) {
+            abort(403, 'You are not authorized to view this result.');
+        }
+
+        // Check if result is published
+        if ($semesterResult->status !== 'published') {
+            abort(403, 'This result is not yet published.');
+        }
+
+        $semesterResult->load(['student.institute', 'student.course', 'results.subject', 'enteredBy', 'verifiedBy']);
+
+        return view('pdf.semester-result-preview', compact('semesterResult'));
     }
 
     /**

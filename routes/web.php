@@ -76,7 +76,8 @@ Route::middleware(['auth:student'])->group(function () {
     Route::get('/student/view/id-card', [\App\Http\Controllers\IdCardController::class, 'studentPreview'])->name('student.documents.view.idcard');
     Route::get('/student/download/id-card', [\App\Http\Controllers\IdCardController::class, 'studentDownload'])->name('student.documents.download.idcard');
     
-    // Student semester result download
+    // Student semester result view and download
+    Route::get('/student/semester-result/{semesterResult}/view', [\App\Http\Controllers\Admin\SemesterResultController::class, 'studentView'])->name('student.semester-result.view');
     Route::get('/student/semester-result/{semesterResult}/download', [\App\Http\Controllers\Admin\SemesterResultController::class, 'studentDownload'])->name('student.semester-result.download');
 });
 
@@ -155,6 +156,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/students/{student}/generate-semester-result', [\App\Http\Controllers\Admin\SemesterResultController::class, 'create'])->name('admin.students.generate-semester-result');
     Route::post('/admin/students/{student}/generate-semester-result', [\App\Http\Controllers\Admin\SemesterResultController::class, 'store'])->name('admin.students.generate-semester-result.store');
     Route::get('/admin/semester-results/{semesterResult}', [\App\Http\Controllers\Admin\SemesterResultController::class, 'show'])->name('admin.semester-results.show');
+    Route::get('/admin/semester-results/{semesterResult}/view', [\App\Http\Controllers\Admin\SemesterResultController::class, 'viewPdf'])->name('admin.semester-results.view');
     Route::post('/admin/semester-results/{semesterResult}/publish', [\App\Http\Controllers\Admin\SemesterResultController::class, 'publish'])->name('admin.semester-results.publish');
     Route::get('/admin/semester-results/{semesterResult}/download', [\App\Http\Controllers\Admin\SemesterResultController::class, 'downloadPdf'])->name('admin.semester-results.download');
 
