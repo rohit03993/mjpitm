@@ -12,7 +12,7 @@ class RollNumberGenerator
     /**
      * Generate a unique roll number for a student
      * Format: {INSTITUTE_CODE}{YEAR}{CATEGORY_CODE}{RANDOM_NUMBER}
-     * Example: MJPITM202501123456
+     * Example: MJPITM202201123456 (uses session year, not current year)
      * 
      * @param Student $student
      * @return string
@@ -31,8 +31,19 @@ class RollNumberGenerator
             throw new \Exception('Institute code is not set. Please set institute_code for the institute.');
         }
 
-        // Get current year (year of registration/activation)
-        $year = date('Y');
+        // Get year from student's session (e.g., "2022-23" -> "2022")
+        // Session is required, so it should always exist
+        if (empty($student->session)) {
+            throw new \Exception('Student session is required to generate roll number. Please set the student\'s session first.');
+        }
+
+        $sessionParts = explode('-', $student->session);
+        $year = $sessionParts[0] ?? date('Y'); // Extract year from session (e.g., "2022-23" -> "2022")
+        
+        // Validate year is numeric and reasonable
+        if (!is_numeric($year) || strlen($year) !== 4) {
+            throw new \Exception('Invalid session format. Session must be in format YYYY-YY (e.g., 2022-23).');
+        }
 
         // Get category code from student's course
         $course = $student->course;
@@ -50,7 +61,7 @@ class RollNumberGenerator
             throw new \Exception('Category roll number code is not set. Please set roll_number_code for the category.');
         }
 
-        // Generate unique random number (4-6 digits)
+        // Generate unique random number (4-6 digits) for the session year
         $randomNumber = static::generateUniqueRandomNumber($instituteCode, $year, $categoryCode);
 
         // Build roll number: {INSTITUTE_CODE}{YEAR}{CATEGORY_CODE}{RANDOM_NUMBER}

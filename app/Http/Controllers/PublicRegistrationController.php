@@ -265,15 +265,36 @@ class PublicRegistrationController extends Controller
         }
 
         // Generate registration number
-        $validated['registration_number'] = $this->generateRegistrationNumber($instituteId);
+        // Generate registration number using session year
+        $sessionYear = null;
+        if (isset($validated['session']) && !empty($validated['session'])) {
+            $sessionParts = explode('-', $validated['session']);
+            $sessionYear = $sessionParts[0] ?? null;
+        }
+        $validated['registration_number'] = $this->generateRegistrationNumber($instituteId, $sessionYear);
 
         // Extract qualifications
         $qualifications = $validated['qualifications'] ?? [];
         unset($validated['qualifications']);
         unset($validated['declaration_accepted']);
 
+        // Ensure session is saved (it's required, so it should be in validated)
+        if (!isset($validated['session']) || empty($validated['session'])) {
+            \Log::warning('Student registration: Session field is missing!', ['request_data' => $request->all()]);
+            return redirect()->back()
+                ->withErrors(['session' => 'Session is required. Please select a session.'])
+                ->withInput();
+        }
+
         // Create student
         $student = Student::create($validated);
+        
+        // Log to verify session was saved
+        \Log::info('Student created with session', [
+            'student_id' => $student->id,
+            'session' => $student->session,
+            'registration_number' => $student->registration_number
+        ]);
         
         // Also store encrypted plain password for Super Admin viewing
         $student->setPlainPassword($plainPassword);
@@ -326,12 +347,24 @@ class PublicRegistrationController extends Controller
 
     /**
      * Generate unique registration number
+     * Uses session year if provided, otherwise uses current year
+     * 
+     * @param int $instituteId
+     * @param string|null $sessionYear Year from session (e.g., "2022" from "2022-23")
+     * @return string
      */
-    private function generateRegistrationNumber($instituteId)
+    private function generateRegistrationNumber($instituteId, ?string $sessionYear = null)
     {
         $institute = Institute::find($instituteId);
         $prefix = $instituteId == 1 ? 'MJPITM' : 'MJPIPS';
-        $year = date('Y');
+        
+        // Use session year if provided, otherwise fallback to current year
+        $year = $sessionYear ?? date('Y');
+        
+        // Validate year format
+        if (!is_numeric($year) || strlen($year) !== 4) {
+            $year = date('Y'); // Fallback to current year if invalid
+        }
         
         // Get last registration number for this institute and year
         $lastStudent = Student::where('institute_id', $instituteId)
@@ -346,7 +379,27 @@ class PublicRegistrationController extends Controller
             $newNumber = 1;
         }
         
-        return $prefix . '-' . $year . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        // Ensure uniqueness by checking if the number already exists
+        $maxAttempts = 100;
+        $attempts = 0;
+        
+        do {
+            $registrationNumber = $prefix . '-' . $year . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+            
+            // Check if this registration number already exists
+            $exists = Student::where('registration_number', $registrationNumber)->exists();
+            
+            if (!$exists) {
+                return $registrationNumber;
+            }
+            
+            $newNumber++;
+            $attempts++;
+        } while ($attempts < $maxAttempts);
+        
+        // Fallback: use timestamp-based number if we can't find a unique sequence
+        $timestamp = time();
+        return $prefix . '-' . $year . '-' . substr($timestamp, -4);
     }
 }
 

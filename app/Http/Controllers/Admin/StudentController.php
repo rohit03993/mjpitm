@@ -406,8 +406,13 @@ class StudentController extends Controller
         // Handle boolean fields
         $validated['pay_in_installment'] = $request->has('pay_in_installment') && $request->pay_in_installment == '1';
         
-        // Generate a unique registration number for the student
-        $validated['registration_number'] = $this->generateRegistrationNumber($instituteId);
+        // Generate a unique registration number for the student using session year
+        $sessionYear = null;
+        if (isset($validated['session']) && !empty($validated['session'])) {
+            $sessionParts = explode('-', $validated['session']);
+            $sessionYear = $sessionParts[0] ?? null;
+        }
+        $validated['registration_number'] = $this->generateRegistrationNumber($instituteId, $sessionYear);
 
         // Calculate and store institute admin fee (only if student is created by an admin, not website registration)
         if ($validated['created_by']) {
@@ -421,8 +426,23 @@ class StudentController extends Controller
         $qualifications = $validated['qualifications'] ?? [];
         unset($validated['qualifications']);
         
+        // Ensure session is saved (it's required, so it should be in validated)
+        if (!isset($validated['session']) || empty($validated['session'])) {
+            \Log::warning('Admin student creation: Session field is missing!', ['request_data' => $request->all()]);
+            return redirect()->back()
+                ->withErrors(['session' => 'Session is required. Please select a session.'])
+                ->withInput();
+        }
+
         // Create student
         $student = Student::create($validated);
+        
+        // Log to verify session was saved
+        \Log::info('Student created by admin with session', [
+            'student_id' => $student->id,
+            'session' => $student->session,
+            'registration_number' => $student->registration_number
+        ]);
         
         // Also store encrypted plain password for Super Admin viewing
         $student->setPlainPassword($plainPassword);
@@ -488,9 +508,11 @@ class StudentController extends Controller
         }
 
         // Load published semester results (only truly published ones)
+        // Must have: status = 'published', published_at IS NOT NULL, and verified_at IS NOT NULL
         $publishedSemesterResults = \App\Models\SemesterResult::where('student_id', $student->id)
             ->where('status', 'published')
-            ->whereNotNull('published_at') // Ensure it's actually published (has published_at timestamp)
+            ->whereNotNull('published_at') // Must have published_at timestamp
+            ->whereNotNull('verified_at') // Must have verified_at timestamp (publish sets both)
             ->with(['results.subject', 'enteredBy', 'verifiedBy'])
             ->orderBy('semester')
             ->get();
@@ -675,6 +697,14 @@ class StudentController extends Controller
                 // Reload student with relationships for roll number generation
                 $student->load(['institute', 'course.category']);
                 
+                // Check if student has session (required for roll number generation)
+                $studentSession = $validated['session'] ?? $student->session;
+                if (empty($studentSession)) {
+                    return back()
+                        ->withErrors(['roll_number' => 'Cannot generate roll number: Student session is required. Please set the session first.'])
+                        ->withInput();
+                }
+                
                 // Check if institute has institute_code set
                 if (empty($student->institute->institute_code)) {
                     return back()
@@ -696,7 +726,7 @@ class StudentController extends Controller
                         ->withInput();
                 }
                 
-                // Auto-generate roll number
+                // Auto-generate roll number (will use session year automatically)
                 $validated['roll_number'] = RollNumberGenerator::generate($student);
             } catch (\Exception $e) {
                 return back()
@@ -926,9 +956,24 @@ class StudentController extends Controller
      *
      * Format: REG-2025-00001 (consistent with PublicRegistrationController format)
      */
-    protected function generateRegistrationNumber(int $instituteId): string
+    /**
+     * Generate a unique registration number for a student
+     * Uses session year if provided, otherwise uses current year
+     * 
+     * @param int $instituteId
+     * @param string|null $sessionYear Year from session (e.g., "2022" from "2022-23")
+     * @return string
+     */
+    protected function generateRegistrationNumber(int $instituteId, ?string $sessionYear = null): string
     {
-        $year = date('Y');
+        // Use session year if provided, otherwise fallback to current year
+        $year = $sessionYear ?? date('Y');
+        
+        // Validate year format
+        if (!is_numeric($year) || strlen($year) !== 4) {
+            $year = date('Y'); // Fallback to current year if invalid
+        }
+        
         $prefix = 'REG';
         
         // Get the last registration number for this institute and year
@@ -980,7 +1025,7 @@ class StudentController extends Controller
      * Generate registration number for a specific year (used when session changes)
      * Excludes current student from uniqueness check
      */
-    protected function generateRegistrationNumberForYear(int $instituteId, string $year, int $excludeStudentId = null): string
+    protected function generateRegistrationNumberForYear(int $instituteId, string $year, ?int $excludeStudentId = null): string
     {
         $prefix = 'REG';
         

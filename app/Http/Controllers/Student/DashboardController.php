@@ -19,8 +19,11 @@ class DashboardController extends Controller
         $student->load(['course', 'course.institute', 'results.subject', 'semesterResults.results.subject']);
 
         // Get published semester results (new system)
+        // Must have: status = 'published', published_at IS NOT NULL, and verified_at IS NOT NULL
         $publishedSemesterResults = $student->semesterResults()
             ->where('status', 'published')
+            ->whereNotNull('published_at') // Must have published_at timestamp
+            ->whereNotNull('verified_at') // Must have verified_at timestamp (publish sets both)
             ->with(['results.subject'])
             ->orderBy('semester')
             ->get();

@@ -348,7 +348,7 @@
                         <!-- Course -->
                         <div class="md:col-span-2">
                             <x-input-label for="course_id" :value="__('Course *')" />
-                            <select id="course_id" name="course_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="loadCourseFees(this.value); updateSession();">
+                            <select id="course_id" name="course_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="loadCourseFees(this.value);">
                                 <option value="">Select Course</option>
                                 @foreach($courses as $course)
                                     <option value="{{ $course->id }}" data-institute-id="{{ $course->institute_id }}" data-category-id="{{ $course->category_id }}" {{ old('course_id') == $course->id ? 'selected' : '' }}>{{ $course->name }}@if($course->category) [{{ $course->category->name }}]@endif</option>

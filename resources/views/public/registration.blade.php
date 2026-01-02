@@ -334,7 +334,7 @@
                     <!-- Course -->
                     <div class="md:col-span-2">
                         <x-input-label for="course_id" :value="__('Course *')" />
-                        <select id="course_id" name="course_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="if(this.value) { loadCourseFees(this.value); } else { clearFees(); } updateSession();">
+                        <select id="course_id" name="course_id" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required onchange="if(this.value) { loadCourseFees(this.value); } else { clearFees(); }">
                             <option value="">Select Course</option>
                             @foreach($courses as $course)
                                 <option value="{{ $course->id }}" data-category-id="{{ $course->category_id }}" {{ (old('course_id') == $course->id || (isset($selectedCourse) && $selectedCourse && $selectedCourse->id == $course->id)) ? 'selected' : '' }}>{{ $course->name }}@if($course->category) [{{ $course->category->name }}]@endif</option>
@@ -809,18 +809,19 @@
     }
     
     // Auto-populate session based on current year (only if empty)
+    // DO NOT call this when course changes - it will preserve user's session selection
     function updateSession() {
         const currentYear = new Date().getFullYear();
         const sessionSelect = document.getElementById('session');
         const admissionYearInput = document.getElementById('admission_year');
         
-        // Only set default session if user hasn't selected one
+        // Only set default session if user hasn't selected one AND form hasn't been touched
         if (sessionSelect && !sessionSelect.value) {
             const defaultSession = `${currentYear}-${String(currentYear + 1).slice(-2)}`;
             sessionSelect.value = defaultSession;
         }
         
-        // Update admission year based on selected session
+        // Update admission year based on selected session (but don't change session)
         if (sessionSelect && sessionSelect.value) {
             const selectedSession = sessionSelect.value;
             const year = selectedSession.split('-')[0];
@@ -832,6 +833,22 @@
             admissionYearInput.value = currentYear;
         }
     }
+    
+    // Prevent form submission if session is not selected
+    document.addEventListener('DOMContentLoaded', function() {
+        const registrationForm = document.querySelector('form');
+        if (registrationForm) {
+            registrationForm.addEventListener('submit', function(e) {
+                const sessionSelect = document.getElementById('session');
+                if (!sessionSelect || !sessionSelect.value) {
+                    e.preventDefault();
+                    alert('Please select a session before submitting the form.');
+                    sessionSelect.focus();
+                    return false;
+                }
+            });
+        }
+    });
 
     // Populate states dropdown and pre-select old value if present
     function initStatesAndDistricts() {
