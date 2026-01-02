@@ -354,7 +354,7 @@
                                         <div class="flex justify-between items-start mb-3">
                                             <div>
                                                 <h4 class="text-lg font-semibold text-gray-900">Semester {{ $semesterResult->semester }}</h4>
-                                                <p class="text-sm text-gray-500">{{ $semesterResult->academic_year }} | Published: {{ $semesterResult->published_at->format('d M Y') }}</p>
+                                                <p class="text-sm text-gray-500">{{ $semesterResult->academic_year }}</p>
                                             </div>
                                             <div class="text-right">
                                                 <div class="text-2xl font-bold text-gray-900">{{ number_format($semesterResult->overall_percentage ?? 0, 2) }}%</div>

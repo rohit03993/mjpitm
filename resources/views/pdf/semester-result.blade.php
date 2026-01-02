@@ -433,9 +433,6 @@
                         </td>
                     </tr>
                 </table>
-                <div class="date-section">
-                    Date: {{ ($semesterResult->published_at ?? now())->format('d F Y') }}
-                </div>
             </div>
 
             <!-- Footer -->

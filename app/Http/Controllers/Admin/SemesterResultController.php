@@ -28,6 +28,16 @@ class SemesterResultController extends Controller
 
         $student->load(['course', 'institute']);
 
+        // First check if there are ANY subjects for this course
+        $totalSubjects = Subject::where('course_id', $student->course_id)
+            ->where('status', 'active')
+            ->count();
+
+        if ($totalSubjects === 0) {
+            return redirect()->route('admin.students.show', $student)
+                ->with('error', 'No subjects have been added for this course. Please add subjects first before generating results.');
+        }
+
         // Get all published semester results for this student
         $publishedSemesters = SemesterResult::where('student_id', $student->id)
             ->where('status', 'published')

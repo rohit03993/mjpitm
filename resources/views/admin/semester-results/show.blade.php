@@ -144,7 +144,6 @@
                                 Download PDF
                             </a>
                         </div>
-                        <p class="text-sm text-gray-500 mt-2">Published on: {{ $semesterResult->published_at->format('d M Y, h:i A') }}</p>
                     </div>
                 </div>
             @endif

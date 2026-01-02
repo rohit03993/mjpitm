@@ -406,11 +406,6 @@
                                                 Download
                                             </a>
                                         </div>
-                                        @if($semesterResult->published_at)
-                                            <p class="text-xs text-gray-500 mt-2">
-                                                Published on {{ $semesterResult->published_at->format('d M Y, h:i A') }}
-                                            </p>
-                                        @endif
                                     </div>
                                     @endif
                                 @endforeach
