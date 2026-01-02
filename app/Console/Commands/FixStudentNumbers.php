@@ -198,7 +198,7 @@ class FixStudentNumbers extends Command
     /**
      * Generate registration number for a specific year
      */
-    protected function generateRegistrationNumberForYear(int $instituteId, string $year, int $excludeStudentId = null): string
+    protected function generateRegistrationNumberForYear(int $instituteId, string $year, ?int $excludeStudentId = null): string
     {
         $prefix = 'REG';
 
