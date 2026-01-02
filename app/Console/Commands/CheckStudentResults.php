@@ -40,7 +40,7 @@ class CheckStudentResults extends Command
         $this->info("ID: {$student->id}");
         $this->info("Name: {$student->name}");
         $this->info("Status: {$student->status}");
-        $session = $student->session ? $student->session : 'NOT SET';
+        $session = !empty($student->session) ? $student->session : 'NOT SET';
         $this->info("Session: {$session}");
         $this->newLine();
 
