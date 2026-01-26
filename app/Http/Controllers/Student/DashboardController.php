@@ -22,6 +22,7 @@ class DashboardController extends Controller
         // Must have: status = 'published', published_at IS NOT NULL, verified_at IS NOT NULL, and verified_by IS NOT NULL
         // This ensures results were explicitly published through the publish workflow, not just created with published status
         // Also ensure published_at is not in the future (data integrity check)
+        // Additionally, only show results that have at least one associated Result record (ensures data completeness)
         $publishedSemesterResults = $student->semesterResults()
             ->where('status', 'published') // Only published status
             ->whereNotNull('published_at') // Must have published_at timestamp
@@ -29,6 +30,10 @@ class DashboardController extends Controller
             ->whereNotNull('verified_by') // Must have verified_by (ensures it went through publish workflow)
             ->where('published_at', '<=', now()) // Ensure not in future
             ->where('verified_at', '<=', now()) // Ensure not in future
+            ->whereHas('results', function($query) {
+                // Only show if it has at least one result record that's published
+                $query->where('status', 'published');
+            })
             ->with(['results.subject'])
             ->orderBy('semester')
             ->get();
