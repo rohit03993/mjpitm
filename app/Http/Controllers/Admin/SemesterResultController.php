@@ -28,16 +28,6 @@ class SemesterResultController extends Controller
 
         $student->load(['course', 'institute']);
 
-        // First check if there are ANY subjects for this course
-        $totalSubjects = Subject::where('course_id', $student->course_id)
-            ->where('status', 'active')
-            ->count();
-
-        if ($totalSubjects === 0) {
-            return redirect()->route('admin.students.show', $student)
-                ->with('error', 'No subjects have been added for this course. Please add subjects first before generating results.');
-        }
-
         // Get all semesters that have subjects defined for this course
         $availableSemesters = Subject::where('course_id', $student->course_id)
             ->where('status', 'active')
@@ -45,6 +35,21 @@ class SemesterResultController extends Controller
             ->pluck('semester')
             ->sort()
             ->values();
+
+        // If no subjects exist at all, check if there are published results
+        if ($availableSemesters->isEmpty()) {
+            $publishedResults = SemesterResult::where('student_id', $student->id)
+                ->where('status', 'published')
+                ->count();
+            
+            if ($publishedResults > 0) {
+                return redirect()->route('admin.students.show', $student)
+                    ->with('error', 'No active subjects are currently configured for this course. However, published results exist. Please add subjects for the next semester before generating new results.');
+            }
+            
+            return redirect()->route('admin.students.show', $student)
+                ->with('error', 'No subjects have been added for this course. Please add subjects first before generating results.');
+        }
 
         // Find next semester to generate
         // Priority: 1) Draft results (can be edited), 2) Published results with zero marks (can be regenerated), 3) Unpublished semesters
@@ -88,7 +93,7 @@ class SemesterResultController extends Controller
 
         if (!$nextSemester) {
             return redirect()->route('admin.students.show', $student)
-                ->with('error', 'All available semesters have been published for this student.');
+                ->with('error', 'All available semesters have been published for this student. Please add subjects for a new semester to generate more results.');
         }
         
         // If there's a draft result, redirect to edit it instead
@@ -105,8 +110,20 @@ class SemesterResultController extends Controller
             ->get();
 
         if ($subjects->isEmpty()) {
+            // Check if there are published results for context
+            $publishedCount = SemesterResult::where('student_id', $student->id)
+                ->where('status', 'published')
+                ->count();
+            
+            $message = "No subjects found for Semester {$nextSemester}.";
+            if ($publishedCount > 0) {
+                $message .= " Published results exist, but subjects for the next semester need to be added.";
+            } else {
+                $message .= " Please add subjects first.";
+            }
+            
             return redirect()->route('admin.students.show', $student)
-                ->with('error', "No subjects found for Semester {$nextSemester}. Please add subjects first.");
+                ->with('error', $message);
         }
 
         // Get academic year from student's session (format: YYYY-YY)
