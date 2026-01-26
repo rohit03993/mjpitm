@@ -92,8 +92,24 @@ class SemesterResultController extends Controller
         }
 
         if (!$nextSemester) {
+            // Get published semesters to provide better context
+            $publishedSemesters = SemesterResult::where('student_id', $student->id)
+                ->where('status', 'published')
+                ->pluck('semester')
+                ->toArray();
+            
+            // Find the highest semester number
+            $maxSemester = $availableSemesters->max() ?? 0;
+            $nextSemesterNumber = $maxSemester + 1;
+            
+            $message = 'All semesters with subjects have been published for this student. ';
+            if (!empty($publishedSemesters)) {
+                $message .= 'Published semesters: ' . implode(', ', $publishedSemesters) . '. ';
+            }
+            $message .= "Please add subjects for Semester {$nextSemesterNumber} (or a higher semester) to generate more results.";
+            
             return redirect()->route('admin.students.show', $student)
-                ->with('error', 'All available semesters have been published for this student. Please add subjects for a new semester to generate more results.');
+                ->with('error', $message);
         }
         
         // If there's a draft result, redirect to edit it instead
