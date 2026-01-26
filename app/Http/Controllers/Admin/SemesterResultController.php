@@ -38,12 +38,6 @@ class SemesterResultController extends Controller
                 ->with('error', 'No subjects have been added for this course. Please add subjects first before generating results.');
         }
 
-        // Get all published semester results for this student
-        $publishedSemesters = SemesterResult::where('student_id', $student->id)
-            ->where('status', 'published')
-            ->pluck('semester')
-            ->toArray();
-
         // Get all semesters that have subjects defined for this course
         $availableSemesters = Subject::where('course_id', $student->course_id)
             ->where('status', 'active')
@@ -52,18 +46,55 @@ class SemesterResultController extends Controller
             ->sort()
             ->values();
 
-        // Find next semester to generate (first semester that's not published)
+        // Find next semester to generate
+        // Priority: 1) Draft results (can be edited), 2) Published results with zero marks (can be regenerated), 3) Unpublished semesters
         $nextSemester = null;
+        $existingDraftResult = null;
+        
         foreach ($availableSemesters as $sem) {
-            if (!in_array($sem, $publishedSemesters)) {
+            // First check if there's a draft result for this semester (can be edited)
+            $draftResult = SemesterResult::where('student_id', $student->id)
+                ->where('semester', $sem)
+                ->where('status', 'draft')
+                ->first();
+            
+            if ($draftResult) {
                 $nextSemester = $sem;
+                $existingDraftResult = $draftResult;
                 break;
             }
+            
+            // Check if there's a published result with zero marks (can be regenerated)
+            $publishedResult = SemesterResult::where('student_id', $student->id)
+                ->where('semester', $sem)
+                ->where('status', 'published')
+                ->first();
+            
+            if ($publishedResult) {
+                // Check if the published result has actual marks (not all zeros)
+                // If total_marks_obtained is 0 or null, allow regenerating
+                if ($publishedResult->total_marks_obtained == 0 || $publishedResult->total_marks_obtained === null) {
+                    $nextSemester = $sem;
+                    break;
+                }
+                // If it has marks, skip this semester
+                continue;
+            }
+            
+            // No result exists for this semester, use it
+            $nextSemester = $sem;
+            break;
         }
 
         if (!$nextSemester) {
             return redirect()->route('admin.students.show', $student)
                 ->with('error', 'All available semesters have been published for this student.');
+        }
+        
+        // If there's a draft result, redirect to edit it instead
+        if ($existingDraftResult) {
+            return redirect()->route('admin.semester-results.show', $existingDraftResult)
+                ->with('info', 'A draft result already exists for this semester. You can review and publish it, or delete it to create a new one.');
         }
 
         // Get subjects for the next semester
@@ -111,16 +142,35 @@ class SemesterResultController extends Controller
             'subjects.*.practical_marks_obtained' => ['required', 'numeric', 'min:0'],
         ]);
 
-        // Check if semester result already exists and is published
+        // Check if semester result already exists
         $existingResult = SemesterResult::where('student_id', $student->id)
             ->where('semester', $validated['semester'])
-            ->where('status', 'published')
             ->first();
 
         if ($existingResult) {
-            return redirect()->back()
-                ->withErrors(['semester' => 'Result for this semester is already published.'])
-                ->withInput();
+            // If it's published and has actual marks, don't allow overwriting
+            if ($existingResult->status === 'published' && $existingResult->total_marks_obtained > 0) {
+                return redirect()->back()
+                    ->withErrors(['semester' => 'Result for this semester is already published with marks.'])
+                    ->withInput();
+            }
+            
+            // If it's published with zero marks or draft, delete it first (we'll create a new one)
+            // This allows regenerating results that were auto-published with zero marks
+            if ($existingResult->status === 'published' && ($existingResult->total_marks_obtained == 0 || $existingResult->total_marks_obtained === null)) {
+                // Delete associated results first
+                $existingResult->results()->delete();
+                // Delete PDF if exists
+                if ($existingResult->pdf_path && \Storage::disk('public')->exists($existingResult->pdf_path)) {
+                    \Storage::disk('public')->delete($existingResult->pdf_path);
+                }
+                // Delete the semester result
+                $existingResult->delete();
+            } elseif ($existingResult->status === 'draft') {
+                // Delete draft result to create a fresh one
+                $existingResult->results()->delete();
+                $existingResult->delete();
+            }
         }
 
         // Get subjects to validate marks
