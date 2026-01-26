@@ -508,12 +508,14 @@ class StudentController extends Controller
         }
 
         // Load published semester results (only truly published ones)
-        // Must have: status = 'published', published_at IS NOT NULL, and verified_at IS NOT NULL
+        // Must have: status = 'published', published_at IS NOT NULL, verified_at IS NOT NULL, and verified_by IS NOT NULL
+        // This ensures results were explicitly published through the publish workflow, not just created with published status
         // Also ensure published_at is not in the future (data integrity check)
         $publishedSemesterResults = \App\Models\SemesterResult::where('student_id', $student->id)
             ->where('status', 'published') // Only published status
             ->whereNotNull('published_at') // Must have published_at timestamp
             ->whereNotNull('verified_at') // Must have verified_at timestamp (publish sets both)
+            ->whereNotNull('verified_by') // Must have verified_by (ensures it went through publish workflow)
             ->where('published_at', '<=', now()) // Ensure not in future
             ->where('verified_at', '<=', now()) // Ensure not in future
             ->with(['results.subject', 'enteredBy', 'verifiedBy'])
