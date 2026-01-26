@@ -39,7 +39,7 @@ class SemesterResultController extends Controller
         // If no subjects exist at all, check if there are published results
         if ($availableSemesters->isEmpty()) {
             $publishedResults = SemesterResult::where('student_id', $student->id)
-                ->where('status', 'published')
+                ->trulyPublished()
                 ->count();
             
             if ($publishedResults > 0) {
@@ -70,9 +70,10 @@ class SemesterResultController extends Controller
             }
             
             // Check if there's a published result with zero marks (can be regenerated)
+            // Use trulyPublished scope to ensure consistency
             $publishedResult = SemesterResult::where('student_id', $student->id)
                 ->where('semester', $sem)
-                ->where('status', 'published')
+                ->trulyPublished()
                 ->first();
             
             if ($publishedResult) {
@@ -93,8 +94,15 @@ class SemesterResultController extends Controller
 
         if (!$nextSemester) {
             // Get published semesters to provide better context
+            // Use the SAME criteria as StudentController to check if truly published
             $publishedSemesters = SemesterResult::where('student_id', $student->id)
                 ->where('status', 'published')
+                ->whereNotNull('published_at')
+                ->whereNotNull('verified_at')
+                ->whereNotNull('verified_by')
+                ->whereHas('results', function($query) {
+                    $query->where('status', 'published');
+                })
                 ->pluck('semester')
                 ->toArray();
             
@@ -181,16 +189,16 @@ class SemesterResultController extends Controller
             ->first();
 
         if ($existingResult) {
-            // If it's published and has actual marks, don't allow overwriting
-            if ($existingResult->status === 'published' && $existingResult->total_marks_obtained > 0) {
+            // If it's truly published and has actual marks, don't allow overwriting
+            if ($existingResult->isTrulyPublished() && $existingResult->total_marks_obtained > 0) {
                 return redirect()->back()
                     ->withErrors(['semester' => 'Result for this semester is already published with marks.'])
                     ->withInput();
             }
             
-            // If it's published with zero marks or draft, delete it first (we'll create a new one)
+            // If it's published (but not truly published) with zero marks or draft, delete it first (we'll create a new one)
             // This allows regenerating results that were auto-published with zero marks
-            if ($existingResult->status === 'published' && ($existingResult->total_marks_obtained == 0 || $existingResult->total_marks_obtained === null)) {
+            if ($existingResult->status === 'published' && !$existingResult->isTrulyPublished() && ($existingResult->total_marks_obtained == 0 || $existingResult->total_marks_obtained === null)) {
                 // Delete associated results first
                 $existingResult->results()->delete();
                 // Delete PDF if exists

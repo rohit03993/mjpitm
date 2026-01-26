@@ -91,4 +91,40 @@ class SemesterResult extends Model
             // Grade calculation removed - not needed
         }
     }
+
+    /**
+     * Scope to get only truly published results
+     * Ensures results went through the proper publish workflow
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeTrulyPublished($query)
+    {
+        return $query->where('status', 'published')
+            ->whereNotNull('published_at')
+            ->whereNotNull('verified_at')
+            ->whereNotNull('verified_by')
+            ->where('published_at', '<=', now())
+            ->where('verified_at', '<=', now())
+            ->whereHas('results', function($q) {
+                $q->where('status', 'published');
+            });
+    }
+
+    /**
+     * Check if this result is truly published
+     * 
+     * @return bool
+     */
+    public function isTrulyPublished()
+    {
+        return $this->status === 'published'
+            && $this->published_at !== null
+            && $this->verified_at !== null
+            && $this->verified_by !== null
+            && $this->published_at <= now()
+            && $this->verified_at <= now()
+            && $this->results()->where('status', 'published')->exists();
+    }
 }
