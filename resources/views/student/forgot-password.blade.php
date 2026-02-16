@@ -67,7 +67,7 @@
 
                 <div>
                     <label for="identifier" class="block text-sm font-medium text-gray-700 mb-1">
-                        Registration / Roll Number
+                        Registration / Enrollment No
                     </label>
                     <input 
                         id="identifier" 

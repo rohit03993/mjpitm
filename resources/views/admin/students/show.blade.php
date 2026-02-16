@@ -26,7 +26,7 @@
                 @endif
                 @if(auth()->user() && auth()->user()->isSuperAdmin())
                     <a href="{{ route('admin.students.edit', $student->id) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
-                        Edit Status & Roll No.
+                        Edit Status & Enrollment No.
                     </a>
                 @endif
             </div>
@@ -97,7 +97,7 @@
                                 {{ $student->registration_number ?? 'N/A' }}
                             </p>
                             <p class="text-sm text-gray-700 mt-1">
-                                <strong>Roll Number:</strong>
+                                <strong>Enrollment No:</strong>
                                 {{ $student->roll_number ?? 'Not assigned' }}
                             </p>
                             <p class="text-sm text-gray-700 mt-1 flex items-center">
@@ -444,7 +444,7 @@
                         @endif
                         @if(auth()->user() && auth()->user()->isSuperAdmin())
                             <a href="{{ route('admin.students.edit', $student->id) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded">
-                                Edit Status & Roll No.
+                                Edit Status & Enrollment No.
                             </a>
                         @endif
                     </div>

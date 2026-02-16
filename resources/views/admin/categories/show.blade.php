@@ -43,7 +43,7 @@
                             <p class="mt-1 text-lg text-gray-900">{{ $category->display_order }}</p>
                         </div>
                         <div>
-                            <h4 class="text-sm font-medium text-gray-500">Roll Number Code</h4>
+                            <h4 class="text-sm font-medium text-gray-500">Enrollment Number Code</h4>
                             @if($category->roll_number_code)
                                 <p class="mt-1 text-lg font-bold text-purple-600">{{ $category->roll_number_code }}</p>
                             @else

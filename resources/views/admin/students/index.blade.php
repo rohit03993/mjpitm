@@ -191,7 +191,7 @@
                                                 Reg: {{ $student->registration_number ?? 'N/A' }}
                                             </p>
                                             @if($student->roll_number)
-                                                <p class="text-xs text-gray-500">Roll: {{ $student->roll_number }}</p>
+                                                <p class="text-xs text-gray-500">Enrollment No: {{ $student->roll_number }}</p>
                                             @endif
                                         </div>
                                     </div>

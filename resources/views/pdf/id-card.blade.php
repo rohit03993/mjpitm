@@ -256,7 +256,7 @@
                             </td>
                             <td class="roll-cell">
                                 <div class="roll-box">
-                                    <span class="roll-label">Roll No: </span>
+                                    <span class="roll-label">Enrollment No: </span>
                                     <span class="roll-value">{{ $student->roll_number ?? 'N/A' }}</span>
                                 </div>
                             </td>

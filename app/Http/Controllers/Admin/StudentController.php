@@ -865,7 +865,7 @@ class StudentController extends Controller
                     $validated['roll_number'] = $newRollNumber;
                 } catch (\Exception $e) {
                     return back()
-                        ->withErrors(['session' => 'Failed to generate new roll number: ' . $e->getMessage()])
+                        ->withErrors(['session' => 'Failed to generate new enrollment number: ' . $e->getMessage()])
                         ->withInput();
                 }
             }
@@ -921,7 +921,7 @@ class StudentController extends Controller
         if ($sessionChanged) {
             $successMessage .= ' Registration number updated to: ' . $validated['registration_number'];
             if (isset($validated['roll_number'])) {
-                $successMessage .= ', Roll number updated to: ' . $validated['roll_number'];
+                $successMessage .= ', Enrollment No updated to: ' . $validated['roll_number'];
             }
             $successMessage .= '. Old PDFs have been deleted and will regenerate with new numbers on next view.';
         }

@@ -76,7 +76,7 @@
                                         </span>
                                         @if($student->roll_number)
                                         <span class="bg-yellow-400 bg-opacity-30 px-3 py-1 rounded-full">
-                                            <strong>Roll:</strong> {{ $student->roll_number }}
+                                            <strong>Enrollment No:</strong> {{ $student->roll_number }}
                                         </span>
                                         @endif
                                         <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full {{ $student->status === 'active' ? 'bg-green-400' : 'bg-yellow-400' }}">

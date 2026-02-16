@@ -131,7 +131,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                     @if($tab === 'students')
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No.</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll No.</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrollment No</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
                                     @else
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
@@ -255,7 +255,7 @@
                                             <span class="text-sm text-gray-900">{{ $user->registration_number ?? 'N/A' }}</span>
                                         </div>
                                         <div class="flex items-start">
-                                            <span class="text-xs font-medium text-gray-500 w-32 flex-shrink-0">Roll No.:</span>
+                                            <span class="text-xs font-medium text-gray-500 w-32 flex-shrink-0">Enrollment No:</span>
                                             <span class="text-sm text-gray-900">{{ $user->roll_number ?? 'N/A' }}</span>
                                         </div>
                                         <div class="flex items-start">

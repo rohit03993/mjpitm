@@ -40,15 +40,15 @@
                 @csrf
                 @method('PUT')
 
-                <!-- Status and Roll Number Section -->
+                <!-- Status and Enrollment No Section -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 bg-purple-50 border-b border-purple-200">
-                        <h3 class="text-lg font-semibold text-purple-900">Status & Roll Number</h3>
+                        <h3 class="text-lg font-semibold text-purple-900">Status & Enrollment No</h3>
                     </div>
                     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Roll Number -->
+                        <!-- Enrollment No -->
                         <div>
-                            <x-input-label for="roll_number" :value="__('Roll Number')" />
+                            <x-input-label for="roll_number" :value="__('Enrollment No')" />
                             <x-text-input
                                 id="roll_number"
                                 class="block mt-1 w-full"

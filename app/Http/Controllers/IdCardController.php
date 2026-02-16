@@ -17,7 +17,7 @@ class IdCardController extends Controller
         // Check if student is active and has roll number
         if ($student->status !== 'active' || empty($student->roll_number)) {
             return redirect()->back()
-                ->with('error', 'ID Card can only be generated for active students with a roll number.');
+                ->with('error', 'ID Card can only be generated for active students with an enrollment number.');
         }
 
         // Check permission - Super Admin can view all, Staff can view students they created
@@ -40,7 +40,7 @@ class IdCardController extends Controller
         // Check if student is active and has roll number
         if ($student->status !== 'active' || empty($student->roll_number)) {
             return redirect()->back()
-                ->with('error', 'ID Card can only be generated for active students with a roll number.');
+                ->with('error', 'ID Card can only be generated for active students with an enrollment number.');
         }
 
         // Check permission - Super Admin can view all, Staff can view students they created

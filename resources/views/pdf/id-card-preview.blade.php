@@ -285,7 +285,7 @@
                             <div class="name-roll-row">
                                 <div class="student-name">{{ $student->name }}</div>
                                 <div class="roll-box">
-                                    <span class="roll-label">Roll No: </span>
+                                    <span class="roll-label">Enrollment No: </span>
                                     <span class="roll-value">{{ $student->roll_number }}</span>
                                 </div>
                             </div>
@@ -333,7 +333,7 @@
                     <p class="font-medium">{{ $student->name }}</p>
                 </div>
                 <div>
-                    <p class="text-gray-500">Roll Number</p>
+                    <p class="text-gray-500">Enrollment No</p>
                     <p class="font-medium">{{ $student->roll_number }}</p>
                 </div>
                 <div>

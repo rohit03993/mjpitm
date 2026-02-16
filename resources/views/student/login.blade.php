@@ -64,9 +64,9 @@
                 @csrf
 
                 <div class="rounded-md shadow-sm space-y-3">
-                    <!-- Registration / Roll Number -->
+                    <!-- Registration / Enrollment No -->
                     <div>
-                        <label for="identifier" class="block text-sm font-medium text-gray-700 mb-1">Registration / Roll Number</label>
+                        <label for="identifier" class="block text-sm font-medium text-gray-700 mb-1">Registration / Enrollment No</label>
                         <input 
                             id="identifier" 
                             name="identifier" 
