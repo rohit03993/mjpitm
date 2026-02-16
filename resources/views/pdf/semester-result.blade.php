@@ -4,199 +4,208 @@
     <meta charset="UTF-8">
     <title>Result Cum Details Marks Certificate - {{ $semesterResult->student->name }}</title>
     <style>
-        @page {
-            margin: 0;
-            size: A4;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        @page { margin: 0; size: A4; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
             font-size: 10px;
-            line-height: 1.4;
-            color: #000;
+            line-height: 1.5;
+            color: #1f2937;
             background: #fff;
         }
         .marksheet-container {
             width: 100%;
             min-height: 100vh;
-            border: 8px solid #87CEEB;
+            border: 3px solid #1e3a5f;
             position: relative;
             background: #fff;
-            padding: 15mm;
+            padding: 18mm;
         }
         .watermark {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.05;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0.03;
             z-index: 0;
             pointer-events: none;
         }
         .watermark-text {
             position: absolute;
-            font-size: 80px;
+            font-size: 72px;
             font-weight: bold;
-            color: #000;
-            transform: rotate(-45deg);
-            white-space: nowrap;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
+            color: #1e3a5f;
+            letter-spacing: 4px;
+            top: 50%; left: 50%;
+            margin-top: -24px; margin-left: -180px;
         }
-        .content {
-            position: relative;
-            z-index: 1;
-        }
+        .content { position: relative; z-index: 1; }
         .header {
             text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid #1e3a5f;
         }
-        .serial-number {
-            text-align: right;
-            font-size: 9px;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .institute-logo {
-            margin: 10px 0;
-        }
+        .institute-logo { margin: 12px 0; }
         .institute-logo img {
-            max-height: 60px;
-            max-width: 200px;
+            max-height: 100px;
+            max-width: 280px;
         }
         .institute-name-hindi {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
-            margin: 8px 0;
-            text-transform: uppercase;
+            margin: 6px 0;
+            color: #1e3a5f;
+            letter-spacing: 0.5px;
         }
         .institute-name-english {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
-            margin: 5px 0;
-            text-transform: uppercase;
+            margin: 4px 0;
+            color: #334155;
+            letter-spacing: 1px;
         }
         .accreditation {
-            font-size: 7px;
-            line-height: 1.3;
+            font-size: 6.5px;
+            line-height: 1.35;
             margin: 8px 0;
             text-align: center;
+            color: #64748b;
         }
-        .accreditation-line {
-            margin: 2px 0;
+        .accreditation-line { margin: 2px 0; }
+        .cert-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin-top: 14px;
+            letter-spacing: 2px;
+            color: #1e3a5f;
+            text-transform: uppercase;
         }
         .examination-details {
-            margin: 15px 0;
-            padding: 10px;
-            border: 1px solid #000;
+            margin: 14px 0;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #1e3a5f;
         }
-        .examination-details table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+        .examination-details table { width: 100%; border-collapse: collapse; }
         .examination-details td {
-            padding: 4px 8px;
+            padding: 6px 10px;
             font-size: 9px;
-            border: 1px solid #000;
+            border: none;
         }
         .examination-details td:first-child {
             font-weight: bold;
-            width: 25%;
-            background: #f0f0f0;
+            width: 28%;
+            color: #475569;
+        }
+        .examination-details td:last-child {
+            font-weight: bold;
+            color: #1e3a5f;
+            font-size: 10px;
         }
         .student-details {
-            margin: 15px 0;
-            padding: 10px;
-            border: 1px solid #000;
+            margin: 14px 0;
+            padding: 0;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
         }
-        .student-details table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+        .student-details table { width: 100%; border-collapse: collapse; }
+        .student-details tr:nth-child(odd) { background: #fff; }
+        .student-details tr:nth-child(even) { background: #f1f5f9; }
         .student-details td {
-            padding: 4px 8px;
+            padding: 6px 12px;
             font-size: 9px;
-            border: 1px solid #000;
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
         }
         .student-details td:first-child {
             font-weight: bold;
-            width: 25%;
-            background: #f0f0f0;
+            width: 28%;
+            color: #475569;
+        }
+        .section-label {
+            background: #1e3a5f;
+            color: #fff;
+            padding: 6px 12px;
+            font-size: 8px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
         .marks-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 15px 0;
-            border: 1px solid #000;
+            margin: 14px 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
         }
         .marks-table th {
-            background: #1e40af;
-            color: white;
-            padding: 8px 5px;
-            font-size: 9px;
+            background: #1e3a5f;
+            color: #fff;
+            padding: 9px 6px;
+            font-size: 8px;
             font-weight: bold;
             text-align: center;
-            border: 1px solid #000;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
         .marks-table td {
-            padding: 6px 5px;
+            padding: 7px 6px;
             font-size: 9px;
             text-align: center;
-            border: 1px solid #000;
+            border-bottom: 1px solid #e2e8f0;
         }
+        .marks-table tbody tr:nth-child(even) { background: #f8fafc; }
         .marks-table td:first-child,
         .marks-table td:nth-child(2) {
             text-align: left;
-            padding-left: 8px;
+            padding-left: 12px;
         }
+        .marks-table td:nth-child(2) { font-weight: bold; color: #334155; }
         .total-row {
-            background: #e0e0e0;
+            background: #1e3a5f !important;
+            color: #fff;
             font-weight: bold;
         }
+        .total-row td { border-bottom: none; }
         .result-summary {
-            margin: 15px 0;
-            padding: 10px;
-            border: 1px solid #000;
+            margin: 14px 0;
+            padding: 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 2px;
         }
-        .result-summary table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+        .result-summary table { width: 100%; border-collapse: collapse; }
         .result-summary td {
-            padding: 4px 8px;
+            padding: 6px 10px;
             font-size: 9px;
-            border: 1px solid #000;
+            border: none;
         }
         .result-summary td:first-child {
             font-weight: bold;
-            width: 30%;
-            background: #f0f0f0;
+            width: 28%;
+            color: #475569;
         }
+        .result-summary .highlight { font-size: 11px; font-weight: bold; color: #1e3a5f; }
         .grading-notes {
-            font-size: 8px;
-            margin: 10px 0;
-            line-height: 1.5;
+            font-size: 7.5px;
+            margin: 0 0 12px 0;
+            line-height: 1.6;
+            color: #64748b;
         }
-        .grading-notes ol {
-            margin-left: 20px;
-        }
+        .grading-notes ol { margin-left: 18px; }
         .footer {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 2px solid #000;
+            margin-top: 22px;
+            padding-top: 16px;
+            border-top: 2px solid #e2e8f0;
         }
         .signature-section {
             display: table;
             width: 100%;
-            margin-top: 20px;
+            margin-top: 18px;
         }
         .signature-box {
             display: table-cell;
@@ -205,48 +214,35 @@
             vertical-align: bottom;
         }
         .signature-seal {
-            margin: 10px auto;
-            width: 80px;
-            height: 80px;
-            border: 2px solid #000;
+            margin: 0 auto 6px;
+            width: 72px;
+            height: 72px;
+            border: 2px solid #1e3a5f;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 7px;
+            font-size: 6.5px;
             text-align: center;
-            background: #f9f9f9;
+            background: #f8fafc;
+            padding: 8px;
         }
         .signature-label {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: bold;
-            margin-top: 5px;
+            color: #475569;
+            letter-spacing: 0.5px;
         }
         .logos-section {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            margin-top: 15px;
-            padding: 10px 0;
+            display: table;
+            width: 100%;
+            margin-top: 16px;
+            padding: 12px 0;
         }
         .logo-item {
+            display: table-cell;
             text-align: center;
+            width: 33%;
         }
-        .logo-item img {
-            max-height: 40px;
-            max-width: 80px;
-        }
-        .logo-item-text {
-            font-size: 7px;
-            margin-top: 3px;
-            font-weight: bold;
-        }
-        .date-section {
-            text-align: right;
-            margin-top: 10px;
-            font-size: 9px;
-            font-weight: bold;
-        }
+        .logo-item img { max-height: 36px; max-width: 70px; }
+        .logo-item-text { font-size: 6.5px; margin-top: 3px; font-weight: bold; color: #64748b; }
     </style>
 </head>
 <body>
@@ -264,8 +260,6 @@
         <div class="content">
             <!-- Header -->
             <div class="header">
-                <div class="serial-number">Sr. No.: {{ str_pad($semesterResult->id, 8, '0', STR_PAD_LEFT) }}</div>
-                
                 <div class="institute-logo">
                     @php
                         $logoPath = $semesterResult->student->institute_id == 1 
@@ -301,38 +295,23 @@
                     @endif
                 </div>
 
-                <div style="font-size: 16px; font-weight: bold; margin-top: 10px; text-transform: uppercase;">
-                    Result Cum Details Marks Certificate
-                </div>
+                <div class="cert-title">Result Cum Details Marks Certificate</div>
+                <div style="width: 60px; height: 2px; background: #1e3a5f; margin: 8px auto 0;"></div>
             </div>
 
             <!-- Examination Details -->
             <div class="examination-details">
                 <table>
                     <tr>
-                        <td>Examination session:</td>
-                        <td>
-                            @php
-                                $sessionParts = explode('-', $semesterResult->academic_year);
-                                $startYear = $sessionParts[0];
-                                $endYear = isset($sessionParts[1]) ? '20' . $sessionParts[1] : ($startYear + 1);
-                            @endphp
-                            JULY {{ $startYear }} - JUNE {{ $endYear }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Roll No.:</td>
-                        <td><strong>{{ $semesterResult->student->roll_number ?? $semesterResult->student->registration_number }}</strong></td>
-                    </tr>
-                    <tr>
                         <td>Enrollment No:</td>
-                        <td>{{ $semesterResult->student->registration_number ?? 'N/A' }}</td>
+                        <td>{{ $semesterResult->student->roll_number ?? $semesterResult->student->registration_number ?? 'N/A' }}</td>
                     </tr>
                 </table>
             </div>
 
             <!-- Student Details -->
             <div class="student-details">
+                <div class="section-label">Candidate &amp; Programme Details</div>
                 <table>
                     <tr>
                         <td>Student's Name:</td>
@@ -356,7 +335,14 @@
                     </tr>
                     <tr>
                         <td>Semester/Year:</td>
-                        <td>{{ $semesterResult->semester }}{{ $semesterResult->semester == 1 ? 'ST' : ($semesterResult->semester == 2 ? 'ND' : ($semesterResult->semester == 3 ? 'RD' : 'TH')) }} YEAR</td>
+                        <td>
+                            @php
+                                $sem = (int) $semesterResult->semester;
+                                $yearNum = (int) ceil($sem / 2);
+                                $yearOrd = $yearNum == 1 ? '1ST' : ($yearNum == 2 ? '2ND' : ($yearNum == 3 ? '3RD' : $yearNum . 'TH'));
+                            @endphp
+                            SEMESTER {{ $sem }}, {{ $yearOrd }} YEAR
+                        </td>
                     </tr>
                     <tr>
                         <td>Institute:</td>
@@ -366,6 +352,7 @@
             </div>
 
             <!-- Marks Table -->
+            <div class="section-label" style="margin-top: 18px;">Statement of Marks</div>
             <table class="marks-table">
                 <thead>
                     <tr>
@@ -411,12 +398,11 @@
                 <table style="margin-top: 10px;">
                     <tr>
                         <td>Percentage:</td>
-                        <td><strong>{{ number_format($semesterResult->overall_percentage ?? 0, 2) }}%</strong></td>
+                        <td class="highlight">{{ number_format($semesterResult->overall_percentage ?? 0, 2) }}%</td>
                     </tr>
                     <tr>
                         <td>Division:</td>
-                        <td>
-                            <strong>
+                        <td class="highlight">
                                 @php
                                     $percentage = $semesterResult->overall_percentage ?? 0;
                                     if ($percentage >= 55) {
@@ -429,7 +415,6 @@
                                         echo 'Fail';
                                     }
                                 @endphp
-                            </strong>
                         </td>
                     </tr>
                 </table>

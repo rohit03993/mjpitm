@@ -150,14 +150,14 @@ class SemesterResultController extends Controller
                 ->with('error', $message);
         }
 
-        // Get academic year from student's session (format: YYYY-YY)
-        // ALWAYS use student's session - it's required, so it should exist
+        // Get academic year from student's session and semester (multi-semester logic)
+        // Sem 1–2 = first academic year (session as-is), Sem 3–4 = second year, Sem 5–6 = third year, etc.
         if (empty($student->session)) {
             return redirect()->route('admin.students.show', $student)
                 ->with('error', 'Student session is not set. Please update the student profile with a valid session.');
         }
         
-        $academicYear = $student->session;
+        $academicYear = $this->getAcademicYearForSemester($student->session, $nextSemester);
 
         return view('admin.semester-results.create', compact('student', 'nextSemester', 'subjects', 'academicYear'));
     }
@@ -176,12 +176,26 @@ class SemesterResultController extends Controller
 
         $validated = $request->validate([
             'semester' => ['required', 'integer', 'min:1'],
-            'academic_year' => ['required', 'string', 'max:255'],
+            'academic_year' => ['nullable', 'string', 'max:255'],
             'subjects' => ['required', 'array', 'min:1'],
             'subjects.*.subject_id' => ['required', 'exists:subjects,id'],
             'subjects.*.theory_marks_obtained' => ['required', 'numeric', 'min:0'],
             'subjects.*.practical_marks_obtained' => ['required', 'numeric', 'min:0'],
         ]);
+
+        // Override academic_year with computed value from session + semester (multi-semester logic)
+        if (empty($student->session)) {
+            return redirect()->back()
+                ->withErrors(['academic_year' => 'Student session is not set. Please update the student profile with a valid session.'])
+                ->withInput();
+        }
+        $computedAcademicYear = $this->getAcademicYearForSemester($student->session, $validated['semester']);
+        if ($request->filled('academic_year') && $request->input('academic_year') !== $computedAcademicYear) {
+            return redirect()->back()
+                ->withErrors(['academic_year' => 'Academic year must match the value derived from student session and semester.'])
+                ->withInput();
+        }
+        $validated['academic_year'] = $computedAcademicYear;
 
         // Check if semester result already exists
         $existingResult = SemesterResult::where('student_id', $student->id)
@@ -451,7 +465,8 @@ class SemesterResultController extends Controller
             return $pdf->download('Semester-' . $semesterResult->semester . '-Result-' . $semesterResult->student->roll_number . '.pdf');
         }
 
-        return \Storage::disk('public')->download($semesterResult->pdf_path);
+        $fullPath = storage_path('app/public/' . $semesterResult->pdf_path);
+        return response()->download($fullPath, basename($semesterResult->pdf_path));
     }
 
     /**
@@ -499,7 +514,8 @@ class SemesterResultController extends Controller
             return $pdf->download('Semester-' . $semesterResult->semester . '-Result-' . $semesterResult->student->roll_number . '.pdf');
         }
 
-        return \Storage::disk('public')->download($semesterResult->pdf_path);
+        $fullPath = storage_path('app/public/' . $semesterResult->pdf_path);
+        return response()->download($fullPath, basename($semesterResult->pdf_path));
     }
 
     /**
@@ -514,5 +530,35 @@ class SemesterResultController extends Controller
         $pdf->setOption('enable-local-file-access', true);
         
         return $pdf;
+    }
+
+    /**
+     * Compute academic year for a given semester based on student session.
+     * Assumes 2 semesters per academic year:
+     *   Sem 1–2 → first year (session as-is, e.g. 2025-26)
+     *   Sem 3–4 → second year (e.g. 2026-27)
+     *   Sem 5–6 → third year (e.g. 2027-28)
+     *
+     * @param string $session Student session (e.g. "2025-26")
+     * @param int $semester Semester number (1, 2, 3, ...)
+     * @return string Academic year (e.g. "2025-26", "2026-27")
+     */
+    private function getAcademicYearForSemester(string $session, int $semester): string
+    {
+        $semester = max(1, (int) $semester);
+        $yearIndex = (int) ceil($semester / 2) - 1; // 0 for 1,2; 1 for 3,4; 2 for 5,6
+
+        if ($yearIndex === 0) {
+            return $session;
+        }
+
+        $parts = explode('-', trim($session));
+        $startYear = isset($parts[0]) && is_numeric($parts[0]) ? (int) $parts[0] : (int) date('Y');
+        $endShort = isset($parts[1]) && is_numeric($parts[1]) ? (int) $parts[1] : ($startYear % 100) + 1;
+
+        $newStart = $startYear + $yearIndex;
+        $newEnd = $endShort + $yearIndex;
+
+        return $newStart . '-' . str_pad((string) $newEnd, 2, '0', STR_PAD_LEFT);
     }
 }

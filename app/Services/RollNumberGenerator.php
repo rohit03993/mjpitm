@@ -10,9 +10,9 @@ use Illuminate\Support\Str;
 class RollNumberGenerator
 {
     /**
-     * Generate a unique roll number for a student
-     * Format: {INSTITUTE_CODE}{YEAR}{CATEGORY_CODE}{RANDOM_NUMBER}
-     * Example: MJPITM202201123456 (uses session year, not current year)
+     * Generate a unique enrollment number (roll number) for a student
+     * Format: {INSTITUTE_PREFIX}{SESSION_YEAR_2_DIGITS}{STUDENT_NUMBER}
+     * Example: MJPITM2001000 (MJPITM + 20 from 2020-21 + 01000 starting from 1000)
      * 
      * @param Student $student
      * @return string
@@ -20,188 +20,163 @@ class RollNumberGenerator
      */
     public static function generate(Student $student): string
     {
-        // Get institute code
+        // Get institute prefix (MJPITM or MJPIPS)
         $institute = $student->institute;
         if (!$institute) {
             throw new \Exception('Student must have an institute assigned.');
         }
 
-        $instituteCode = $institute->institute_code;
-        if (empty($instituteCode)) {
-            throw new \Exception('Institute code is not set. Please set institute_code for the institute.');
-        }
+        // Determine institute prefix based on institute_id
+        $institutePrefix = $institute->id == 1 ? 'MJPITM' : 'MJPIPS';
 
-        // Get year from student's session (e.g., "2022-23" -> "2022")
+        // Get 2-digit year from student's session (e.g., "2020-21" -> "20")
         // Session is required, so it should always exist
         if (empty($student->session)) {
-            throw new \Exception('Student session is required to generate roll number. Please set the student\'s session first.');
+            throw new \Exception('Student session is required to generate enrollment number. Please set the student\'s session first.');
         }
 
         $sessionParts = explode('-', $student->session);
-        $year = $sessionParts[0] ?? date('Y'); // Extract year from session (e.g., "2022-23" -> "2022")
+        $fullYear = $sessionParts[0] ?? date('Y'); // Extract year from session (e.g., "2020-21" -> "2020")
         
         // Validate year is numeric and reasonable
-        if (!is_numeric($year) || strlen($year) !== 4) {
-            throw new \Exception('Invalid session format. Session must be in format YYYY-YY (e.g., 2022-23).');
+        if (!is_numeric($fullYear) || strlen($fullYear) !== 4) {
+            throw new \Exception('Invalid session format. Session must be in format YYYY-YY (e.g., 2020-21).');
         }
 
-        // Get category code from student's course
-        $course = $student->course;
-        if (!$course) {
-            throw new \Exception('Student must have a course assigned.');
-        }
+        // Extract last 2 digits of year (e.g., "2020" -> "20")
+        $yearTwoDigits = substr($fullYear, -2);
 
-        $category = $course->category;
-        if (!$category) {
-            throw new \Exception('Course must have a category assigned.');
-        }
+        // Generate unique sequential student number starting from 1000
+        $studentNumber = static::generateUniqueStudentNumber($institutePrefix, $yearTwoDigits, $student->id);
 
-        $categoryCode = $category->roll_number_code;
-        if (empty($categoryCode)) {
-            throw new \Exception('Category roll number code is not set. Please set roll_number_code for the category.');
-        }
+        // Build enrollment number: {INSTITUTE_PREFIX}{YEAR_2_DIGITS}{STUDENT_NUMBER}
+        // Example: MJPITM2001000
+        $enrollmentNumber = $institutePrefix . $yearTwoDigits . $studentNumber;
 
-        // Generate unique random number (4-6 digits) for the session year
-        $randomNumber = static::generateUniqueRandomNumber($instituteCode, $year, $categoryCode);
-
-        // Build roll number: {INSTITUTE_CODE}{YEAR}{CATEGORY_CODE}{RANDOM_NUMBER}
-        $rollNumber = $instituteCode . $year . $categoryCode . $randomNumber;
-
-        return $rollNumber;
+        return $enrollmentNumber;
     }
 
     /**
-     * Generate a unique random number (4-6 digits) that doesn't exist
+     * Generate a unique sequential student number starting from 1000
+     * Format: 5 digits (01000, 01001, 01002, etc.)
      * 
-     * @param string $instituteCode
-     * @param string $year
-     * @param string $categoryCode
+     * @param string $institutePrefix (MJPITM or MJPIPS)
+     * @param string $yearTwoDigits (e.g., "20" from 2020-21)
+     * @param int|null $excludeStudentId Student ID to exclude from check (for session changes)
      * @return string
      */
-    protected static function generateUniqueRandomNumber(string $instituteCode, string $year, string $categoryCode): string
+    protected static function generateUniqueStudentNumber(string $institutePrefix, string $yearTwoDigits, ?int $excludeStudentId = null): string
     {
-        $maxAttempts = 100; // Prevent infinite loop
-        $attempt = 0;
-
-        do {
-            // Generate random number: 4-6 digits (1000 to 999999)
-            $randomNumber = str_pad((string)rand(1000, 999999), 4, '0', STR_PAD_LEFT);
+        // Build prefix to search for existing enrollment numbers
+        $prefix = $institutePrefix . $yearTwoDigits;
+        
+        // Get the last enrollment number for this institute and year
+        $query = Student::where('roll_number', 'like', $prefix . '%')
+            ->whereNotNull('roll_number');
+        
+        if ($excludeStudentId) {
+            $query->where('id', '!=', $excludeStudentId);
+        }
+        
+        $lastStudent = $query->orderBy('roll_number', 'desc')->first();
+        
+        $nextNumber = 1000; // Start from 1000
+        
+        if ($lastStudent && $lastStudent->roll_number) {
+            // Extract student number from enrollment number
+            // Format: MJPITM2001000 -> extract 01000 (last 5 digits)
+            $lastEnrollmentNumber = $lastStudent->roll_number;
             
-            // Build the prefix to check
-            $prefix = $instituteCode . $year . $categoryCode;
+            // Remove prefix to get the number part
+            $numberPart = substr($lastEnrollmentNumber, strlen($prefix));
             
-            // Check if this roll number already exists
-            $exists = Student::where('roll_number', $prefix . $randomNumber)->exists();
-            
-            $attempt++;
-            
-            if ($attempt >= $maxAttempts) {
-                // If we can't find a unique number, use timestamp-based approach
-                $randomNumber = substr(str_replace('.', '', microtime(true)), -6);
+            if (is_numeric($numberPart)) {
+                $lastNumber = (int)$numberPart;
+                // If last number is less than 1000, start from 1000
+                // Otherwise, increment from last number
+                $nextNumber = max(1000, $lastNumber + 1);
             }
-        } while ($exists && $attempt < $maxAttempts);
-
-        return $randomNumber;
-    }
-
-    /**
-     * Generate roll number for a specific year (used when session changes)
-     * Format: {INSTITUTE_CODE}{YEAR}{CATEGORY_CODE}{RANDOM_NUMBER}
-     * 
-     * @param Student $student
-     * @param string $year Year to use in roll number (e.g., "2022")
-     * @return string
-     * @throws \Exception
-     */
-    public static function generateForYear(Student $student, string $year): string
-    {
-        // Get institute code
-        $institute = $student->institute;
-        if (!$institute) {
-            throw new \Exception('Student must have an institute assigned.');
         }
-
-        $instituteCode = $institute->institute_code;
-        if (empty($instituteCode)) {
-            throw new \Exception('Institute code is not set. Please set institute_code for the institute.');
-        }
-
-        // Get category code from student's course
-        $course = $student->course;
-        if (!$course) {
-            throw new \Exception('Student must have a course assigned.');
-        }
-
-        $category = $course->category;
-        if (!$category) {
-            throw new \Exception('Course must have a category assigned.');
-        }
-
-        $categoryCode = $category->roll_number_code;
-        if (empty($categoryCode)) {
-            throw new \Exception('Category roll number code is not set. Please set roll_number_code for the category.');
-        }
-
-        // Generate unique random number (4-6 digits) for the specified year
-        $randomNumber = static::generateUniqueRandomNumberForYear($instituteCode, $year, $categoryCode, $student->id);
-
-        // Build roll number: {INSTITUTE_CODE}{YEAR}{CATEGORY_CODE}{RANDOM_NUMBER}
-        $rollNumber = $instituteCode . $year . $categoryCode . $randomNumber;
-
-        return $rollNumber;
-    }
-
-    /**
-     * Generate a unique random number for a specific year (excludes current student)
-     * 
-     * @param string $instituteCode
-     * @param string $year
-     * @param string $categoryCode
-     * @param int|null $excludeStudentId
-     * @return string
-     */
-    protected static function generateUniqueRandomNumberForYear(string $instituteCode, string $year, string $categoryCode, int $excludeStudentId = null): string
-    {
-        $maxAttempts = 100; // Prevent infinite loop
-        $attempt = 0;
-
+        
+        // Ensure uniqueness by checking if the number already exists
+        $maxAttempts = 1000; // Allow up to 1000 attempts
+        $attempts = 0;
+        
         do {
-            // Generate random number: 4-6 digits (1000 to 999999)
-            $randomNumber = str_pad((string)rand(1000, 999999), 4, '0', STR_PAD_LEFT);
+            $studentNumber = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+            $enrollmentNumber = $prefix . $studentNumber;
             
-            // Build the prefix to check
-            $prefix = $instituteCode . $year . $categoryCode;
-            
-            // Check if this roll number already exists (excluding current student)
-            $existsQuery = Student::where('roll_number', $prefix . $randomNumber);
+            // Check if this enrollment number already exists
+            $existsQuery = Student::where('roll_number', $enrollmentNumber);
             if ($excludeStudentId) {
                 $existsQuery->where('id', '!=', $excludeStudentId);
             }
             $exists = $existsQuery->exists();
             
-            $attempt++;
-            
-            if ($attempt >= $maxAttempts) {
-                // If we can't find a unique number, use timestamp-based approach
-                $randomNumber = substr(str_replace('.', '', microtime(true)), -6);
+            if (!$exists) {
+                return $studentNumber;
             }
-        } while ($exists && $attempt < $maxAttempts);
-
-        return $randomNumber;
+            
+            $nextNumber++;
+            $attempts++;
+        } while ($attempts < $maxAttempts);
+        
+        // Fallback: use timestamp-based number if we can't find a unique sequence
+        $timestamp = time();
+        return substr($timestamp, -5);
     }
 
     /**
-     * Validate if a roll number format is correct
+     * Generate enrollment number for a specific year (used when session changes)
+     * Format: {INSTITUTE_PREFIX}{SESSION_YEAR_2_DIGITS}{STUDENT_NUMBER}
      * 
-     * @param string $rollNumber
+     * @param Student $student
+     * @param string $year Full year to use (e.g., "2020" from "2020-21")
+     * @return string
+     * @throws \Exception
+     */
+    public static function generateForYear(Student $student, string $year): string
+    {
+        // Get institute prefix (MJPITM or MJPIPS)
+        $institute = $student->institute;
+        if (!$institute) {
+            throw new \Exception('Student must have an institute assigned.');
+        }
+
+        // Determine institute prefix based on institute_id
+        $institutePrefix = $institute->id == 1 ? 'MJPITM' : 'MJPIPS';
+
+        // Validate year is numeric and reasonable
+        if (!is_numeric($year) || strlen($year) !== 4) {
+            throw new \Exception('Invalid year format. Year must be 4 digits (e.g., 2020).');
+        }
+
+        // Extract last 2 digits of year (e.g., "2020" -> "20")
+        $yearTwoDigits = substr($year, -2);
+
+        // Generate unique sequential student number starting from 1000
+        $studentNumber = static::generateUniqueStudentNumber($institutePrefix, $yearTwoDigits, $student->id);
+
+        // Build enrollment number: {INSTITUTE_PREFIX}{YEAR_2_DIGITS}{STUDENT_NUMBER}
+        // Example: MJPITM2001000
+        $enrollmentNumber = $institutePrefix . $yearTwoDigits . $studentNumber;
+
+        return $enrollmentNumber;
+    }
+
+
+    /**
+     * Validate if an enrollment number format is correct
+     * Format: {INSTITUTE_PREFIX}{SESSION_YEAR_2_DIGITS}{STUDENT_NUMBER}
+     * Example: MJPITM2001000 (MJPITM + 20 + 01000)
+     * 
+     * @param string $enrollmentNumber
      * @return bool
      */
-    public static function validateFormat(string $rollNumber): bool
+    public static function validateFormat(string $enrollmentNumber): bool
     {
-        // Basic validation: should be alphanumeric and reasonable length
-        // Format: {INSTITUTE_CODE}{YEAR}{CATEGORY_CODE}{RANDOM_NUMBER}
-        // Minimum: 6 chars (e.g., ABC202401) + 4 digits = 10 chars
-        // Maximum: 10 chars (institute) + 4 (year) + 3 (category) + 6 (random) = 23 chars
-        return preg_match('/^[A-Z0-9]{10,23}$/i', $rollNumber) === 1;
+        // Format: MJPITM or MJPIPS (6 chars) + 2 digits (year) + 5 digits (student number) = 13 chars
+        // Example: MJPITM2001000
+        return preg_match('/^(MJPITM|MJPIPS)\d{7}$/i', $enrollmentNumber) === 1;
     }
 }

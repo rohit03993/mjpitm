@@ -181,9 +181,9 @@ class PublicRegistrationController extends Controller
             'country' => ['nullable', 'string', 'max:255'],
             'nationality' => ['nullable', 'string', 'max:255'],
             
-            // Course Details
-            'course_id' => ['required', 'exists:courses,id'],
-            'session' => ['required', 'string', 'max:255'],
+            // Course Details (course must belong to the selected institute)
+            'course_id' => ['required', Rule::exists('courses', 'id')->where('institute_id', $instituteId)],
+            'session' => ['required', 'string', 'max:255', 'regex:/^\d{4}-\d{2}$/'],
             
             // Login Credentials
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -205,13 +205,9 @@ class PublicRegistrationController extends Controller
             'qualifications.*.percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'qualifications.*.cgpa' => ['nullable', 'numeric', 'min:0', 'max:10'],
             'qualifications.*.subjects' => ['nullable', 'string', 'max:500'],
+        ], [], [
+            'session.regex' => 'Session must be in YYYY-YY format (e.g. 2025-26).',
         ]);
-
-        // Verify course belongs to the institute
-        $course = Course::findOrFail($validated['course_id']);
-        if ($course->institute_id != $instituteId) {
-            return redirect()->back()->withErrors(['course_id' => 'Selected course does not belong to this institute.'])->withInput();
-        }
 
         // Handle file uploads
         if ($request->hasFile('photo')) {
@@ -347,16 +343,17 @@ class PublicRegistrationController extends Controller
 
     /**
      * Generate unique registration number
+     * Format: REG-{YEAR}-{STUDENT_NUMBER}
+     * Example: REG-2025-05000 (starting from 5000)
      * Uses session year if provided, otherwise uses current year
      * 
      * @param int $instituteId
-     * @param string|null $sessionYear Year from session (e.g., "2022" from "2022-23")
+     * @param string|null $sessionYear Year from session (e.g., "2025" from "2025-26")
      * @return string
      */
     private function generateRegistrationNumber($instituteId, ?string $sessionYear = null)
     {
-        $institute = Institute::find($instituteId);
-        $prefix = $instituteId == 1 ? 'MJPITM' : 'MJPIPS';
+        $prefix = 'REG';
         
         // Use session year if provided, otherwise fallback to current year
         $year = $sessionYear ?? date('Y');
@@ -366,25 +363,32 @@ class PublicRegistrationController extends Controller
             $year = date('Y'); // Fallback to current year if invalid
         }
         
-        // Get last registration number for this institute and year
-        $lastStudent = Student::where('institute_id', $instituteId)
-            ->where('registration_number', 'like', $prefix . '-' . $year . '%')
+        // Get last registration number for this year (format: REG-{YEAR}-{NUMBER})
+        $lastStudent = Student::where('registration_number', 'like', $prefix . '-' . $year . '-%')
             ->orderBy('registration_number', 'desc')
             ->first();
         
+        $nextNumber = 5000; // Start from 5000
+        
         if ($lastStudent && $lastStudent->registration_number) {
-            $lastNumber = (int) substr($lastStudent->registration_number, -4);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
+            // Extract the sequence number from the last registration number
+            // Format: REG-2025-05000 -> extract 05000
+            $parts = explode('-', $lastStudent->registration_number);
+            if (count($parts) >= 3) {
+                $lastNumber = (int) $parts[2]; // Get the sequence part
+                // If last number is less than 5000, start from 5000
+                // Otherwise, increment from last number
+                $nextNumber = max(5000, $lastNumber + 1);
+            }
         }
         
         // Ensure uniqueness by checking if the number already exists
-        $maxAttempts = 100;
+        $maxAttempts = 1000; // Allow up to 1000 attempts
         $attempts = 0;
         
         do {
-            $registrationNumber = $prefix . '-' . $year . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+            $sequencePadded = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+            $registrationNumber = "{$prefix}-{$year}-{$sequencePadded}";
             
             // Check if this registration number already exists
             $exists = Student::where('registration_number', $registrationNumber)->exists();
@@ -393,13 +397,13 @@ class PublicRegistrationController extends Controller
                 return $registrationNumber;
             }
             
-            $newNumber++;
+            $nextNumber++;
             $attempts++;
         } while ($attempts < $maxAttempts);
         
         // Fallback: use timestamp-based number if we can't find a unique sequence
         $timestamp = time();
-        return $prefix . '-' . $year . '-' . substr($timestamp, -4);
+        return "{$prefix}-{$year}-" . substr($timestamp, -5);
     }
 }
 

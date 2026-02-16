@@ -291,8 +291,8 @@ class StudentController extends Controller
             
             // Programme Details
             'institute_id' => ['nullable', 'exists:institutes,id'], // For Super Admin
-            'course_id' => ['required', 'exists:courses,id'],
-            'session' => ['required', 'string', 'max:255'],
+            'course_id' => ['required', Rule::exists('courses', 'id')->where('institute_id', $instituteId)],
+            'session' => ['required', 'string', 'max:255', 'regex:/^\d{4}-\d{2}$/'],
             
             // Fee Details
             'registration_fee' => ['nullable', 'numeric', 'min:0'],
@@ -324,6 +324,8 @@ class StudentController extends Controller
             'qualifications.*.percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'qualifications.*.cgpa' => ['nullable', 'string'],
             'qualifications.*.subjects' => ['nullable', 'string'],
+        ], [], [
+            'session.regex' => 'Session must be in YYYY-YY format (e.g. 2025-26).',
         ]);
         
         // Handle document uploads
@@ -639,8 +641,8 @@ class StudentController extends Controller
             
             // Programme Details
             'institute_id' => ['required', 'exists:institutes,id'],
-            'course_id' => ['required', 'exists:courses,id'],
-            'session' => ['nullable', 'string', 'max:255'],
+            'course_id' => ['required', Rule::exists('courses', 'id')->where('institute_id', $instituteId)],
+            'session' => ['nullable', 'string', 'max:255', 'regex:/^\d{4}-\d{2}$/'],
             'admission_year' => ['nullable', 'string', 'max:255'],
             'mode_of_study' => ['nullable', 'string', 'max:255'],
             'admission_type' => ['nullable', 'string', 'max:255'],
@@ -684,6 +686,8 @@ class StudentController extends Controller
             'qualifications.*.percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'qualifications.*.cgpa' => ['nullable', 'string'],
             'qualifications.*.subjects' => ['nullable', 'string'],
+        ], [], [
+            'session.regex' => 'Session must be in YYYY-YY format (e.g. 2025-26).',
         ]);
 
         // Auto-generate roll number when status is active and roll_number is empty
@@ -695,49 +699,35 @@ class StudentController extends Controller
                 // Reload student with relationships for roll number generation
                 $student->load(['institute', 'course.category']);
                 
-                // Check if student has session (required for roll number generation)
+                // Check if student has session (required for enrollment number generation)
                 $studentSession = $validated['session'] ?? $student->session;
                 if (empty($studentSession)) {
                     return back()
-                        ->withErrors(['roll_number' => 'Cannot generate roll number: Student session is required. Please set the session first.'])
+                        ->withErrors(['roll_number' => 'Cannot generate enrollment number: Student session is required. Please set the session first.'])
                         ->withInput();
                 }
                 
-                // Check if institute has institute_code set
-                if (empty($student->institute->institute_code)) {
-                    return back()
-                        ->withErrors(['roll_number' => 'Cannot generate roll number: Institute code is not set. Please set institute_code for the institute first.'])
-                        ->withInput();
-                }
-                
-                // Check if course has category
+                // Check if course is assigned
                 if (!$student->course) {
                     return back()
-                        ->withErrors(['roll_number' => 'Cannot generate roll number: Student must have a course assigned.'])
+                        ->withErrors(['roll_number' => 'Cannot generate enrollment number: Student must have a course assigned.'])
                         ->withInput();
                 }
                 
-                // Check if category has roll_number_code
-                if (!$student->course->category || empty($student->course->category->roll_number_code)) {
-                    return back()
-                        ->withErrors(['roll_number' => 'Cannot generate roll number: Course category does not have a roll number code. Please set roll_number_code for the category first.'])
-                        ->withInput();
-                }
-                
-                // Auto-generate roll number (will use session year automatically)
+                // Auto-generate enrollment number (will use session year automatically)
                 $validated['roll_number'] = RollNumberGenerator::generate($student);
             } catch (\Exception $e) {
                 return back()
-                    ->withErrors(['roll_number' => 'Failed to generate roll number: ' . $e->getMessage()])
+                    ->withErrors(['roll_number' => 'Failed to generate enrollment number: ' . $e->getMessage()])
                     ->withInput();
             }
         }
         
-        // If status is active and still no roll number, return error
+        // If status is active and still no enrollment number, return error
         $rollNumberStillEmpty = empty($validated['roll_number']) || trim($validated['roll_number'] ?? '') === '';
         if ($validated['status'] === 'active' && $rollNumberStillEmpty) {
             return back()
-                ->withErrors(['roll_number' => 'Roll number is required when activating a student.'])
+                ->withErrors(['roll_number' => 'Enrollment number is required when activating a student.'])
                 ->withInput();
         }
 
@@ -861,19 +851,13 @@ class StudentController extends Controller
             // Regenerate Roll Number (if student is active and has roll number)
             if ($student->status === 'active' && $student->roll_number) {
                 try {
-                    // Reload student with relationships for roll number generation
-                    $student->load(['institute', 'course.category']);
+                    // Reload student with relationships for enrollment number generation
+                    $student->load(['institute', 'course']);
                     
                     // Check prerequisites
-                    if (empty($student->institute->institute_code)) {
+                    if (!$student->course) {
                         return back()
-                            ->withErrors(['session' => 'Cannot generate roll number: Institute code is not set.'])
-                            ->withInput();
-                    }
-                    
-                    if (!$student->course || !$student->course->category || empty($student->course->category->roll_number_code)) {
-                        return back()
-                            ->withErrors(['session' => 'Cannot generate roll number: Course category does not have a roll number code.'])
+                            ->withErrors(['session' => 'Cannot generate enrollment number: Student must have a course assigned.'])
                             ->withInput();
                     }
                     
@@ -891,6 +875,11 @@ class StudentController extends Controller
             
             // Update academic_year in all existing semester results to match new session
             \App\Models\SemesterResult::where('student_id', $student->id)
+                ->update(['academic_year' => $newSession]);
+            
+            // Update academic_year in all individual result records to match new session
+            // This ensures parent (SemesterResult) and child (Result) records stay synchronized
+            \App\Models\Result::where('student_id', $student->id)
                 ->update(['academic_year' => $newSession]);
             
             // Delete old PDFs (they will regenerate with new numbers on next view)
@@ -956,14 +945,18 @@ class StudentController extends Controller
      */
     /**
      * Generate a unique registration number for a student
+     * Format: REG-{YEAR}-{STUDENT_NUMBER}
+     * Example: REG-2025-05000 (starting from 5000)
      * Uses session year if provided, otherwise uses current year
      * 
      * @param int $instituteId
-     * @param string|null $sessionYear Year from session (e.g., "2022" from "2022-23")
+     * @param string|null $sessionYear Year from session (e.g., "2025" from "2025-26")
      * @return string
      */
     protected function generateRegistrationNumber(int $instituteId, ?string $sessionYear = null): string
     {
+        $prefix = 'REG';
+        
         // Use session year if provided, otherwise fallback to current year
         $year = $sessionYear ?? date('Y');
         
@@ -972,35 +965,32 @@ class StudentController extends Controller
             $year = date('Y'); // Fallback to current year if invalid
         }
         
-        $prefix = 'REG';
-        
-        // Get the last registration number for this institute and year
-        $lastStudent = Student::where('institute_id', $instituteId)
-            ->where('registration_number', 'like', $prefix . '-' . $year . '%')
+        // Get the last registration number for this year (format: REG-{YEAR}-{NUMBER})
+        $lastStudent = Student::where('registration_number', 'like', $prefix . '-' . $year . '-%')
             ->orderBy('registration_number', 'desc')
             ->first();
         
+        $nextNumber = 5000; // Start from 5000
+        
         if ($lastStudent && $lastStudent->registration_number) {
             // Extract the sequence number from the last registration number
-            // Format: REG-2025-00001 -> extract 00001
+            // Format: REG-2025-05000 -> extract 05000
             $parts = explode('-', $lastStudent->registration_number);
             if (count($parts) >= 3) {
                 $lastNumber = (int) $parts[2]; // Get the sequence part
-                $newNumber = $lastNumber + 1;
-            } else {
-                $newNumber = 1;
+                // If last number is less than 5000, start from 5000
+                // Otherwise, increment from last number
+                $nextNumber = max(5000, $lastNumber + 1);
             }
-        } else {
-            $newNumber = 1;
         }
         
         // Ensure uniqueness by checking if the number already exists
         // This handles race conditions where multiple registrations happen simultaneously
-        $maxAttempts = 100; // Safety limit
+        $maxAttempts = 1000; // Allow up to 1000 attempts
         $attempts = 0;
         
         do {
-            $sequencePadded = str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+            $sequencePadded = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
             $registrationNumber = "{$prefix}-{$year}-{$sequencePadded}";
             
             // Check if this registration number already exists
@@ -1010,7 +1000,7 @@ class StudentController extends Controller
                 return $registrationNumber;
             }
             
-            $newNumber++;
+            $nextNumber++;
             $attempts++;
         } while ($attempts < $maxAttempts);
         
@@ -1021,15 +1011,26 @@ class StudentController extends Controller
 
     /**
      * Generate registration number for a specific year (used when session changes)
+     * Format: REG-{YEAR}-{STUDENT_NUMBER}
+     * Example: REG-2025-05000 (starting from 5000)
      * Excludes current student from uniqueness check
+     * 
+     * @param int $instituteId
+     * @param string $year Year to use (e.g., "2025")
+     * @param int|null $excludeStudentId Student ID to exclude from check
+     * @return string
      */
     protected function generateRegistrationNumberForYear(int $instituteId, string $year, ?int $excludeStudentId = null): string
     {
         $prefix = 'REG';
         
-        // Get the last registration number for this institute and year
-        $query = Student::where('institute_id', $instituteId)
-            ->where('registration_number', 'like', $prefix . '-' . $year . '%');
+        // Validate year format
+        if (!is_numeric($year) || strlen($year) !== 4) {
+            $year = date('Y'); // Fallback to current year if invalid
+        }
+        
+        // Get the last registration number for this year (format: REG-{YEAR}-{NUMBER})
+        $query = Student::where('registration_number', 'like', $prefix . '-' . $year . '-%');
         
         // Exclude current student from check
         if ($excludeStudentId) {
@@ -1038,26 +1039,26 @@ class StudentController extends Controller
         
         $lastStudent = $query->orderBy('registration_number', 'desc')->first();
         
+        $nextNumber = 5000; // Start from 5000
+        
         if ($lastStudent && $lastStudent->registration_number) {
             // Extract the sequence number from the last registration number
-            // Format: REG-2022-00001 -> extract 00001
+            // Format: REG-2025-05000 -> extract 05000
             $parts = explode('-', $lastStudent->registration_number);
             if (count($parts) >= 3) {
                 $lastNumber = (int) $parts[2]; // Get the sequence part
-                $newNumber = $lastNumber + 1;
-            } else {
-                $newNumber = 1;
+                // If last number is less than 5000, start from 5000
+                // Otherwise, increment from last number
+                $nextNumber = max(5000, $lastNumber + 1);
             }
-        } else {
-            $newNumber = 1;
         }
         
         // Ensure uniqueness by checking if the number already exists
-        $maxAttempts = 100; // Safety limit
+        $maxAttempts = 1000; // Allow up to 1000 attempts
         $attempts = 0;
         
         do {
-            $sequencePadded = str_pad($newNumber, 5, '0', STR_PAD_LEFT);
+            $sequencePadded = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
             $registrationNumber = "{$prefix}-{$year}-{$sequencePadded}";
             
             // Check if this registration number already exists (excluding current student)
@@ -1071,7 +1072,7 @@ class StudentController extends Controller
                 return $registrationNumber;
             }
             
-            $newNumber++;
+            $nextNumber++;
             $attempts++;
         } while ($attempts < $maxAttempts);
         
