@@ -142,6 +142,21 @@
         .info-row {
             margin-bottom: 1mm;
         }
+        .info-row-parallel {
+            margin-bottom: 1mm;
+        }
+        .info-row-parallel table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info-row-parallel td {
+            vertical-align: baseline;
+            padding: 0;
+        }
+        .info-row-parallel .info-block .info-label,
+        .info-row-parallel .info-block .info-value {
+            font-size: inherit;
+        }
         
         .info-label {
             font-size: 7px;
@@ -263,9 +278,25 @@
                         </tr>
                     </table>
                     
-                    <div class="info-row" style="margin-top: 1.5mm;">
-                        <span class="info-label">Duration: </span>
-                        <span class="info-value">{{ $student->course->formatted_duration ?? '3 Years' }}</span>
+                    <div class="info-row-parallel" style="margin-top: 1.5mm;">
+                        <table><tr>
+                            <td width="50%">
+                                <span class="info-label">Duration: </span>
+                                <span class="info-value">{{ $student->course->formatted_duration ?? '3 Years' }}</span>
+                            </td>
+                            <td width="50%">
+                                <span class="info-label">Session: </span>
+                                <span class="info-value">
+                                    @if($student->session)
+                                        {{ $student->session }}
+                                    @elseif($student->admission_year)
+                                        {{ $student->admission_year }}-{{ substr($student->admission_year + 1, -2) }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </span>
+                            </td>
+                        </tr></table>
                     </div>
                     
                     <div class="info-row">
@@ -276,19 +307,6 @@
                     <div class="info-row">
                         <span class="info-label">Course: </span>
                         <span class="info-value">{{ $student->course->name ?? 'N/A' }}</span>
-                    </div>
-                    
-                    <div class="info-row">
-                        <span class="info-label">Session: </span>
-                        <span class="info-value">
-                            @if($student->session)
-                                {{ $student->session }}
-                            @elseif($student->admission_year)
-                                {{ $student->admission_year }}-{{ substr($student->admission_year + 1, -2) }}
-                            @else
-                                N/A
-                            @endif
-                        </span>
                     </div>
                 </td>
             </tr>
