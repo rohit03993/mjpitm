@@ -29,85 +29,45 @@ class PublicRegistrationController extends Controller
             return redirect()->route('home')->with('error', 'Please access registration from the correct institute website.');
         }
 
-        // Get category and course from URL parameters (if provided)
-        $categorySlug = $request->query('category');
-        $courseSlug = $request->query('course');
-        
-        $selectedCategory = null;
-        $selectedCourse = null;
+        // Single query each: categories and courses (with category) — avoids duplicate queries and speeds up the form
+        $categories = CourseCategory::where('institute_id', $instituteId)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
-        // Find category by slug if provided (improved matching)
-        if ($categorySlug) {
-            $selectedCategory = CourseCategory::where('institute_id', $instituteId)
-                ->where('status', 'active')
-                ->get()
-                ->first(function($cat) use ($categorySlug) {
-                    // Try exact slug match
-                    $categorySlugMatch = Str::slug($cat->name);
-                    if ($categorySlugMatch === $categorySlug) {
-                        return true;
-                    }
-                    
-                    // Try case-insensitive name match
-                    $categoryNameLower = strtolower(str_replace(['/', '-'], ' ', $cat->name));
-                    $searchName = strtolower(str_replace('-', ' ', $categorySlug));
-                    if (strpos($categoryNameLower, $searchName) !== false || strpos($searchName, $categoryNameLower) !== false) {
-                        return true;
-                    }
-                    
-                    // Try code match
-                    if ($cat->code && strtolower($cat->code) === strtolower($categorySlug)) {
-                        return true;
-                    }
-                    
-                    return false;
-                });
-        }
-
-        // Find course by slug if provided (improved matching)
-        if ($courseSlug) {
-            $selectedCourse = Course::where('institute_id', $instituteId)
-                ->where('status', 'active')
-                ->get()
-                ->first(function($course) use ($courseSlug) {
-                    // Try exact slug match
-                    $courseSlugMatch = Str::slug($course->name);
-                    if ($courseSlugMatch === $courseSlug) {
-                        return true;
-                    }
-                    
-                    // Try case-insensitive name match
-                    $courseNameLower = strtolower(str_replace(['/', '-'], ' ', $course->name));
-                    $searchName = strtolower(str_replace('-', ' ', $courseSlug));
-                    if (strpos($courseNameLower, $searchName) !== false || strpos($searchName, $courseNameLower) !== false) {
-                        return true;
-                    }
-                    
-                    // Try code match
-                    if ($course->code && strtolower($course->code) === strtolower($courseSlug)) {
-                        return true;
-                    }
-                    
-                    return false;
-                });
-            
-            // If course found and category not set, get course's category
-            if ($selectedCourse && $selectedCourse->category_id && !$selectedCategory) {
-                $selectedCategory = CourseCategory::find($selectedCourse->category_id);
-            }
-        }
-
-        // Get courses for this institute only
         $courses = Course::where('institute_id', $instituteId)
             ->where('status', 'active')
             ->with('category')
             ->orderBy('name')
             ->get();
 
-        // Get categories for this institute
-        $categories = CourseCategory::where('institute_id', $instituteId)
-            ->orderBy('name')
-            ->get();
+        $categorySlug = $request->query('category');
+        $courseSlug = $request->query('course');
+        $selectedCategory = null;
+        $selectedCourse = null;
+
+        if ($categorySlug) {
+            $selectedCategory = $categories->first(function ($cat) use ($categorySlug) {
+                if (Str::slug($cat->name) === $categorySlug) return true;
+                $nameLower = strtolower(str_replace(['/', '-'], ' ', $cat->name));
+                $search = strtolower(str_replace('-', ' ', $categorySlug));
+                if (str_contains($nameLower, $search) || str_contains($search, $nameLower)) return true;
+                return $cat->code && strtolower($cat->code) === strtolower($categorySlug);
+            });
+        }
+
+        if ($courseSlug) {
+            $selectedCourse = $courses->first(function ($course) use ($courseSlug) {
+                if (Str::slug($course->name) === $courseSlug) return true;
+                $nameLower = strtolower(str_replace(['/', '-'], ' ', $course->name));
+                $search = strtolower(str_replace('-', ' ', $courseSlug));
+                if (str_contains($nameLower, $search) || str_contains($search, $nameLower)) return true;
+                return $course->code && strtolower($course->code) === strtolower($courseSlug);
+            });
+            if ($selectedCourse && $selectedCourse->category_id && !$selectedCategory) {
+                $selectedCategory = $categories->firstWhere('id', $selectedCourse->category_id);
+            }
+        }
 
         // Pass courses as JSON for JavaScript filtering
         $coursesJson = $courses->map(function($course) {
@@ -194,9 +154,6 @@ class PublicRegistrationController extends Controller
             'course_id' => ['required', Rule::exists('courses', 'id')->where('institute_id', $instituteId)],
             'session' => ['required', 'string', 'max:255', 'regex:/^\d{4}-\d{2}$/'],
             
-            // Login Credentials
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            
             // Academic Certificates
             'certificate_class_10th' => ['nullable', 'file', 'mimes:pdf,jpeg,png,jpg', 'max:5120'],
             'certificate_class_12th' => ['nullable', 'file', 'mimes:pdf,jpeg,png,jpg', 'max:5120'],
@@ -220,6 +177,13 @@ class PublicRegistrationController extends Controller
 
         // Enforce current session only for public registration (ignore any tampered value)
         $validated['session'] = $currentSessionOnly;
+
+        // Password = date of birth in DDMMYYYY format (e.g. 03091992); student can change after login
+        $plainPassword = Student::dateOfBirthToPassword($validated['date_of_birth']);
+        if (!$plainPassword) {
+            return redirect()->back()->withErrors(['date_of_birth' => 'Invalid date of birth.'])->withInput();
+        }
+        $validated['password'] = Hash::make($plainPassword);
 
         // Handle file uploads
         if ($request->hasFile('photo')) {
@@ -251,10 +215,6 @@ class PublicRegistrationController extends Controller
         if ($request->hasFile('certificate_others')) {
             $validated['certificate_others'] = $request->file('certificate_others')->store('students/certificates', 'public');
         }
-
-        // Store plain password before hashing (for encrypted storage)
-        $plainPassword = $validated['password'];
-        $validated['password'] = Hash::make($plainPassword);
 
         // Set institute and status
         $validated['institute_id'] = $instituteId;

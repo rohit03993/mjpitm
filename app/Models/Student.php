@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -153,6 +154,22 @@ class Student extends Authenticatable
     public function qualifications()
     {
         return $this->hasMany(Qualification::class);
+    }
+
+    /**
+     * Convert date of birth to default password format (DDMMYYYY, e.g. 03091992).
+     * Used for new registrations and one-time sync of existing students.
+     */
+    public static function dateOfBirthToPassword(?string $dateOfBirth): ?string
+    {
+        if (!$dateOfBirth) {
+            return null;
+        }
+        try {
+            return Carbon::parse($dateOfBirth)->format('dmY');
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**

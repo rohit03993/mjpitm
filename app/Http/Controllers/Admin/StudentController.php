@@ -259,6 +259,11 @@ class StudentController extends Controller
         if (!$instituteId) {
             return redirect()->back()->withErrors(['institute_id' => 'Please select an institute.'])->withInput();
         }
+
+        // New registrations use current session only (same as guest registration)
+        $currentYear = (int) date('Y');
+        $currentSession = $currentYear . '-' . substr((string) ($currentYear + 1), -2);
+        $request->merge(['session' => $currentSession]);
         
         // Validate the request
         $validated = $request->validate([
@@ -312,9 +317,6 @@ class StudentController extends Controller
             
             // Declaration
             'declaration_accepted' => ['required', 'accepted'],
-            
-            // Password (minimum 8 characters for security)
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
             
             // Qualifications
             'qualifications' => ['nullable', 'array'],
@@ -385,9 +387,12 @@ class StudentController extends Controller
         // Set institute_id and created_by
         $validated['institute_id'] = $instituteId;
         $validated['created_by'] = Auth::id();
-        
-        // Store plain password before hashing (for encrypted storage)
-        $plainPassword = $validated['password'];
+
+        // Password = date of birth in DDMMYYYY format (e.g. 03091992); student can change after login
+        $plainPassword = Student::dateOfBirthToPassword($validated['date_of_birth']);
+        if (!$plainPassword) {
+            return redirect()->back()->withErrors(['date_of_birth' => 'Invalid date of birth.'])->withInput();
+        }
         $validated['password'] = Hash::make($plainPassword);
         
         // New students start as pending until approved by admin / super admin

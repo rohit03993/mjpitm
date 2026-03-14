@@ -3,230 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <title>Provisional Registration Form</title>
+    @php
+        $isTech = ($student->institute_id ?? 1) == 1;
+        $themePrimary = $isTech ? '#1e40af' : '#166534';
+        $themeLight = $isTech ? '#dbeafe' : '#dcfce7';
+    @endphp
     <style>
-        @page {
-            margin: 8mm 10mm;
-        }
+        /* A4 portrait, 8mm margins – content area 194mm x 281mm */
+        @page { margin: 8mm; size: A4 portrait; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 8px;
-            margin: 0;
-            padding: 0;
+            font-size: 8pt;
+            color: #374151;
+            line-height: 1.25;
         }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
+        table { border-collapse: collapse; width: 100%; }
         .header-table {
-            border-bottom: 3px solid #000;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-            background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            background: #fafafa;
         }
-        .header-table td {
-            vertical-align: top;
-            padding: 0;
-        }
-        .logo-cell {
-            width: 12%;
-            padding-right: 12px;
-            vertical-align: middle;
-        }
-        .logo-cell img {
-            max-width: 70px;
-            max-height: 70px;
-            display: block;
-        }
-        .institute-cell {
-            width: 88%;
-            position: relative;
-            padding-top: 3px;
-        }
+        .header-table td { vertical-align: middle; padding: 0; }
+        .logo-cell { width: 11%; padding-right: 6px; }
+        .logo-cell img { max-width: 52px; max-height: 52px; display: block; }
+        .institute-cell { width: 89%; }
         .institute-name {
-            font-size: 16px;
+            font-size: 11pt;
             font-weight: bold;
             text-transform: uppercase;
             text-align: center;
-            margin-bottom: 4px;
-            line-height: 1.3;
-            padding: 4px 0;
-            color: #1e40af;
-            letter-spacing: 0.5px;
-            text-shadow: 0.5px 0.5px 0px rgba(0,0,0,0.1);
+            margin: 0 0 1px 0;
+            line-height: 1.2;
+            color: {{ $themePrimary }};
         }
-        .institute-address {
-            font-size: 7.5px;
-            text-align: center;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: 500;
-            padding: 2px 0;
-        }
-        .contact-info {
-            font-size: 6.5px;
-            text-align: center;
-            color: #555;
-            padding: 3px 0;
-            background: #f8f9fa;
-            border-radius: 3px;
-        }
-        .contact-info span {
-            margin-right: 18px;
-            padding: 1px 4px;
-        }
-        .contact-info .phone {
-            color: #ea580c;
-            font-weight: bold;
-        }
-        .contact-info .website {
-            color: #1e40af;
-            font-weight: bold;
-        }
-        .contact-info .email {
-            color: #1e40af;
-            font-weight: bold;
-        }
+        .institute-address { font-size: 7pt; text-align: center; margin: 0; color: #555; }
         .main-title {
             text-align: center;
-            font-size: 13px;
+            font-size: 11pt;
             font-weight: bold;
             text-transform: uppercase;
-            margin: 12px auto 8px auto;
-            letter-spacing: 1px;
-            border: 3px solid #000;
-            padding: 8px 15px;
+            margin: 5px 0 4px 0;
+            letter-spacing: 0.5px;
+            border: 1px solid #d1d5db;
+            padding: 6px 10px;
             background: #fff;
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
+            color: #111827;
         }
-        .course-box {
-            border: 1px solid #000;
-            padding: 5px;
-            margin: 5px 0;
-            position: relative;
-            min-height: 120px;
-        }
-        .course-box table {
-            width: 70%;
-        }
-        .course-box td {
-            padding: 2px 0;
-            border: none;
-            font-size: 7.5px;
-            vertical-align: top;
-        }
-        .course-label {
+        .regno-top {
+            margin: 0 0 5px 0;
+            padding: 5px 10px;
+            border: 1px solid {{ $themePrimary }};
+            background: {{ $themeLight }};
+            text-align: center;
             font-weight: bold;
-            padding-right: 5px;
+            color: {{ $themePrimary }};
         }
+        .regno-top .label { font-size: 6.5pt; text-transform: uppercase; margin-bottom: 0; }
+        .regno-top .value { font-size: 10pt; letter-spacing: 0.5px; }
+        .course-box {
+            border: 1px solid #e5e7eb;
+            padding: 6px;
+            margin: 4px 0;
+            position: relative;
+            min-height: 82px;
+            background: #fafafa;
+        }
+        .course-box table { width: 68%; }
+        .course-box td { padding: 2px 0; border: none; font-size: 7.5pt; vertical-align: top; }
+        .course-label { font-weight: bold; padding-right: 5px; color: #4b5563; }
         .photo-box {
             position: absolute;
-            right: 5px;
-            top: 5px;
-            width: 90px;
-            height: 110px;
-            border: 2px solid #000;
+            right: 6px;
+            top: 6px;
+            width: 64px;
+            height: 76px;
+            border: 1px solid #d1d5db;
             padding: 2px;
             text-align: center;
+            background: #fff;
         }
-        .photo-box img {
-            width: 100%;
-            height: calc(100% - 12px);
-            object-fit: cover;
-            display: block;
-        }
-        .photo-label {
-            font-size: 5.5px;
-            font-weight: bold;
-            margin-top: 2px;
-        }
+        .photo-box img { width: 100%; height: calc(100% - 10px); object-fit: cover; display: block; }
+        .photo-label { font-size: 5.5pt; font-weight: bold; margin-top: 0; }
         .section-header {
-            background-color: #1e40af;
+            background-color: {{ $themePrimary }};
             color: white;
-            padding: 4px;
-            font-size: 8px;
+            padding: 4px 6px;
+            font-size: 7pt;
             font-weight: bold;
             text-transform: uppercase;
             text-align: center;
-            margin: 6px 0 3px 0;
+            margin: 5px 0 0 0;
         }
-        .info-table {
-            border: 1px solid #000;
-        }
+        .info-table { border: 1px solid #e5e7eb; }
         .info-table td {
-            border: 1px solid #000;
-            padding: 3px 5px;
+            border: 1px solid #e5e7eb;
+            padding: 4px 6px;
             width: 50%;
             vertical-align: top;
-            height: 20px;
+            min-height: 20px;
+            font-size: 7.5pt;
         }
-        .field-label {
-            font-weight: bold;
-            font-size: 7px;
-            color: #1e40af;
-            display: block;
-            margin-bottom: 1px;
-        }
-        .field-value {
-            font-size: 7.5px;
-            text-transform: uppercase;
-            padding-top: 1px;
-        }
-        .qual-table {
-            border: 1px solid #000;
-            margin-top: 3px;
-        }
-        .qual-table th,
-        .qual-table td {
-            border: 1px solid #000;
-            padding: 3px 2px;
+        .field-label { font-weight: bold; font-size: 7pt; color: {{ $themePrimary }}; display: block; margin-bottom: 0; }
+        .field-value { font-size: 7.5pt; text-transform: uppercase; color: #111827; }
+        .qual-table { border: 1px solid #e5e7eb; margin-top: 3px; }
+        .qual-table th, .qual-table td {
+            border: 1px solid #e5e7eb;
+            padding: 3px 4px;
             text-align: center;
-            font-size: 7px;
+            font-size: 7pt;
         }
-        .qual-table th {
-            background-color: #e5e7eb;
-            font-weight: bold;
-        }
+        .qual-table th { background-color: #f3f4f6; font-weight: bold; color: #374151; }
         .declaration-box p {
-            border: 1px solid #000;
-            padding: 3px;
-            margin-bottom: 4px;
-            font-size: 6.5px;
+            border: 1px solid #e5e7eb;
+            padding: 6px 8px;
+            margin: 0 0 3px 0;
+            font-size: 6.5pt;
             text-align: justify;
             line-height: 1.4;
+            background: #fafafa;
         }
         .signature-section {
-            margin-top: 8px;
+            margin-top: 6px;
             padding: 5px;
-            border: 1px solid #000;
+            border: 1px solid #e5e7eb;
+            background: #fafafa;
         }
+        .signature-section > div:first-child { font-size: 6.5pt; font-weight: bold; margin-bottom: 2px; }
         .signature-box {
             display: inline-block;
-            width: 150px;
-            height: 50px;
-            border: 1px solid #000;
+            width: 100px;
+            height: 36px;
+            border: 1px solid #d1d5db;
             padding: 2px;
-            margin-top: 5px;
-            text-align: center;
-        }
-        .signature-box img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-        .signature-label {
-            font-size: 6px;
-            font-weight: bold;
             margin-top: 2px;
-        }
-        .footer {
-            margin-top: 10px;
-            padding-top: 3px;
-            border-top: 1px solid #ccc;
             text-align: center;
-            font-size: 6.5px;
-            color: #666;
+            background: #fff;
+        }
+        .signature-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .signature-label { font-size: 5.5pt; font-weight: bold; margin-top: 0; }
+        .office-use {
+            margin-top: 6px;
+            border: 1px solid #e5e7eb;
+            padding: 5px 8px;
+            background: #fafafa;
+            font-size: 6.5pt;
+            color: #6b7280;
+        }
+        .office-use .title { font-weight: bold; margin-bottom: 2px; color: #374151; }
+        .footer {
+            margin-top: 6px;
+            padding-top: 5px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 6.5pt;
+            color: #6b7280;
         }
     </style>
 </head>
@@ -262,9 +195,9 @@
                     }
                 @endphp
                 @if($logoBase64)
-                <img src="{{ $logoBase64 }}" alt="Logo" style="border: 2px solid #1e40af; border-radius: 8px; padding: 3px; background: #fff;">
+                <img src="{{ $logoBase64 }}" alt="Logo" style="border: 1px solid {{ $themePrimary }}; border-radius: 4px; padding: 1px; background: #fff;">
                 @else
-                <div style="width: 70px; height: 70px; border: 2px solid #1e40af; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 8px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: #fff; font-weight: bold; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="width: 52px; height: 52px; border: 1px solid {{ $themePrimary }}; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 7pt; background: {{ $themePrimary }}; color: #fff; font-weight: bold; text-align: center;">
                     {{ substr($student->institute->name ?? 'MJP', 0, 3) }}
                 </div>
                 @endif
@@ -280,17 +213,18 @@
                         @endif
                     @endif
                 </div>
-                <div class="contact-info">
-                    <span class="phone">Phone: 1800 XXX XXXX</span>
-                    <span class="website">Website: {{ $student->institute->domain ?? 'www.mjpitm.in / www.mjpips.in' }}</span>
-                    <span class="email">Email: info@{{ $student->institute->domain ?? 'mjpitm.in' }}</span>
-                </div>
             </td>
         </tr>
     </table>
 
     <!-- Main Title -->
     <div class="main-title">Provisional Registration Form</div>
+
+    <!-- Registration Number (on top) -->
+    <div class="regno-top">
+        <div class="label">Registration No.</div>
+        <div class="value">{{ $student->registration_number ?? 'N/A' }}</div>
+    </div>
 
     <!-- Course Details Box -->
     <div class="course-box">
@@ -474,17 +408,12 @@
     <!-- Declaration -->
     <div class="section-header">Declaration</div>
     <div class="declaration-box">
-        <p>
-            I hereby declare that the entries made and documents submitted by me in this registration form are true to the best of my knowledge and belief. I understand that if any information provided by me is found to be false or incorrect, my registration shall be automatically cancelled and all fees paid by me shall be forfeited. The institute/university reserves the right to take any other action as deemed fit.
-        </p>
-        <p>
-            I further declare that my registration is subject to the rules and regulations of the institute/university. I agree to abide by all the discipline and conduct rules of the institute/university. I am aware that ragging is banned and if I am found guilty of any form of ragging, I shall be liable to be punished as per the law.
-        </p>
+        <p>I hereby declare that the entries made and documents submitted by me in this registration form are true to the best of my knowledge and belief. I understand that if any information provided by me is found to be false or incorrect, my registration shall be automatically cancelled and all fees paid by me shall be forfeited. The institute/university reserves the right to take any other action as deemed fit. I further declare that my registration is subject to the rules and regulations of the institute/university. I agree to abide by all discipline and conduct rules. I am aware that ragging is banned and if found guilty I shall be liable to be punished as per the law.</p>
     </div>
 
     <!-- Signature Section -->
     <div class="signature-section">
-        <div style="font-size: 7px; font-weight: bold; margin-bottom: 3px;">Signature of the Candidate:</div>
+        <div>Signature of the Candidate:</div>
         @if($student->signature)
         <div class="signature-box">
             @php
@@ -517,6 +446,11 @@
             </div>
         </div>
         @endif
+    </div>
+
+    <div class="office-use">
+        <div class="title">For office use only</div>
+        <div>Remarks: ___________________________ &nbsp; Verified by: ________________ &nbsp; Date: ________</div>
     </div>
 
     <!-- Footer -->

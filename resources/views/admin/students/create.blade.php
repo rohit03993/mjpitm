@@ -357,22 +357,15 @@
                             <x-input-error :messages="$errors->get('course_id')" class="mt-2" />
                         </div>
 
-                        <!-- Session -->
+                        <!-- Session (current session only for new registrations) -->
                         <div>
                             <x-input-label for="session" :value="__('Session')" />
+                            @php
+                                $currentYear = (int) date('Y');
+                                $currentSessionValue = $currentYear . '-' . substr((string)($currentYear + 1), -2);
+                            @endphp
                             <select id="session" name="session" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
-                                <option value="">Select</option>
-                                @php
-                                    $currentYear = date('Y');
-                                    $defaultSession = $currentYear . '-' . substr($currentYear + 1, -2);
-                                @endphp
-                                @for($year = 2020; $year <= 2030; $year++)
-                                    @php
-                                        $sessionValue = $year . '-' . substr($year + 1, -2);
-                                        $sessionDisplay = $year . '-' . substr($year + 1, -2);
-                                    @endphp
-                                    <option value="{{ $sessionValue }}" {{ old('session', $defaultSession) == $sessionValue ? 'selected' : '' }}>{{ $sessionDisplay }}</option>
-                                @endfor
+                                <option value="{{ $currentSessionValue }}" {{ old('session', $currentSessionValue) == $currentSessionValue ? 'selected' : '' }}>{{ $currentSessionValue }}</option>
                             </select>
                             <x-input-error :messages="$errors->get('session')" class="mt-2" />
                         </div>
@@ -443,25 +436,13 @@
                     </div>
                 </div>
 
-                <!-- Password Section -->
+                <!-- Login (password = DOB in DDMMYYYY) -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 bg-gray-50 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">Login Credentials</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">Login</h3>
                     </div>
-                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Password -->
-                        <div>
-                            <x-input-label for="password" :value="__('Password *')" />
-                            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-                            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                        </div>
-
-                        <!-- Confirm Password -->
-                        <div>
-                            <x-input-label for="password_confirmation" :value="__('Confirm Password *')" />
-                            <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
-                            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-                        </div>
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600">The student's password will be their <strong>date of birth in DDMMYYYY format</strong> (e.g. 03-09-1992 → <strong>03091992</strong>). They can change it after logging in.</p>
                     </div>
                 </div>
 
