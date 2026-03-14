@@ -28,6 +28,13 @@
                     <a href="{{ route('admin.students.edit', $student->id) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
                         Edit Status & Enrollment No.
                     </a>
+                    <form action="{{ route('admin.students.destroy', $student->id) }}" method="POST" class="inline" onsubmit="return confirm('Remove this student from the active list? Their data will be kept for audit but they will not appear in lists or be able to log in.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                            Remove student
+                        </button>
+                    </form>
                 @endif
             </div>
         </div>

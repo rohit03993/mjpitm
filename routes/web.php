@@ -21,7 +21,7 @@ Route::get('/course/{category}', [LandingPageController::class, 'categoryCourses
 
 // Public Registration Form Routes (for general access)
 Route::get('/registration-form', [\App\Http\Controllers\PublicRegistrationController::class, 'create'])->name('public.registration');
-Route::post('/registration-form', [\App\Http\Controllers\PublicRegistrationController::class, 'store'])->name('public.registration.store');
+Route::post('/registration-form', [\App\Http\Controllers\PublicRegistrationController::class, 'store'])->middleware('throttle:5,1')->name('public.registration.store');
 Route::get('/registration-success/{student}', [\App\Http\Controllers\PublicRegistrationController::class, 'success'])->name('public.registration.success');
 
 // Combined Login choice page (Super Admin / Staff / Student)
@@ -54,11 +54,14 @@ Route::middleware(['guest', 'throttle:10,1'])->group(function () {
 Route::middleware(['guest'])->group(function () {
     Route::get('/student/login', [StudentAuthController::class, 'showLoginForm'])->name('student.login');
     Route::get('/student/forgot-password', [StudentAuthController::class, 'showPasswordRequestForm'])->name('student.password.request');
+    Route::get('/student/password/reset-sent', [StudentAuthController::class, 'showResetLinkSent'])->name('student.password.reset.sent');
+    Route::get('/student/password/reset/{token}', [StudentAuthController::class, 'showResetForm'])->name('student.password.reset');
 });
 // POST routes (login/password reset attempts) - rate limited to 10 attempts per minute
 Route::middleware(['guest', 'throttle:10,1'])->group(function () {
     Route::post('/student/login', [StudentAuthController::class, 'login']);
     Route::post('/student/forgot-password', [StudentAuthController::class, 'sendPasswordResetLink'])->name('student.password.email');
+    Route::post('/student/password/reset', [StudentAuthController::class, 'resetPassword'])->name('student.password.update');
 });
 
 // Student Dashboard (protected - separate guard)

@@ -131,6 +131,10 @@ class PublicRegistrationController extends Controller
             ];
         })->toJson();
 
+        // Guests see only the current session (no dropdown of all years)
+        $currentYear = (int) date('Y');
+        $currentSessionForGuest = $currentYear . '-' . substr((string) ($currentYear + 1), -2);
+
         return view('public.registration', compact(
             'courses', 
             'categories', 
@@ -139,7 +143,8 @@ class PublicRegistrationController extends Controller
             'institute', 
             'instituteId',
             'selectedCategory',
-            'selectedCourse'
+            'selectedCourse',
+            'currentSessionForGuest'
         ));
     }
 
@@ -156,13 +161,17 @@ class PublicRegistrationController extends Controller
             return redirect()->back()->withErrors(['institute_id' => 'Please access registration from the correct institute website.'])->withInput();
         }
 
+        // Current session only for guests (no past/future years)
+        $currentYear = (int) date('Y');
+        $currentSessionOnly = $currentYear . '-' . substr((string) ($currentYear + 1), -2);
+
         // Validate the request
         $validated = $request->validate([
             // Personal Details
             'name' => ['required', 'string', 'max:255'],
             'mother_name' => ['nullable', 'string', 'max:255'],
             'father_name' => ['nullable', 'string', 'max:255'],
-            'date_of_birth' => ['required', 'date'],
+            'date_of_birth' => ['required', 'date', 'before:today', 'after:1900-01-01'],
             'gender' => ['required', 'in:male,female,other'],
             'category' => ['nullable', 'string', 'max:255'],
             'aadhaar_number' => ['nullable', 'string', 'max:255'],
@@ -208,6 +217,9 @@ class PublicRegistrationController extends Controller
         ], [], [
             'session.regex' => 'Session must be in YYYY-YY format (e.g. 2025-26).',
         ]);
+
+        // Enforce current session only for public registration (ignore any tampered value)
+        $validated['session'] = $currentSessionOnly;
 
         // Handle file uploads
         if ($request->hasFile('photo')) {

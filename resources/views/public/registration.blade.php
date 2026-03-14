@@ -343,23 +343,12 @@
                         <x-input-error :messages="$errors->get('course_id')" class="mt-2" />
                     </div>
 
-                    <!-- Session -->
+                    <!-- Session (guests see only current session) -->
                     <div>
                         <x-input-label for="session" :value="__('Session *')" />
-                        <select id="session" name="session" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
-                            <option value="">Select</option>
-                            @php
-                                $currentYear = date('Y');
-                                $defaultSession = $currentYear . '-' . substr($currentYear + 1, -2);
-                            @endphp
-                            @for($year = 2020; $year <= 2030; $year++)
-                                @php
-                                    $sessionValue = $year . '-' . substr($year + 1, -2);
-                                    $sessionDisplay = $year . '-' . substr($year + 1, -2);
-                                @endphp
-                                <option value="{{ $sessionValue }}" {{ old('session', $defaultSession) == $sessionValue ? 'selected' : '' }}>{{ $sessionDisplay }}</option>
-                            @endfor
-                        </select>
+                        <input type="text" id="session_display" class="block mt-1 w-full rounded-md border-gray-300 bg-gray-100 text-gray-700 font-medium" value="{{ $currentSessionForGuest ?? (date('Y') . '-' . substr((int)date('Y') + 1, -2)) }}" readonly aria-readonly="true" />
+                        <input type="hidden" id="session" name="session" value="{{ old('session', $currentSessionForGuest ?? (date('Y') . '-' . substr((int)date('Y') + 1, -2))) }}" />
+                        <p class="mt-1 text-xs text-gray-500">Current admission session only.</p>
                         <x-input-error :messages="$errors->get('session')" class="mt-2" />
                     </div>
                 </div>

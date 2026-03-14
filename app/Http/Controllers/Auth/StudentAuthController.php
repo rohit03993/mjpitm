@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
@@ -90,6 +92,8 @@ class StudentAuthController extends Controller
 
     /**
      * Handle a password reset link request for students.
+     * Generates a one-time token (60 min), stores in cache. Redirects to a page that shows the reset link.
+     * No email required; student uses the link to set a new password. No existing data is overwritten except password on reset.
      */
     public function sendPasswordResetLink(Request $request): RedirectResponse
     {
@@ -97,8 +101,70 @@ class StudentAuthController extends Controller
             'identifier' => ['required', 'string'],
         ]);
 
-        // TODO: Implement password reset email functionality
-        // For now, just return with a message
-        return back()->with('status', 'Password reset functionality will be implemented soon.');
+        $student = Student::where('registration_number', $request->identifier)
+            ->orWhere('roll_number', $request->identifier)
+            ->first();
+
+        if (!$student) {
+            return redirect()->route('student.password.reset.sent')
+                ->with('status', 'If an account exists with that identifier, a reset link has been prepared.');
+        }
+
+        $token = Str::random(64);
+        Cache::put('student_reset_' . $token, $student->id, now()->addMinutes(60));
+        $resetUrl = route('student.password.reset', ['token' => $token]);
+
+        return redirect()->route('student.password.reset.sent')
+            ->with('reset_link', $resetUrl)
+            ->with('status', 'Use the link below within 60 minutes to set a new password. Do not share this link.');
+    }
+
+    /**
+     * Show the "reset link sent" page (displays the one-time link).
+     */
+    public function showResetLinkSent(): View
+    {
+        return view('student.reset-password-sent');
+    }
+
+    /**
+     * Show the password reset form (with token in URL).
+     */
+    public function showResetForm(Request $request, string $token): View|RedirectResponse
+    {
+        $studentId = Cache::get('student_reset_' . $token);
+        if (!$studentId) {
+            return redirect()->route('student.login')
+                ->with('error', 'This reset link has expired or is invalid. Please request a new one.');
+        }
+        return view('student.reset-password', ['token' => $token]);
+    }
+
+    /**
+     * Reset the student's password using the token.
+     * Only updates password; no other data is changed or deleted.
+     */
+    public function resetPassword(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'token' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $studentId = Cache::get('student_reset_' . $request->token);
+        if (!$studentId) {
+            return back()->withErrors(['token' => 'This reset link has expired or is invalid. Please request a new one.']);
+        }
+
+        $student = Student::find($studentId);
+        if (!$student) {
+            return back()->withErrors(['token' => 'Invalid reset link.']);
+        }
+
+        $student->update(['password' => Hash::make($request->password)]);
+        Cache::forget('student_reset_' . $request->token);
+
+        return redirect()->route('student.login')
+            ->with('status', 'Your password has been reset. You can now log in with your new password.');
     }
 }

@@ -266,7 +266,7 @@ class StudentController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'mother_name' => ['nullable', 'string', 'max:255'],
             'father_name' => ['nullable', 'string', 'max:255'],
-            'date_of_birth' => ['required', 'date'],
+            'date_of_birth' => ['required', 'date', 'before:today', 'after:1900-01-01'],
             'gender' => ['required', 'in:male,female,other'],
             'category' => ['nullable', 'string', 'max:255'],
             'aadhaar_number' => ['nullable', 'string', 'max:255'],
@@ -613,7 +613,7 @@ class StudentController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'mother_name' => ['nullable', 'string', 'max:255'],
             'father_name' => ['nullable', 'string', 'max:255'],
-            'date_of_birth' => ['required', 'date'],
+            'date_of_birth' => ['required', 'date', 'before:today', 'after:1900-01-01'],
             'gender' => ['required', 'in:male,female,other'],
             'category' => ['nullable', 'string', 'max:255'],
             'aadhaar_number' => ['nullable', 'string', 'max:255'],
@@ -931,11 +931,22 @@ class StudentController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Soft-delete the student (only Super Admin).
+     * No data is permanently removed; the student is hidden from lists and cannot log in.
+     * Related records (results, fees, etc.) are kept for audit; they still show the student via withTrashed().
      */
     public function destroy(string $id)
     {
-        //
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can remove students.');
+        }
+
+        $student = Student::findOrFail($id);
+        $student->delete(); // Soft delete: sets deleted_at
+
+        return redirect()->route('admin.students.index')
+            ->with('success', 'Student has been removed from the active list. Their records are retained for audit.');
     }
 
     /**
