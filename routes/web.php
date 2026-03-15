@@ -159,8 +159,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/students/{student}/generate-semester-result', [\App\Http\Controllers\Admin\SemesterResultController::class, 'create'])->name('admin.students.generate-semester-result');
     Route::post('/admin/students/{student}/generate-semester-result', [\App\Http\Controllers\Admin\SemesterResultController::class, 'store'])->name('admin.students.generate-semester-result.store');
     Route::get('/admin/semester-results/{semesterResult}', [\App\Http\Controllers\Admin\SemesterResultController::class, 'show'])->name('admin.semester-results.show');
-    Route::get('/admin/semester-results/{semesterResult}/view', [\App\Http\Controllers\Admin\SemesterResultController::class, 'viewPdf'])->name('admin.semester-results.view');
+    Route::get('/admin/semester-results/{semesterResult}/publish-form', [\App\Http\Controllers\Admin\SemesterResultController::class, 'showPublishForm'])->name('admin.semester-results.publish-form');
     Route::post('/admin/semester-results/{semesterResult}/publish', [\App\Http\Controllers\Admin\SemesterResultController::class, 'publish'])->name('admin.semester-results.publish');
+    Route::get('/admin/semester-results/{semesterResult}/issue-marksheet-form', [\App\Http\Controllers\Admin\SemesterResultController::class, 'showIssueMarksheetForm'])->name('admin.semester-results.issue-marksheet-form');
+    Route::post('/admin/semester-results/{semesterResult}/issue-marksheet', [\App\Http\Controllers\Admin\SemesterResultController::class, 'issueMarksheet'])->name('admin.semester-results.issue-marksheet');
+    Route::get('/admin/semester-results/{semesterResult}/view', [\App\Http\Controllers\Admin\SemesterResultController::class, 'viewPdf'])->name('admin.semester-results.view');
     Route::get('/admin/semester-results/{semesterResult}/download', [\App\Http\Controllers\Admin\SemesterResultController::class, 'downloadPdf'])->name('admin.semester-results.download');
 
     // ID Card generation (for both Super Admin and Staff - controller handles permission)

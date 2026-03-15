@@ -80,6 +80,20 @@
             color: #1e3a5f;
             text-transform: uppercase;
         }
+        .sr-no-top {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #475569;
+        }
+        .examination-session-line {
+            font-size: 9px;
+            color: #475569;
+            margin-top: 6px;
+            margin-bottom: 10px;
+        }
         .examination-details {
             margin: 14px 0;
             padding: 12px 14px;
@@ -143,7 +157,7 @@
             overflow: hidden;
         }
         .marks-table th {
-            background: #1e3a5f;
+            background: #0d9488;
             color: #fff;
             padding: 9px 6px;
             font-size: 8px;
@@ -258,6 +272,7 @@
         </div>
 
         <div class="content">
+            <div class="sr-no-top">Sr. No. {{ str_pad((string) $semesterResult->id, 8, '0', STR_PAD_LEFT) }}</div>
             <!-- Header -->
             <div class="header">
                 <div class="institute-logo">
@@ -296,57 +311,50 @@
                 </div>
 
                 <div class="cert-title">Result Cum Details Marks Certificate</div>
+                <div class="examination-session-line">
+                    @php
+                        $ay = $semesterResult->academic_year;
+                        if ($ay && preg_match('/^(\d{4})-\d{2}$/', $ay, $m)) {
+                            $y1 = (int) $m[1];
+                            $y2 = $y1 + 1;
+                            echo 'Examination session: JULY ' . $y1 . ' - JUNE ' . $y2;
+                        } else {
+                            echo 'Examination session: —';
+                        }
+                    @endphp
+                </div>
                 <div style="width: 60px; height: 2px; background: #1e3a5f; margin: 8px auto 0;"></div>
             </div>
 
-            <!-- Examination Details -->
-            <div class="examination-details">
-                <table>
-                    <tr>
-                        <td>Enrollment No:</td>
-                        <td>{{ $semesterResult->student->roll_number ?? $semesterResult->student->registration_number ?? 'N/A' }}</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- Student Details -->
+            <!-- Student Details (two columns like reference) -->
             <div class="student-details">
                 <div class="section-label">Candidate &amp; Programme Details</div>
-                <table>
+                <table style="width: 100%; border-collapse: collapse;">
                     <tr>
-                        <td>Student's Name:</td>
-                        <td><strong>{{ strtoupper($semesterResult->student->name) }}</strong></td>
-                    </tr>
-                    <tr>
-                        <td>Date of Birth:</td>
-                        <td>{{ $semesterResult->student->date_of_birth ? \Carbon\Carbon::parse($semesterResult->student->date_of_birth)->format('d/m/Y') : 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Father's Name:</td>
-                        <td>{{ strtoupper($semesterResult->student->father_name ?? 'N/A') }}</td>
-                    </tr>
-                    <tr>
-                        <td>Mother's name:</td>
-                        <td>{{ strtoupper($semesterResult->student->mother_name ?? 'N/A') }}</td>
-                    </tr>
-                    <tr>
-                        <td>Course:</td>
-                        <td><strong>{{ strtoupper($semesterResult->course->name) }}</strong></td>
-                    </tr>
-                    <tr>
-                        <td>Semester/Year:</td>
-                        <td>
-                            @php
-                                $sem = (int) $semesterResult->semester;
-                                $yearNum = (int) ceil($sem / 2);
-                                $yearOrd = $yearNum == 1 ? '1ST' : ($yearNum == 2 ? '2ND' : ($yearNum == 3 ? '3RD' : $yearNum . 'TH'));
-                            @endphp
-                            SEMESTER {{ $sem }}, {{ $yearOrd }} YEAR
+                        <td style="width: 50%; vertical-align: top; padding-right: 16px;">
+                            <table style="width: 100%; border: none;">
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Roll No.:</td><td style="font-size: 9px;">{{ $semesterResult->student->roll_number ?? $semesterResult->student->registration_number ?? 'N/A' }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Student's Name:</td><td style="font-size: 9px;"><strong>{{ strtoupper($semesterResult->student->name) }}</strong></td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Father's Name:</td><td style="font-size: 9px;">{{ strtoupper($semesterResult->student->father_name ?? 'N/A') }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Course:</td><td style="font-size: 9px;"><strong>{{ strtoupper($semesterResult->course->name) }}</strong></td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Institute:</td><td style="font-size: 9px;">{{ strtoupper($semesterResult->student->institute->name ?? ($semesterResult->student->institute_id == 1 ? 'Mahatma Jyotiba Phule Institute of Technology & Management' : 'Mahatma Jyotiba Phule Institute of Paramedical Science')) }}</td></tr>
+                            </table>
                         </td>
-                    </tr>
-                    <tr>
-                        <td>Institute:</td>
-                        <td>{{ strtoupper($semesterResult->student->institute->name ?? ($semesterResult->student->institute_id == 1 ? 'Mahatma Jyotiba Phule Institute of Technology & Management' : 'Mahatma Jyotiba Phule Institute of Paramedical Science')) }}</td>
+                        <td style="width: 50%; vertical-align: top;">
+                            <table style="width: 100%; border: none;">
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Enrollment No.:</td><td style="font-size: 9px;">{{ $semesterResult->student->registration_number ?? $semesterResult->student->roll_number ?? 'N/A' }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Date of Birth:</td><td style="font-size: 9px;">{{ $semesterResult->student->date_of_birth ? \Carbon\Carbon::parse($semesterResult->student->date_of_birth)->format('d/m/Y') : 'N/A' }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Mother's name:</td><td style="font-size: 9px;">{{ strtoupper($semesterResult->student->mother_name ?? 'N/A') }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Semester/Year:</td><td style="font-size: 9px;">
+                                    @php
+                                        $sem = (int) $semesterResult->semester;
+                                        $yearNum = (int) ceil($sem / 2);
+                                        $yearOrd = $yearNum == 1 ? '1ST' : ($yearNum == 2 ? '2ND' : ($yearNum == 3 ? '3RD' : $yearNum . 'TH'));
+                                    @endphp
+                                    SEMESTER {{ $sem }}, {{ $yearOrd }} YEAR
+                                </td></tr>
+                            </table>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -390,7 +398,7 @@
                 <div class="grading-notes">
                     <ol>
                         <li>Line below the marks indicates failure in the paper</li>
-                        <li>The minimum marks for: Pass Marks 40%</li>
+                        <li>The minimum marks for : Pass Marks 40%</li>
                         <li>Second Division 48%</li>
                         <li>First Division 55%</li>
                     </ol>
@@ -416,6 +424,10 @@
                                     }
                                 @endphp
                         </td>
+                    </tr>
+                    <tr>
+                        <td>Date of issue:</td>
+                        <td class="highlight">{{ $semesterResult->date_of_issue ? 'Date: ' . \Carbon\Carbon::parse($semesterResult->date_of_issue)->format('d F Y') : '—' }}</td>
                     </tr>
                 </table>
             </div>

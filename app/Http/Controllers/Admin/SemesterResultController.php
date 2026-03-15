@@ -27,10 +27,12 @@ class SemesterResultController extends Controller
         }
 
         $student->load(['course', 'institute']);
+        $maxSemesters = $student->course->max_semesters ?? 99;
 
-        // Get all semesters that have subjects defined for this course
+        // Get all semesters that have subjects defined for this course, capped by course duration
         $availableSemesters = Subject::where('course_id', $student->course_id)
             ->where('status', 'active')
+            ->where('semester', '<=', $maxSemesters)
             ->distinct()
             ->pluck('semester')
             ->sort()
@@ -174,8 +176,9 @@ class SemesterResultController extends Controller
             abort(403, 'Only Super Admin can generate results.');
         }
 
+        $maxSemesters = $student->course->max_semesters ?? 99;
         $validated = $request->validate([
-            'semester' => ['required', 'integer', 'min:1'],
+            'semester' => ['required', 'integer', 'min:1', 'max:' . $maxSemesters],
             'academic_year' => ['nullable', 'string', 'max:255'],
             'subjects' => ['required', 'array', 'min:1'],
             'subjects.*.subject_id' => ['required', 'exists:subjects,id'],
@@ -345,41 +348,77 @@ class SemesterResultController extends Controller
     }
 
     /**
-     * Publish semester result and generate PDF
+     * Show form to set result declaration date. Super Admin only.
      */
-    public function publish(SemesterResult $semesterResult)
+    public function showPublishForm(SemesterResult $semesterResult)
     {
-        $user = Auth::user();
-        
-        // Check permission - match the same logic as StudentController@show
-        if (!$user->isSuperAdmin()) {
-            $student = $semesterResult->student;
-            $instituteId = session('current_institute_id');
-            
-            // Institute Admin can publish if:
-            // 1. They created the student, OR
-            // 2. Student is from their institute (website registration - created_by is null)
-            if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
-                abort(403, 'You are not authorized to publish this result.');
-            }
+        if (!Auth::user()->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can publish results.');
         }
 
         if ($semesterResult->status === 'published') {
-            return redirect()->back()
+            return redirect()->route('admin.semester-results.show', $semesterResult)
                 ->with('error', 'This result is already published.');
+        }
+
+        $sem = (int) $semesterResult->semester;
+        $isOddSem = ($sem % 2) === 1;
+        $year = null;
+        if (preg_match('/^(\d{4})/', (string) $semesterResult->academic_year, $m)) {
+            $year = (int) $m[1];
+        } else {
+            $year = (int) date('Y');
+        }
+
+        $defaultResultMonth = $isOddSem ? 2 : 7;
+        $defaultResultDate = sprintf('%04d-%02d-01', $year, $defaultResultMonth);
+
+        return view('admin.semester-results.publish-form', compact(
+            'semesterResult',
+            'defaultResultDate',
+            'isOddSem'
+        ));
+    }
+
+    /**
+     * Publish result only (with result declaration date). Super Admin only.
+     */
+    public function publish(Request $request, SemesterResult $semesterResult)
+    {
+        if (!Auth::user()->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can publish results.');
+        }
+
+        if ($semesterResult->status === 'published') {
+            return redirect()->route('admin.semester-results.show', $semesterResult)
+                ->with('error', 'This result is already published.');
+        }
+
+        $sem = (int) $semesterResult->semester;
+        $isOddSem = ($sem % 2) === 1;
+        $validResultMonths = $isOddSem ? [2] : [7];
+
+        $validated = $request->validate([
+            'result_declaration_date' => ['required', 'date'],
+        ]);
+
+        $resultDate = \Carbon\Carbon::parse($validated['result_declaration_date']);
+        if (!in_array((int) $resultDate->month, $validResultMonths, true)) {
+            return redirect()->back()
+                ->withErrors(['result_declaration_date' => 'Result declaration date must be in ' . ($isOddSem ? 'February' : 'July') . ' for this semester.'])
+                ->withInput();
         }
 
         DB::beginTransaction();
         try {
-            // Update status
             $semesterResult->update([
+                'result_declaration_date' => $resultDate->format('Y-m-d'),
                 'status' => 'published',
                 'verified_by' => Auth::id(),
                 'verified_at' => now(),
                 'published_at' => now(),
             ]);
 
-            // Update individual results status
             $semesterResult->results()->update([
                 'status' => 'published',
                 'verified_by' => Auth::id(),
@@ -387,16 +426,6 @@ class SemesterResultController extends Controller
                 'published_at' => now(),
             ]);
 
-            // Generate PDF
-            $pdf = $this->generatePdf($semesterResult);
-            
-            // Save PDF path
-            $pdfPath = 'results/' . $semesterResult->student_id . '/' . $semesterResult->id . '.pdf';
-            \Storage::disk('public')->put($pdfPath, $pdf->output());
-            
-            $semesterResult->update(['pdf_path' => $pdfPath]);
-
-            // Update student's current semester if this is the next semester
             $student = $semesterResult->student;
             if ($student->current_semester < $semesterResult->semester) {
                 $student->update(['current_semester' => $semesterResult->semester]);
@@ -405,7 +434,7 @@ class SemesterResultController extends Controller
             DB::commit();
 
             return redirect()->route('admin.semester-results.show', $semesterResult)
-                ->with('success', 'Result published successfully and PDF generated.');
+                ->with('success', 'Result published. You can issue the marksheet later from this page.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -415,52 +444,115 @@ class SemesterResultController extends Controller
     }
 
     /**
-     * View PDF in browser (HTML preview)
+     * Show form to set marksheet issue date. Super Admin only.
+     */
+    public function showIssueMarksheetForm(SemesterResult $semesterResult)
+    {
+        if (!Auth::user()->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can issue and print marksheet.');
+        }
+
+        if ($semesterResult->status !== 'published') {
+            return redirect()->route('admin.semester-results.show', $semesterResult)
+                ->with('error', 'Publish the result first, then issue the marksheet.');
+        }
+
+        $sem = (int) $semesterResult->semester;
+        $isOddSem = ($sem % 2) === 1;
+        $year = null;
+        if (preg_match('/^(\d{4})/', (string) $semesterResult->academic_year, $m)) {
+            $year = (int) $m[1];
+        } else {
+            $year = (int) date('Y');
+        }
+        $defaultIssueMonth = $isOddSem ? 3 : 8;
+        $defaultIssueDate = sprintf('%04d-%02d-01', $year, $defaultIssueMonth);
+
+        return view('admin.semester-results.issue-marksheet-form', compact(
+            'semesterResult',
+            'defaultIssueDate',
+            'isOddSem'
+        ));
+    }
+
+    /**
+     * Issue marksheet: set date of issue and generate PDF. Super Admin only.
+     */
+    public function issueMarksheet(Request $request, SemesterResult $semesterResult)
+    {
+        if (!Auth::user()->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can issue and print marksheet.');
+        }
+
+        if ($semesterResult->status !== 'published') {
+            return redirect()->route('admin.semester-results.show', $semesterResult)
+                ->with('error', 'Publish the result first, then issue the marksheet.');
+        }
+
+        $sem = (int) $semesterResult->semester;
+        $isOddSem = ($sem % 2) === 1;
+        $validIssueMonths = $isOddSem ? [3] : [8];
+
+        $validated = $request->validate([
+            'date_of_issue' => ['required', 'date'],
+        ]);
+
+        $issueDate = \Carbon\Carbon::parse($validated['date_of_issue']);
+        if (!in_array((int) $issueDate->month, $validIssueMonths, true)) {
+            return redirect()->back()
+                ->withErrors(['date_of_issue' => 'Marksheet issue date must be in ' . ($isOddSem ? 'March' : 'August') . ' for this semester.'])
+                ->withInput();
+        }
+
+        try {
+            $semesterResult->update(['date_of_issue' => $issueDate->format('Y-m-d')]);
+
+            $pdf = $this->generatePdf($semesterResult);
+            $pdfPath = 'results/' . $semesterResult->student_id . '/' . $semesterResult->id . '.pdf';
+            \Storage::disk('public')->put($pdfPath, $pdf->output());
+            $semesterResult->update(['pdf_path' => $pdfPath]);
+
+            return redirect()->route('admin.semester-results.show', $semesterResult)
+                ->with('success', 'Marksheet issued. You can view and download the PDF.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'An error occurred while generating the marksheet: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * View PDF in browser (HTML preview). Super Admin only; marksheet must be issued first.
      */
     public function viewPdf(SemesterResult $semesterResult)
     {
-        $user = Auth::user();
-        
-        // Check permission - match the same logic as StudentController@show
-        if (!$user->isSuperAdmin()) {
-            $student = $semesterResult->student;
-            $instituteId = session('current_institute_id');
-            
-            // Institute Admin can view if:
-            // 1. They created the student, OR
-            // 2. Student is from their institute (website registration - created_by is null)
-            if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
-                abort(403, 'You are not authorized to view this result.');
-            }
+        if (!Auth::user()->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can view and print the marksheet.');
+        }
+
+        if (!$semesterResult->date_of_issue) {
+            return redirect()->route('admin.semester-results.issue-marksheet-form', $semesterResult->id)
+                ->with('error', 'Issue the marksheet first (set issue date) to view the PDF.');
         }
 
         $semesterResult->load(['student.institute', 'student.course', 'results.subject', 'enteredBy', 'verifiedBy']);
-
         return view('pdf.semester-result-preview', compact('semesterResult'));
     }
 
     /**
-     * Download PDF (Admin)
+     * Download PDF. Super Admin only; marksheet must be issued first.
      */
     public function downloadPdf(SemesterResult $semesterResult)
     {
-        $user = Auth::user();
-        
-        // Check permission - match the same logic as StudentController@show
-        if (!$user->isSuperAdmin()) {
-            $student = $semesterResult->student;
-            $instituteId = session('current_institute_id');
-            
-            // Institute Admin can download if:
-            // 1. They created the student, OR
-            // 2. Student is from their institute (website registration - created_by is null)
-            if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
-                abort(403, 'You are not authorized to download this result.');
-            }
+        if (!Auth::user()->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can view and print the marksheet.');
+        }
+
+        if (!$semesterResult->date_of_issue) {
+            return redirect()->route('admin.semester-results.issue-marksheet-form', $semesterResult->id)
+                ->with('error', 'Issue the marksheet first (set issue date) to download the PDF.');
         }
 
         if (!$semesterResult->pdf_path || !\Storage::disk('public')->exists($semesterResult->pdf_path)) {
-            // Generate PDF if it doesn't exist
             $pdf = $this->generatePdf($semesterResult);
             return $pdf->download('Semester-' . $semesterResult->semester . '-Result-' . $semesterResult->student->roll_number . '.pdf');
         }
@@ -470,52 +562,19 @@ class SemesterResultController extends Controller
     }
 
     /**
-     * View PDF (Student - their own results only)
+     * View PDF – Admin only. Marksheet is for printing; students see result online but cannot view/download the marksheet.
      */
     public function studentView(SemesterResult $semesterResult)
     {
-        $student = Auth::guard('student')->user();
-        
-        // Check if this result belongs to the logged-in student
-        if ($semesterResult->student_id !== $student->id) {
-            abort(403, 'You are not authorized to view this result.');
-        }
-
-        // Check if result is published
-        if ($semesterResult->status !== 'published') {
-            abort(403, 'This result is not yet published.');
-        }
-
-        $semesterResult->load(['student.institute', 'student.course', 'results.subject', 'enteredBy', 'verifiedBy']);
-
-        return view('pdf.semester-result-preview', compact('semesterResult'));
+        abort(403, 'The marksheet is issued by the institute only. Your result is published and visible above; the printed marksheet can be collected from the office.');
     }
 
     /**
-     * Download PDF (Student - their own results only)
+     * Download PDF – Admin only. Marksheet is for printing; students cannot download it.
      */
     public function studentDownload(SemesterResult $semesterResult)
     {
-        $student = Auth::guard('student')->user();
-        
-        // Check if this result belongs to the logged-in student
-        if ($semesterResult->student_id !== $student->id) {
-            abort(403, 'You are not authorized to download this result.');
-        }
-
-        // Check if result is published
-        if ($semesterResult->status !== 'published') {
-            abort(403, 'This result is not yet published.');
-        }
-
-        if (!$semesterResult->pdf_path || !\Storage::disk('public')->exists($semesterResult->pdf_path)) {
-            // Generate PDF if it doesn't exist
-            $pdf = $this->generatePdf($semesterResult);
-            return $pdf->download('Semester-' . $semesterResult->semester . '-Result-' . $semesterResult->student->roll_number . '.pdf');
-        }
-
-        $fullPath = storage_path('app/public/' . $semesterResult->pdf_path);
-        return response()->download($fullPath, basename($semesterResult->pdf_path));
+        abort(403, 'The marksheet is issued by the institute only. Your result is published and visible above; the printed marksheet can be collected from the office.');
     }
 
     /**

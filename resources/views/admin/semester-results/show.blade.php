@@ -110,40 +110,55 @@
                 </div>
             </div>
 
-            <!-- Actions -->
-            @if($semesterResult->status !== 'published')
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-                        <div class="flex gap-4">
-                            <form action="{{ route('admin.semester-results.publish', $semesterResult->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to publish this result? Once published, it will be visible to the student.');">
-                                @csrf
-                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                                    ✓ Publish Result
-                                </button>
-                            </form>
+            <!-- Actions (Super Admin only: publish, issue marksheet, print) -->
+            @if(auth()->user()->isSuperAdmin())
+                @if($semesterResult->status !== 'published')
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+                            <div class="flex gap-4">
+                                <a href="{{ route('admin.semester-results.publish-form', $semesterResult->id) }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-block">
+                                    ✓ Publish result
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @else
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+                            <div class="flex flex-wrap gap-4 items-center">
+                                <a href="{{ route('admin.semester-results.issue-marksheet-form', $semesterResult->id) }}" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    {{ $semesterResult->date_of_issue ? 'Re-issue marksheet' : 'Issue marksheet' }}
+                                </a>
+                                @if($semesterResult->date_of_issue)
+                                <a href="{{ route('admin.semester-results.view', $semesterResult->id) }}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    View PDF
+                                </a>
+                                <a href="{{ route('admin.semester-results.download', $semesterResult->id) }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Download PDF
+                                </a>
+                                @else
+                                <span class="text-sm text-gray-500">Issue the marksheet (set issue date) to generate and print the PDF.</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
             @else
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-                        <div class="flex gap-4">
-                            <a href="{{ route('admin.semester-results.view', $semesterResult->id) }}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                View PDF
-                            </a>
-                            <a href="{{ route('admin.semester-results.download', $semesterResult->id) }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Download PDF
-                            </a>
-                        </div>
+                        <p class="text-sm text-gray-600">Only Super Admin can publish results and issue/print the marksheet. You can view the result details above.</p>
                     </div>
                 </div>
             @endif

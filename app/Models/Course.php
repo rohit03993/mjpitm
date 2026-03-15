@@ -129,6 +129,15 @@ class Course extends Model
     }
 
     /**
+     * Get max semesters for this course (6 months = 1 sem, 1 year = 2, 2 years = 4, 3 years = 6).
+     */
+    public function getMaxSemestersAttribute(): int
+    {
+        $months = (int) ($this->duration_months ?? 0);
+        return $months >= 6 ? (int) floor($months / 6) : 1;
+    }
+
+    /**
      * Get total fee (tuition fee + registration fee)
      * Registration fee defaults to ₹1000 if not set or is 0
      */
