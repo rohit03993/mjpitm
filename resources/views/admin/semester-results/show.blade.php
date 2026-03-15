@@ -32,12 +32,12 @@
                 <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <p class="text-sm text-gray-500">Student</p>
-                        <p class="font-semibold text-gray-900">{{ $semesterResult->student->name }}</p>
-                        <p class="text-xs text-gray-500">{{ $semesterResult->student->roll_number ?? $semesterResult->student->registration_number }}</p>
+                        <p class="font-semibold text-gray-900">{{ $semesterResult->student?->name ?? '—' }}</p>
+                        <p class="text-xs text-gray-500">{{ $semesterResult->student?->roll_number ?? $semesterResult->student?->registration_number ?? '—' }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Course</p>
-                        <p class="font-semibold text-gray-900">{{ $semesterResult->course->name }}</p>
+                        <p class="font-semibold text-gray-900">{{ $semesterResult->course?->name ?? '—' }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Semester</p>
@@ -79,13 +79,13 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($semesterResult->results as $result)
                                     <tr>
-                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $result->subject->name }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-500">{{ $result->subject->code }}</td>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $result->subject?->name ?? '—' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-500">{{ $result->subject?->code ?? '—' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900">
-                                            {{ $result->theory_marks_obtained ?? 0 }} / {{ $result->subject->theory_marks ?? 0 }}
+                                            {{ $result->theory_marks_obtained ?? 0 }} / {{ $result->subject?->theory_marks ?? 0 }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900">
-                                            {{ $result->practical_marks_obtained ?? 0 }} / {{ $result->subject->practical_marks ?? 0 }}
+                                            {{ $result->practical_marks_obtained ?? 0 }} / {{ $result->subject?->practical_marks ?? 0 }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900">
                                             <span class="font-semibold">{{ $result->marks_obtained ?? 0 }}</span>
@@ -111,7 +111,7 @@
             </div>
 
             <!-- Actions (Super Admin only: publish, issue marksheet, print) -->
-            @if(auth()->user()->isSuperAdmin())
+            @if(auth()->user()?->isSuperAdmin())
                 @if($semesterResult->status !== 'published')
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">

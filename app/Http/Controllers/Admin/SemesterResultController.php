@@ -327,22 +327,24 @@ class SemesterResultController extends Controller
      */
     public function show(SemesterResult $semesterResult)
     {
+        $semesterResult->load(['student.course', 'student.institute', 'results.subject', 'enteredBy', 'verifiedBy']);
+
+        $student = $semesterResult->student;
+        if (!$student) {
+            abort(404, 'Student record not found for this result.');
+        }
+        if (!$semesterResult->course) {
+            abort(404, 'Course not found for this result.');
+        }
+
         $user = Auth::user();
-        
         // Check permission - match the same logic as StudentController@show
         if (!$user->isSuperAdmin()) {
-            $student = $semesterResult->student;
             $instituteId = session('current_institute_id');
-            
-            // Institute Admin can view if:
-            // 1. They created the student, OR
-            // 2. Student is from their institute (website registration - created_by is null)
             if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
                 abort(403, 'You are not authorized to view this result.');
             }
         }
-
-        $semesterResult->load(['student.course', 'student.institute', 'results.subject', 'enteredBy', 'verifiedBy']);
 
         return view('admin.semester-results.show', compact('semesterResult'));
     }
