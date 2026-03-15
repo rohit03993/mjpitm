@@ -129,4 +129,55 @@ class SemesterResult extends Model
             && $this->verified_at <= now()
             && $this->results()->where('status', 'published')->exists();
     }
+
+    /**
+     * Get academic year for a given admission session and semester (e.g. 2026-27 + sem 1 → 2026-27; sem 3 → 2027-28).
+     */
+    public static function getAcademicYearForSessionSemester(string $session, int $semester): string
+    {
+        $semester = max(1, (int) $semester);
+        $yearIndex = (int) ceil($semester / 2) - 1;
+        if ($yearIndex === 0) {
+            return $session;
+        }
+        $parts = explode('-', trim($session));
+        $startYear = isset($parts[0]) && is_numeric($parts[0]) ? (int) $parts[0] : (int) date('Y');
+        $endShort = isset($parts[1]) && is_numeric($parts[1]) ? (int) $parts[1] : ($startYear % 100) + 1;
+        $newStart = $startYear + $yearIndex;
+        $newEnd = $endShort + $yearIndex;
+        return $newStart . '-' . str_pad((string) $newEnd, 2, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Calendar year when result/marksheet falls (academic_year 2026-27 → 2027).
+     */
+    public static function getResultCalendarYear(string $academicYear): int
+    {
+        if (preg_match('/^(\d{4})/', trim($academicYear), $m)) {
+            return (int) $m[1] + 1;
+        }
+        return (int) date('Y');
+    }
+
+    /**
+     * Default result declaration date (15 Feb or 15 Jul) for a session+semester.
+     */
+    public static function getDefaultResultDeclarationDate(string $session, int $semester): string
+    {
+        $academicYear = static::getAcademicYearForSessionSemester($session, $semester);
+        $year = static::getResultCalendarYear($academicYear);
+        $month = ($semester % 2) === 1 ? 2 : 7; // odd → Feb, even → Jul
+        return sprintf('%04d-%02d-15', $year, $month);
+    }
+
+    /**
+     * Default marksheet issue date (15 Mar or 15 Aug) for a session+semester.
+     */
+    public static function getDefaultMarksheetIssueDate(string $session, int $semester): string
+    {
+        $academicYear = static::getAcademicYearForSessionSemester($session, $semester);
+        $year = static::getResultCalendarYear($academicYear);
+        $month = ($semester % 2) === 1 ? 3 : 8; // odd → Mar, even → Aug
+        return sprintf('%04d-%02d-15', $year, $month);
+    }
 }

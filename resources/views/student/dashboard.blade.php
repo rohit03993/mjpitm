@@ -365,6 +365,12 @@
                                                 <strong>Total:</strong> {{ $semesterResult->total_marks_obtained }} / {{ $semesterResult->total_max_marks }} marks
                                                 | <strong>Subjects:</strong> {{ $semesterResult->total_subjects }}
                                             </p>
+                                            @if($semesterResult->result_declaration_date)
+                                            <p class="text-xs text-gray-600 mt-1">Result declared on {{ \Carbon\Carbon::parse($semesterResult->result_declaration_date)->format('d M Y') }}</p>
+                                            @endif
+                                            @if($semesterResult->date_of_issue)
+                                            <p class="text-xs text-gray-600">Marksheet issued on {{ \Carbon\Carbon::parse($semesterResult->date_of_issue)->format('d M Y') }}</p>
+                                            @endif
                                         </div>
                                         <p class="text-xs text-gray-500 italic">Result published online. The official marksheet is issued by the institute and can be collected from the office.</p>
                                     </div>

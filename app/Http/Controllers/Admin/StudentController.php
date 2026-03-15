@@ -877,16 +877,26 @@ class StudentController extends Controller
             
             // Update admission_year to match new session
             $validated['admission_year'] = $newYear;
-            
-            // Update academic_year in all existing semester results to match new session
-            \App\Models\SemesterResult::where('student_id', $student->id)
+
+            // Recompute academic_year, result_declaration_date, and date_of_issue per semester from new session
+            $semesterResults = \App\Models\SemesterResult::where('student_id', $student->id)->get();
+            foreach ($semesterResults as $sr) {
+                $sem = (int) $sr->semester;
+                $academicYear = \App\Models\SemesterResult::getAcademicYearForSessionSemester($newSession, $sem);
+                $resultDate = \App\Models\SemesterResult::getDefaultResultDeclarationDate($newSession, $sem);
+                $issueDate = \App\Models\SemesterResult::getDefaultMarksheetIssueDate($newSession, $sem);
+                $sr->update([
+                    'academic_year' => $academicYear,
+                    'result_declaration_date' => $resultDate,
+                    'date_of_issue' => $sr->date_of_issue ? $issueDate : null, // keep issue date in sync if it was set
+                ]);
+                // Sync child Result records to same academic_year
+                \App\Models\Result::where('semester_result_id', $sr->id)->update(['academic_year' => $academicYear]);
+            }
+            // Legacy Result rows without semester_result_id: set academic_year from new session (year 1)
+            \App\Models\Result::where('student_id', $student->id)->whereNull('semester_result_id')
                 ->update(['academic_year' => $newSession]);
-            
-            // Update academic_year in all individual result records to match new session
-            // This ensures parent (SemesterResult) and child (Result) records stay synchronized
-            \App\Models\Result::where('student_id', $student->id)
-                ->update(['academic_year' => $newSession]);
-            
+
             // Delete old PDFs (they will regenerate with new numbers on next view)
             $this->deleteStudentPDFs($student);
         }

@@ -56,6 +56,18 @@
                             {{ ucfirst(str_replace('_', ' ', $semesterResult->status)) }}
                         </span>
                     </div>
+                    @if($semesterResult->result_declaration_date)
+                    <div>
+                        <p class="text-sm text-gray-500">Result declaration date</p>
+                        <p class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($semesterResult->result_declaration_date)->format('d M Y') }}</p>
+                    </div>
+                    @endif
+                    @if($semesterResult->date_of_issue)
+                    <div>
+                        <p class="text-sm text-gray-500">Marksheet date of issue</p>
+                        <p class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($semesterResult->date_of_issue)->format('d M Y') }}</p>
+                    </div>
+                    @endif
                 </div>
             </div>
 

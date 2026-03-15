@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Result Cum Details Marks Certificate - {{ $semesterResult->student->name }}</title>
+    <title>Result Cum Details Marks Certificate - {{ $semesterResult->student?->name ?? 'Student' }}</title>
     <style>
         @page { margin: 0; size: A4; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -265,9 +265,9 @@
         <div class="watermark">
             <div class="watermark-text">
                 @php
-                    $instituteName = $semesterResult->student->institute->name ?? ($semesterResult->student->institute_id == 1 ? 'MAHATMA JYOTIBA PHULE INSTITUTE OF TECHNOLOGY & MANAGEMENT' : 'MAHATMA JYOTIBA PHULE INSTITUTE OF PARAMEDICAL SCIENCE');
+                    $instituteName = $semesterResult->student?->institute?->name ?? ($semesterResult->student?->institute_id == 1 ? 'MAHATMA JYOTIBA PHULE INSTITUTE OF TECHNOLOGY & MANAGEMENT' : 'MAHATMA JYOTIBA PHULE INSTITUTE OF PARAMEDICAL SCIENCE');
                 @endphp
-                {{ strtoupper($instituteName) }} {{ strtoupper($instituteName) }} {{ strtoupper($instituteName) }}
+                {{ strtoupper($instituteName ?? 'INSTITUTE') }} {{ strtoupper($instituteName ?? 'INSTITUTE') }} {{ strtoupper($instituteName ?? 'INSTITUTE') }}
             </div>
         </div>
 
@@ -277,9 +277,8 @@
             <div class="header">
                 <div class="institute-logo">
                     @php
-                        $logoPath = $semesterResult->student->institute_id == 1 
-                            ? public_path('images/logos/MJPITM.png') 
-                            : public_path('images/logos/MJPIPS.png');
+                        $instId = $semesterResult->student?->institute_id ?? 1;
+                        $logoPath = $instId == 1 ? public_path('images/logos/MJPITM.png') : public_path('images/logos/MJPIPS.png');
                     @endphp
                     @if(file_exists($logoPath))
                         <img src="{{ $logoPath }}" alt="Institute Logo">
@@ -287,7 +286,7 @@
                 </div>
 
                 <div class="institute-name-hindi">
-                    @if($semesterResult->student->institute_id == 1)
+                    @if(($semesterResult->student?->institute_id ?? 1) == 1)
                         महात्मा ज्योतिबा फुले प्रौद्योगिकी एवं प्रबंधन संस्थान (स्वायत्त)
                     @else
                         महात्मा ज्योतिबा फुले पराचिकित्सा संस्थान (स्वायत्त)
@@ -295,11 +294,11 @@
                 </div>
 
                 <div class="institute-name-english">
-                    {{ $semesterResult->student->institute->name ?? ($semesterResult->student->institute_id == 1 ? 'Mahatma Jyotiba Phule Institute of Technology & Management' : 'Mahatma Jyotiba Phule Institute of Paramedical Science') }}
+                    {{ $semesterResult->student?->institute?->name ?? (($semesterResult->student?->institute_id ?? 1) == 1 ? 'Mahatma Jyotiba Phule Institute of Technology & Management' : 'Mahatma Jyotiba Phule Institute of Paramedical Science') }}
                 </div>
 
                 <div class="accreditation">
-                    @if($semesterResult->student->institute_id == 1)
+                    @if(($semesterResult->student?->institute_id ?? 1) == 1)
                         <div class="accreditation-line">An Autonomous Institution for Education & Training Run and Managed By Diksha Educational Trust, Regd. By Govt. of NCT of Delhi</div>
                         <div class="accreditation-line">Estd. & Regd. By Indian Trusts Act, 1882 under Guidelines of NEP-1986 & 2020 Incorporated under the legislation of Govt of India</div>
                         <div class="accreditation-line">Affiliated with Labour Ministry Govt of India, NITI Aayog In association with MoEAn ISO 9001:2015 Certified Institution</div>
@@ -312,16 +311,7 @@
 
                 <div class="cert-title">Result Cum Details Marks Certificate</div>
                 <div class="examination-session-line">
-                    @php
-                        $ay = $semesterResult->academic_year;
-                        if ($ay && preg_match('/^(\d{4})-\d{2}$/', $ay, $m)) {
-                            $y1 = (int) $m[1];
-                            $y2 = $y1 + 1;
-                            echo 'Examination session: JULY ' . $y1 . ' - JUNE ' . $y2;
-                        } else {
-                            echo 'Examination session: —';
-                        }
-                    @endphp
+                    Examination session {{ $semesterResult->academic_year ? '(' . $semesterResult->academic_year . ')' : '—' }}
                 </div>
                 <div style="width: 60px; height: 2px; background: #1e3a5f; margin: 8px auto 0;"></div>
             </div>
@@ -333,18 +323,17 @@
                     <tr>
                         <td style="width: 50%; vertical-align: top; padding-right: 16px;">
                             <table style="width: 100%; border: none;">
-                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Roll No.:</td><td style="font-size: 9px;">{{ $semesterResult->student->roll_number ?? $semesterResult->student->registration_number ?? 'N/A' }}</td></tr>
-                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Student's Name:</td><td style="font-size: 9px;"><strong>{{ strtoupper($semesterResult->student->name) }}</strong></td></tr>
-                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Father's Name:</td><td style="font-size: 9px;">{{ strtoupper($semesterResult->student->father_name ?? 'N/A') }}</td></tr>
-                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Course:</td><td style="font-size: 9px;"><strong>{{ strtoupper($semesterResult->course->name) }}</strong></td></tr>
-                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Institute:</td><td style="font-size: 9px;">{{ strtoupper($semesterResult->student->institute->name ?? ($semesterResult->student->institute_id == 1 ? 'Mahatma Jyotiba Phule Institute of Technology & Management' : 'Mahatma Jyotiba Phule Institute of Paramedical Science')) }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Enrollment No.:</td><td style="font-size: 9px;">{{ $semesterResult->student?->roll_number ?? $semesterResult->student?->registration_number ?? 'N/A' }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Student's Name:</td><td style="font-size: 9px;"><strong>{{ strtoupper($semesterResult->student?->name ?? 'N/A') }}</strong></td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Father's Name:</td><td style="font-size: 9px;">{{ strtoupper($semesterResult->student?->father_name ?? 'N/A') }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Course:</td><td style="font-size: 9px;"><strong>{{ strtoupper($semesterResult->course?->name ?? 'N/A') }}</strong></td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Institute:</td><td style="font-size: 9px;">{{ strtoupper($semesterResult->student?->institute?->name ?? (($semesterResult->student?->institute_id ?? 1) == 1 ? 'Mahatma Jyotiba Phule Institute of Technology & Management' : 'Mahatma Jyotiba Phule Institute of Paramedical Science')) }}</td></tr>
                             </table>
                         </td>
                         <td style="width: 50%; vertical-align: top;">
                             <table style="width: 100%; border: none;">
-                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Enrollment No.:</td><td style="font-size: 9px;">{{ $semesterResult->student->registration_number ?? $semesterResult->student->roll_number ?? 'N/A' }}</td></tr>
-                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Date of Birth:</td><td style="font-size: 9px;">{{ $semesterResult->student->date_of_birth ? \Carbon\Carbon::parse($semesterResult->student->date_of_birth)->format('d/m/Y') : 'N/A' }}</td></tr>
-                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Mother's name:</td><td style="font-size: 9px;">{{ strtoupper($semesterResult->student->mother_name ?? 'N/A') }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Date of Birth:</td><td style="font-size: 9px;">{{ $semesterResult->student?->date_of_birth ? \Carbon\Carbon::parse($semesterResult->student->date_of_birth)->format('d/m/Y') : 'N/A' }}</td></tr>
+                                <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Mother's name:</td><td style="font-size: 9px;">{{ strtoupper($semesterResult->student?->mother_name ?? 'N/A') }}</td></tr>
                                 <tr><td style="font-weight: bold; color: #475569; font-size: 9px; padding: 4px 0;">Semester/Year:</td><td style="font-size: 9px;">
                                     @php
                                         $sem = (int) $semesterResult->semester;
@@ -373,10 +362,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($semesterResult->results as $index => $result)
+                    @foreach($semesterResult->results ?? [] as $index => $result)
                         <tr>
                             <td>{{ $index + 1 }}</td>
-                            <td><strong>{{ strtoupper($result->subject->name) }}</strong></td>
+                            <td><strong>{{ strtoupper($result->subject?->name ?? '—') }}</strong></td>
                             <td>{{ number_format($result->total_marks ?? 0, 2) }}</td>
                             <td>{{ number_format($result->theory_marks_obtained ?? 0, 2) }}</td>
                             <td>{{ number_format($result->practical_marks_obtained ?? 0, 2) }}</td>
@@ -385,10 +374,10 @@
                     @endforeach
                     <tr class="total-row">
                         <td colspan="2"><strong>TOTAL</strong></td>
-                        <td><strong>{{ number_format($semesterResult->total_max_marks, 2) }}</strong></td>
-                        <td><strong>{{ number_format($semesterResult->results->sum('theory_marks_obtained'), 2) }}</strong></td>
-                        <td><strong>{{ number_format($semesterResult->results->sum('practical_marks_obtained'), 2) }}</strong></td>
-                        <td><strong>{{ number_format($semesterResult->total_marks_obtained, 2) }}</strong></td>
+                        <td><strong>{{ number_format($semesterResult->total_max_marks ?? 0, 2) }}</strong></td>
+                        <td><strong>{{ number_format($semesterResult->results?->sum('theory_marks_obtained') ?? 0, 2) }}</strong></td>
+                        <td><strong>{{ number_format($semesterResult->results?->sum('practical_marks_obtained') ?? 0, 2) }}</strong></td>
+                        <td><strong>{{ number_format($semesterResult->total_marks_obtained ?? 0, 2) }}</strong></td>
                     </tr>
                 </tbody>
             </table>
@@ -424,6 +413,10 @@
                                     }
                                 @endphp
                         </td>
+                    </tr>
+                    <tr>
+                        <td>Result declaration:</td>
+                        <td class="highlight">{{ $semesterResult->result_declaration_date ? \Carbon\Carbon::parse($semesterResult->result_declaration_date)->format('d F Y') : '—' }}</td>
                     </tr>
                     <tr>
                         <td>Date of issue:</td>

@@ -95,31 +95,54 @@ class SemesterResultController extends Controller
         }
 
         if (!$nextSemester) {
-            // Get published semesters to provide better context
-            // Use the SAME criteria as StudentController to check if truly published
+            // Fallback: next semester may have subjects even if not in distinct list (e.g. just added).
+            // Use max of (published semesters, available semesters) + 1 and check for subjects.
             $publishedSemesters = SemesterResult::where('student_id', $student->id)
                 ->where('status', 'published')
                 ->whereNotNull('published_at')
                 ->whereNotNull('verified_at')
                 ->whereNotNull('verified_by')
-                ->whereHas('results', function($query) {
+                ->whereHas('results', function ($query) {
                     $query->where('status', 'published');
                 })
                 ->pluck('semester')
+                ->map(fn ($s) => (int) $s)
                 ->toArray();
-            
-            // Find the highest semester number
-            $maxSemester = $availableSemesters->max() ?? 0;
-            $nextSemesterNumber = $maxSemester + 1;
-            
-            $message = 'All semesters with subjects have been published for this student. ';
-            if (!empty($publishedSemesters)) {
-                $message .= 'Published semesters: ' . implode(', ', $publishedSemesters) . '. ';
+            $maxPublished = !empty($publishedSemesters) ? (int) max($publishedSemesters) : 0;
+            $maxAvailable = (int) ($availableSemesters->max() ?? 0);
+            $nextSemesterNumber = max($maxPublished, $maxAvailable) + 1;
+
+            if ($nextSemesterNumber <= $maxSemesters) {
+                $subjectsForNext = Subject::where('course_id', $student->course_id)
+                    ->where('status', 'active')
+                    ->where(function ($q) use ($nextSemesterNumber) {
+                        $q->where('semester', $nextSemesterNumber)
+                            ->orWhere('semester', (string) $nextSemesterNumber);
+                    })
+                    ->orderBy('name')
+                    ->get();
+                if ($subjectsForNext->isNotEmpty()) {
+                    $nextSemester = $nextSemesterNumber;
+                    $subjects = $subjectsForNext;
+                }
             }
-            $message .= "Please add subjects for Semester {$nextSemesterNumber} (or a higher semester) to generate more results.";
-            
-            return redirect()->route('admin.students.show', $student)
-                ->with('error', $message);
+
+            if (!$nextSemester) {
+                // Course has limited semesters: next would exceed course duration — show clear completion message
+                if ($nextSemesterNumber > $maxSemesters) {
+                    $yearLabel = $maxSemesters === 1 ? '1 semester' : ($maxSemesters === 2 ? '1 year' : (($maxSemesters / 2) . ' years'));
+                    $message = "This course is for {$yearLabel} only (max {$maxSemesters} semester(s)). All results for this course have been published.";
+                    return redirect()->route('admin.students.show', $student)
+                        ->with('error', $message);
+                }
+                $message = 'All semesters with subjects have been published for this student. ';
+                if (!empty($publishedSemesters)) {
+                    $message .= 'Published semesters: ' . implode(', ', $publishedSemesters) . '. ';
+                }
+                $message .= "Please add subjects for Semester {$nextSemesterNumber} (or a higher semester) to generate more results.";
+                return redirect()->route('admin.students.show', $student)
+                    ->with('error', $message);
+            }
         }
         
         // If there's a draft result, redirect to edit it instead
@@ -365,15 +388,10 @@ class SemesterResultController extends Controller
 
         $sem = (int) $semesterResult->semester;
         $isOddSem = ($sem % 2) === 1;
-        $year = null;
-        if (preg_match('/^(\d{4})/', (string) $semesterResult->academic_year, $m)) {
-            $year = (int) $m[1];
-        } else {
-            $year = (int) date('Y');
-        }
-
+        // Calendar year for result: academic year start + 1 (e.g. session 2026-27, sem 1 → result Feb 2027)
+        $defaultYear = $this->getResultCalendarYear($semesterResult);
         $defaultResultMonth = $isOddSem ? 2 : 7;
-        $defaultResultDate = sprintf('%04d-%02d-01', $year, $defaultResultMonth);
+        $defaultResultDate = sprintf('%04d-%02d-15', $defaultYear, $defaultResultMonth);
 
         return view('admin.semester-results.publish-form', compact(
             'semesterResult',
@@ -461,14 +479,10 @@ class SemesterResultController extends Controller
 
         $sem = (int) $semesterResult->semester;
         $isOddSem = ($sem % 2) === 1;
-        $year = null;
-        if (preg_match('/^(\d{4})/', (string) $semesterResult->academic_year, $m)) {
-            $year = (int) $m[1];
-        } else {
-            $year = (int) date('Y');
-        }
+        // Calendar year for marksheet: same as result (e.g. sem 1 → marksheet Mar 2027)
+        $defaultYear = $this->getResultCalendarYear($semesterResult);
         $defaultIssueMonth = $isOddSem ? 3 : 8;
-        $defaultIssueDate = sprintf('%04d-%02d-01', $year, $defaultIssueMonth);
+        $defaultIssueDate = sprintf('%04d-%02d-15', $defaultYear, $defaultIssueMonth);
 
         return view('admin.semester-results.issue-marksheet-form', compact(
             'semesterResult',
@@ -604,6 +618,24 @@ class SemesterResultController extends Controller
      * @param int $semester Semester number (1, 2, 3, ...)
      * @return string Academic year (e.g. "2025-26", "2026-27")
      */
+    /**
+     * Calendar year when result/marksheet falls (e.g. session 2026-27, sem 1 → 2027; sem 3 → 2028).
+     */
+    private function getResultCalendarYear(SemesterResult $semesterResult): int
+    {
+        if (preg_match('/^(\d{4})/', (string) $semesterResult->academic_year, $m)) {
+            return (int) $m[1] + 1;
+        }
+        $student = $semesterResult->student;
+        if ($student && $student->session) {
+            $academicYear = $this->getAcademicYearForSemester($student->session, (int) $semesterResult->semester);
+            if (preg_match('/^(\d{4})/', $academicYear, $m)) {
+                return (int) $m[1] + 1;
+            }
+        }
+        return (int) date('Y');
+    }
+
     private function getAcademicYearForSemester(string $session, int $semester): string
     {
         $semester = max(1, (int) $semester);
