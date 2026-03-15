@@ -130,31 +130,33 @@
                 <div>
                     <h3 class="text-lg font-bold mb-4">Programs</h3>
                     <ul class="space-y-2">
-                        <li><a href="{{ route('courses') }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>DMLT</a></li>
-                        <li><a href="{{ route('courses') }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>B.Sc Nursing</a></li>
-                        <li><a href="{{ route('courses') }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>Pharmacy</a></li>
+                        @foreach($footerCategories ?? [] as $cat)
+                        <li><a href="{{ route('courses.category', \Illuminate\Support\Str::slug($cat->name)) }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>{{ $cat->name }}</a></li>
+                        @endforeach
                         <li><a href="{{ route('courses') }}" class="text-gray-400 hover:text-white transition"><i class="fas fa-chevron-right mr-2 text-xs"></i>All Courses</a></li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-4">Contact Us</h3>
                     <ul class="space-y-3">
+                        @if(!empty($institute->contact_address ?? null))
                         <li class="flex items-start">
                             <i class="fas fa-map-marker-alt mr-3 text-green-400 mt-1"></i>
-                            <span class="text-gray-400">Agra, Uttar Pradesh, India</span>
+                            <span class="text-gray-400">{{ $institute->contact_address }}</span>
                         </li>
+                        @endif
+                        @if(!empty($institute->contact_email ?? null))
                         <li class="flex items-center">
                             <i class="fas fa-envelope mr-3 text-green-400"></i>
-                            <a href="mailto:info@mjpips.in" class="text-gray-400 hover:text-white transition">info@mjpips.in</a>
+                            <a href="mailto:{{ $institute->contact_email }}" class="text-gray-400 hover:text-white transition">{{ $institute->contact_email }}</a>
                         </li>
+                        @endif
+                        @if(!empty($institute->contact_phone ?? null))
                         <li class="flex items-center">
                             <i class="fas fa-phone mr-3 text-green-400"></i>
-                            <a href="tel:+91XXXXXXXXXX" class="text-gray-400 hover:text-white transition">+91-XXXXX-XXXXX</a>
+                            <a href="tel:{{ preg_replace('/[^0-9+]/', '', $institute->contact_phone ?? '') }}" class="text-gray-400 hover:text-white transition">{{ $institute->contact_phone }}</a>
                         </li>
-                        <li class="flex items-center">
-                            <i class="fas fa-globe mr-3 text-green-400"></i>
-                            <a href="http://mjpips.in" class="text-gray-400 hover:text-white transition">www.mjpips.in</a>
-                        </li>
+                        @endif
                     </ul>
                 </div>
             </div>

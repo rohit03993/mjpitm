@@ -184,11 +184,11 @@
     </div>
 </section>
 
-<!-- Popular Courses Section -->
+<!-- Course Categories - Show categories with image and course count (MJPIPS) -->
 <section class="py-16 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Popular Courses</h2>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Course Categories</h2>
             <div class="w-24 h-1 bg-green-600 mx-auto mb-6"></div>
             <p class="text-gray-700 text-lg max-w-3xl mx-auto font-medium">
                 Discover our healthcare and paramedical programs designed for your professional growth
@@ -196,41 +196,56 @@
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            @forelse($popularCategories ?? [] as $category)
             @php
-                $sampleCourses = [
-                    ['name' => 'DMLT', 'full' => 'Diploma in Medical Laboratory Technology', 'duration' => '2 Years', 'icon' => 'fa-flask', 'image' => 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&h=400&fit=crop', 'description' => 'Learn laboratory techniques and diagnostic procedures'],
-                    ['name' => 'B.Sc Nursing', 'full' => 'Bachelor of Science in Nursing', 'duration' => '4 Years', 'icon' => 'fa-heartbeat', 'image' => 'https://images.unsplash.com/photo-1559839734876-b7833e8f5570?w=600&h=400&fit=crop', 'description' => 'Comprehensive nursing program for healthcare excellence'],
-                    ['name' => 'Pharmacy', 'full' => 'Diploma in Pharmacy', 'duration' => '2 Years', 'icon' => 'fa-pills', 'image' => 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&h=400&fit=crop', 'description' => 'Master pharmaceutical sciences and patient care'],
-                ];
+                $categoryImage = null;
+                if (!empty($category->image)) {
+                    if (str_starts_with($category->image, 'http')) {
+                        $categoryImage = $category->image;
+                    } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($category->image)) {
+                        $categoryImage = asset('storage/' . ltrim($category->image, '/'));
+                    }
+                }
+                if (!$categoryImage) {
+                    $categoryImage = 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&h=400&fit=crop';
+                }
+                $categorySlug = \Illuminate\Support\Str::slug($category->name);
+                $learnMoreUrl = route('courses.category', $categorySlug);
             @endphp
-            @foreach($sampleCourses as $course)
-            <div class="bg-white border-2 border-gray-200 rounded-lg shadow-md hover:shadow-xl transition group overflow-hidden">
-                <img src="{{ $course['image'] }}" alt="{{ $course['name'] }}" class="w-full h-48 object-cover">
+            <a href="{{ $learnMoreUrl }}" class="group block bg-white border-2 border-gray-200 rounded-lg shadow-md hover:shadow-xl transition overflow-hidden">
+                <div class="h-48 bg-gray-200 overflow-hidden">
+                    <img src="{{ $categoryImage }}" alt="{{ $category->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
+                </div>
                 <div class="p-6">
                     <div class="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-900 transition">
-                        <i class="fas {{ $course['icon'] }} text-xl text-green-900 group-hover:text-white transition"></i>
+                        <i class="fas fa-folder-open text-xl text-green-900 group-hover:text-white transition"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ $course['name'] }}</h3>
-                    <p class="text-gray-700 font-semibold mb-2">{{ $course['full'] }}</p>
-                    <p class="text-gray-600 text-sm mb-4">{{ $course['description'] }}</p>
+                    <h3 class="text-xl md:text-2xl font-bold text-gray-900 mb-3 leading-tight">{{ $category->name }}</h3>
                     <div class="flex items-center justify-between">
                         <span class="text-green-900 font-semibold text-sm">
-                            <i class="fas fa-clock mr-2"></i>{{ $course['duration'] }}
+                            <i class="fas fa-book mr-2"></i>{{ $category->active_courses_count }} {{ $category->active_courses_count == 1 ? 'Course' : 'Courses' }}
                         </span>
-                        <a href="{{ route('courses') }}" class="text-green-600 hover:text-green-800 font-medium text-sm">
+                        <span class="text-green-600 hover:text-green-800 font-medium text-sm">
                             Learn More <i class="fas fa-arrow-right ml-1"></i>
-                        </a>
+                        </span>
                     </div>
                 </div>
+            </a>
+            @empty
+            <div class="col-span-full text-center py-12 text-gray-500">
+                <p class="text-lg">Categories will appear here once they are added for this institute.</p>
+                <a href="{{ route('courses') }}" class="inline-block mt-4 text-green-700 font-semibold">View courses page</a>
             </div>
-            @endforeach
+            @endforelse
         </div>
         
+        @if(($popularCategories ?? collect())->isNotEmpty())
         <div class="text-center mt-12">
             <a href="{{ route('courses') }}" class="bg-green-900 text-white px-8 py-4 rounded-lg font-semibold hover:bg-green-800 transition shadow-lg text-lg inline-block">
-                <i class="fas fa-list mr-2"></i>View All Courses
+                <i class="fas fa-list mr-2"></i>View all courses
             </a>
         </div>
+        @endif
     </div>
 </section>
 

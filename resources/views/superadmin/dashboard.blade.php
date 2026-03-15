@@ -95,6 +95,10 @@
                             <h4 class="font-medium text-indigo-900">Manage Users</h4>
                             <p class="text-sm text-indigo-700">View and manage Staff, Institute Admin, and Students with password control</p>
                         </a>
+                        <a href="{{ route('superadmin.institutes.index') }}" class="p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition">
+                            <h4 class="font-medium text-slate-900">Manage Institutes</h4>
+                            <p class="text-sm text-slate-700">Edit institute details and Contact Us (address, email, phone) for the footer</p>
+                        </a>
                         <a href="{{ route('admin.categories.index') }}" class="p-4 bg-pink-50 rounded-lg hover:bg-pink-100 transition">
                             <h4 class="font-medium text-pink-900">Manage Categories</h4>
                             <p class="text-sm text-pink-700">Create course categories</p>
@@ -138,7 +142,12 @@
             <!-- Institutes List -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Institutes</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Institutes</h3>
+                        <a href="{{ route('superadmin.institutes.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900">
+                            Manage Institutes →
+                        </a>
+                    </div>
                     
                     <!-- Desktop Table View (hidden on mobile) -->
                     <div class="hidden lg:block overflow-hidden">
@@ -150,6 +159,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -172,10 +182,13 @@
                                                 {{ ucfirst($institute->status) }}
                                             </span>
                                         </td>
+                                        <td class="px-4 py-3 text-sm font-medium">
+                                            <a href="{{ route('superadmin.institutes.edit', $institute->id) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No institutes found</td>
+                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No institutes found</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -198,7 +211,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="space-y-2">
+                                <div class="space-y-2 mb-4">
                                     <div class="flex items-start">
                                         <span class="text-xs font-medium text-gray-500 w-24 flex-shrink-0">Students:</span>
                                         <span class="text-sm text-gray-900">{{ $institute->students_count }}</span>
@@ -207,6 +220,10 @@
                                         <span class="text-xs font-medium text-gray-500 w-24 flex-shrink-0">Courses:</span>
                                         <span class="text-sm text-gray-900">{{ $institute->courses_count }}</span>
                                     </div>
+                                </div>
+                                
+                                <div class="pt-3 border-t border-gray-200">
+                                    <a href="{{ route('superadmin.institutes.edit', $institute->id) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-900">Edit institute (details & Contact Us)</a>
                                 </div>
                             </div>
                         @empty

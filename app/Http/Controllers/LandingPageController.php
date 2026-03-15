@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Institute;
+use App\Models\CourseCategory;
 use Illuminate\Support\Str;
 
 class LandingPageController extends Controller
@@ -21,7 +22,19 @@ class LandingPageController extends Controller
             return view('welcome');
         }
 
-        // Map institute to view
+        // Top 6 categories for this institute (with course count) – homepage shows categories, then "View all courses"
+        $popularCategories = CourseCategory::where('institute_id', $instituteId)
+            ->where('status', 'active')
+            ->withCount(['activeCourses' => function ($query) {
+                $query->where('status', 'active');
+            }])
+            ->orderBy('display_order')
+            ->orderBy('name')
+            ->get()
+            ->where('active_courses_count', '>', 0)
+            ->take(6)
+            ->values();
+
         $instituteViews = [
             1 => 'institutes.tech.home',        // Tech Institute (mjpitm.in)
             2 => 'institutes.paramedical.home', // Paramedical Institute (mjpips.in)
@@ -31,6 +44,7 @@ class LandingPageController extends Controller
 
         return view($viewName, [
             'institute' => $institute,
+            'popularCategories' => $popularCategories,
         ]);
     }
 

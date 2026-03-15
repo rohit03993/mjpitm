@@ -14,6 +14,9 @@ class Institute extends Model
         'institute_code',
         'domain',
         'description',
+        'contact_address',
+        'contact_email',
+        'contact_phone',
         'status',
     ];
 

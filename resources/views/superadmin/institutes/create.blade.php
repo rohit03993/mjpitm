@@ -86,6 +86,30 @@
                     </div>
                 </div>
 
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                    <div class="p-6 bg-blue-50 border-b border-blue-200">
+                        <h3 class="text-lg font-semibold text-blue-900">Contact Us (Footer)</h3>
+                        <p class="text-sm text-blue-700 mt-1">These appear in the site footer. Optional; leave blank to hide.</p>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <x-input-label for="contact_address" :value="__('Location / Address')" />
+                            <x-text-input id="contact_address" class="block mt-1 w-full" type="text" name="contact_address" :value="old('contact_address')" placeholder="e.g., Agra, Uttar Pradesh, India" />
+                            <x-input-error :messages="$errors->get('contact_address')" class="mt-2" />
+                        </div>
+                        <div>
+                            <x-input-label for="contact_email" :value="__('Email')" />
+                            <x-text-input id="contact_email" class="block mt-1 w-full" type="email" name="contact_email" :value="old('contact_email')" placeholder="e.g., info@mjpitm.in" />
+                            <x-input-error :messages="$errors->get('contact_email')" class="mt-2" />
+                        </div>
+                        <div>
+                            <x-input-label for="contact_phone" :value="__('Phone')" />
+                            <x-text-input id="contact_phone" class="block mt-1 w-full" type="text" name="contact_phone" :value="old('contact_phone')" placeholder="e.g., +91-XXXXX-XXXXX" />
+                            <x-input-error :messages="$errors->get('contact_phone')" class="mt-2" />
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Submit Button -->
                 <div class="flex items-center justify-end gap-4">
                     <a href="{{ route('superadmin.institutes.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">

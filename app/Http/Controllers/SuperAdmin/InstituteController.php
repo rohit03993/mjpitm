@@ -39,6 +39,9 @@ class InstituteController extends Controller
             'institute_code' => ['nullable', 'string', 'max:10', 'regex:/^[A-Z0-9]+$/'],
             'domain' => ['required', 'string', 'max:255', 'unique:institutes,domain'],
             'description' => ['nullable', 'string'],
+            'contact_address' => ['nullable', 'string', 'max:500'],
+            'contact_email' => ['nullable', 'email', 'max:255'],
+            'contact_phone' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,inactive'],
         ]);
 
@@ -77,6 +80,9 @@ class InstituteController extends Controller
             'institute_code' => ['nullable', 'string', 'max:10', 'regex:/^[A-Z0-9]+$/'],
             'domain' => ['required', 'string', 'max:255', Rule::unique('institutes', 'domain')->ignore($institute->id)],
             'description' => ['nullable', 'string'],
+            'contact_address' => ['nullable', 'string', 'max:500'],
+            'contact_email' => ['nullable', 'email', 'max:255'],
+            'contact_phone' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,inactive'],
         ]);
 

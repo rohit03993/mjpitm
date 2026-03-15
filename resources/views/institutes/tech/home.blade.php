@@ -183,12 +183,12 @@
     </div>
 </section>
 
-<!-- Popular Courses - Modern Cards with Images -->
+<!-- Popular Categories - Show categories with image and course count (MJPITM) -->
 <section class="py-20 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
             <span class="inline-block px-4 py-2 bg-blue-100 text-blue-900 rounded-full text-sm font-bold mb-4">OUR COURSES</span>
-            <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">Popular Courses</h2>
+            <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">Course Categories</h2>
             <div class="h-1.5 w-24 bg-gradient-to-r from-blue-500 to-indigo-600 mx-auto rounded-full"></div>
             <p class="text-xl text-gray-600 max-w-3xl mx-auto mt-6 font-medium">
                 Explore our range of technical and management programs designed for your career success
@@ -196,45 +196,59 @@
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            @forelse($popularCategories ?? [] as $category)
             @php
-                $courses = [
-                    ['name' => 'BCA', 'full' => 'Bachelor of Computer Applications', 'duration' => '3 Years', 'icon' => 'fa-code', 'image' => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=400&fit=crop'],
-                    ['name' => 'BBA', 'full' => 'Bachelor of Business Administration', 'duration' => '3 Years', 'icon' => 'fa-briefcase', 'image' => 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600&h=400&fit=crop'],
-                    ['name' => 'MCA', 'full' => 'Master of Computer Applications', 'duration' => '2 Years', 'icon' => 'fa-laptop-code', 'image' => 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&h=400&fit=crop'],
-                ];
+                $categoryImage = null;
+                if (!empty($category->image)) {
+                    if (str_starts_with($category->image, 'http')) {
+                        $categoryImage = $category->image;
+                    } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($category->image)) {
+                        $categoryImage = asset('storage/' . ltrim($category->image, '/'));
+                    }
+                }
+                if (!$categoryImage) {
+                    $categoryImage = 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop';
+                }
+                $categorySlug = \Illuminate\Support\Str::slug($category->name);
+                $learnMoreUrl = route('courses.category', $categorySlug);
             @endphp
-            @foreach($courses as $course)
-            <div class="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-300 transform hover:-translate-y-2">
-                <div class="relative overflow-hidden">
-                    <img src="{{ $course['image'] }}" alt="{{ $course['name'] }}" class="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-500">
+            <a href="{{ $learnMoreUrl }}" class="group block bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-300 transform hover:-translate-y-2">
+                <div class="relative overflow-hidden h-56 bg-gray-200">
+                    <img src="{{ $categoryImage }}" alt="{{ $category->name }}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" loading="lazy">
                     <div class="absolute inset-0 bg-gradient-to-t from-blue-900/80 to-transparent"></div>
                     <div class="absolute bottom-4 left-4">
                         <div class="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg">
-                            <i class="fas {{ $course['icon'] }} text-2xl text-blue-600"></i>
+                            <i class="fas fa-folder-open text-2xl text-blue-600"></i>
                         </div>
                     </div>
                 </div>
                 <div class="p-6">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ $course['name'] }}</h3>
-                    <p class="text-gray-700 font-semibold mb-3">{{ $course['full'] }}</p>
+                    <h3 class="text-xl md:text-2xl font-bold text-gray-900 mb-3 leading-tight">{{ $category->name }}</h3>
                     <div class="flex items-center justify-between pt-4 border-t border-gray-100">
                         <span class="flex items-center text-blue-600 font-bold">
-                            <i class="fas fa-clock mr-2"></i>{{ $course['duration'] }}
+                            <i class="fas fa-book mr-2"></i>{{ $category->active_courses_count }} {{ $category->active_courses_count == 1 ? 'Course' : 'Courses' }}
                         </span>
-                        <a href="{{ route('courses') }}" class="text-blue-600 hover:text-blue-800 font-bold flex items-center group-hover:translate-x-2 transition-transform">
+                        <span class="text-blue-600 hover:text-blue-800 font-bold flex items-center group-hover:translate-x-2 transition-transform">
                             Learn More <i class="fas fa-arrow-right ml-2"></i>
-                        </a>
+                        </span>
                     </div>
                 </div>
+            </a>
+            @empty
+            <div class="col-span-full text-center py-12 text-gray-500">
+                <p class="text-lg">Categories will appear here once they are added for this institute.</p>
+                <a href="{{ route('courses') }}" class="inline-block mt-4 text-blue-600 font-semibold">View courses page</a>
             </div>
-            @endforeach
+            @endforelse
         </div>
         
+        @if(($popularCategories ?? collect())->isNotEmpty())
         <div class="text-center mt-12">
             <a href="{{ route('courses') }}" class="inline-flex items-center px-10 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105">
-                <i class="fas fa-list mr-3"></i>View All Courses
+                <i class="fas fa-list mr-3"></i>View all courses
             </a>
         </div>
+        @endif
     </div>
 </section>
 
