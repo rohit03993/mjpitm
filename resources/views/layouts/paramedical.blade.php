@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="Mahatma Jyotiba Phule Institute of Paramedical Science - Shaping Future Healthcare Professionals. Offering DMLT, B.Sc Nursing, Pharmacy and more programs.">
 
-    <title>{{ $institute->name ?? 'Mahatma Jyotiba Phule Institute of Paramedical Science' }} | Excellence in Healthcare Education</title>
+    <title>{{ $institute?->name ?? 'Mahatma Jyotiba Phule Institute of Paramedical Science' }} | Excellence in Healthcare Education</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -108,7 +108,7 @@
                         @endif
                     </div>
                     <p class="text-gray-400 mb-4">
-                        {{ $institute->description ?? 'Mahatma Jyotiba Phule Institute of Paramedical Science - Dedicated to excellence in healthcare education and training future healthcare professionals.' }}
+                        {{ $institute?->description ?? 'Mahatma Jyotiba Phule Institute of Paramedical Science - Dedicated to excellence in healthcare education and training future healthcare professionals.' }}
                     </p>
                     <div class="flex space-x-4">
                         <a href="#" class="text-gray-400 hover:text-green-400 transition"><i class="fab fa-facebook-f"></i></a>
@@ -139,22 +139,22 @@
                 <div>
                     <h3 class="text-lg font-bold mb-4">Contact Us</h3>
                     <ul class="space-y-3">
-                        @if(!empty($institute->contact_address ?? null))
+                        @if(!empty($institute?->contact_address))
                         <li class="flex items-start">
                             <i class="fas fa-map-marker-alt mr-3 text-green-400 mt-1"></i>
                             <span class="text-gray-400">{{ $institute->contact_address }}</span>
                         </li>
                         @endif
-                        @if(!empty($institute->contact_email ?? null))
+                        @if(!empty($institute?->contact_email))
                         <li class="flex items-center">
                             <i class="fas fa-envelope mr-3 text-green-400"></i>
                             <a href="mailto:{{ $institute->contact_email }}" class="text-gray-400 hover:text-white transition">{{ $institute->contact_email }}</a>
                         </li>
                         @endif
-                        @if(!empty($institute->contact_phone ?? null))
+                        @if(!empty($institute?->contact_phone))
                         <li class="flex items-center">
                             <i class="fas fa-phone mr-3 text-green-400"></i>
-                            <a href="tel:{{ preg_replace('/[^0-9+]/', '', $institute->contact_phone ?? '') }}" class="text-gray-400 hover:text-white transition">{{ $institute->contact_phone }}</a>
+                            <a href="tel:{{ preg_replace('/[^0-9+]/', '', $institute->contact_phone) }}" class="text-gray-400 hover:text-white transition">{{ $institute->contact_phone }}</a>
                         </li>
                         @endif
                     </ul>
@@ -162,7 +162,7 @@
             </div>
             <div class="border-t border-gray-800 mt-8 pt-8 text-center">
                 <p class="text-gray-400">
-                    &copy; {{ date('Y') }} {{ $institute->name ?? 'Mahatma Jyotiba Phule Institute of Paramedical Science' }}. All rights reserved.
+                    &copy; {{ date('Y') }} {{ $institute?->name ?? 'Mahatma Jyotiba Phule Institute of Paramedical Science' }}. All rights reserved.
                 </p>
                 <p class="text-gray-500 text-sm mt-2">Designed with <i class="fas fa-heart text-red-500"></i> for Healthcare Excellence</p>
             </div>

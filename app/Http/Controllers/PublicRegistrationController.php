@@ -310,7 +310,8 @@ class PublicRegistrationController extends Controller
             abort(403, 'Unauthorized access.');
         }
         
-        return view('public.registration-success', compact('student'));
+        $institute = $student->institute;
+        return view('public.registration-success', compact('student', 'institute'));
     }
 
     /**

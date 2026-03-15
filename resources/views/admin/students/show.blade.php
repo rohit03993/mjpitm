@@ -398,6 +398,7 @@
                                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-3 rounded text-center transition">
                                                 View Details
                                             </a>
+                                            @if(auth()->user()->isSuperAdmin() && $semesterResult->date_of_issue)
                                             <a href="{{ route('admin.semester-results.view', $semesterResult->id) }}" 
                                                target="_blank"
                                                class="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 px-3 rounded text-center transition inline-flex items-center justify-center">
@@ -414,6 +415,7 @@
                                                 </svg>
                                                 Download
                                             </a>
+                                            @endif
                                         </div>
                                     </div>
                                     @endif

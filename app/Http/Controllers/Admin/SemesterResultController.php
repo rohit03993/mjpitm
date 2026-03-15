@@ -521,7 +521,7 @@ class SemesterResultController extends Controller
     }
 
     /**
-     * View PDF in browser (HTML preview). Super Admin only; marksheet must be issued first.
+     * View marksheet PDF (printed format). Super Admin only; not visible to Institute Admin or Student.
      */
     public function viewPdf(SemesterResult $semesterResult)
     {
@@ -539,7 +539,7 @@ class SemesterResultController extends Controller
     }
 
     /**
-     * Download PDF. Super Admin only; marksheet must be issued first.
+     * Download marksheet PDF. Super Admin only; not visible to Institute Admin or Student.
      */
     public function downloadPdf(SemesterResult $semesterResult)
     {
@@ -562,7 +562,7 @@ class SemesterResultController extends Controller
     }
 
     /**
-     * View PDF – Admin only. Marksheet is for printing; students see result online but cannot view/download the marksheet.
+     * Marksheet PDF is for Super Admin only. Students see the online result; printed marksheet is collected from the office.
      */
     public function studentView(SemesterResult $semesterResult)
     {
@@ -570,7 +570,7 @@ class SemesterResultController extends Controller
     }
 
     /**
-     * Download PDF – Admin only. Marksheet is for printing; students cannot download it.
+     * Marksheet PDF is for Super Admin only. Students see the online result; printed marksheet is collected from the office.
      */
     public function studentDownload(SemesterResult $semesterResult)
     {
