@@ -61,10 +61,13 @@ class DetectInstitute
             // Production: Remove 'www.' prefix if present
             $domain = preg_replace('/^www\./', '', $host);
             
-            // Find institute by domain
-            $institute = Institute::where('domain', $domain)
-                ->orWhere('domain', 'www.' . $domain)
+            // Find institute by domain (group OR so status applies to both domain variants)
+            $institute = Institute::query()
                 ->where('status', 'active')
+                ->where(function ($q) use ($domain) {
+                    $q->where('domain', $domain)
+                        ->orWhere('domain', 'www.' . $domain);
+                })
                 ->first();
             
             if ($institute) {

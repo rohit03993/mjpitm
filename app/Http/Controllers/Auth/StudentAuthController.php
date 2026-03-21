@@ -52,19 +52,16 @@ class StudentAuthController extends Controller
             ]);
         }
 
-        // Check if student's institute matches the current domain's institute
-        $instituteId = session('current_institute_id');
-        if (!$instituteId) {
-            throw ValidationException::withMessages([
-                'identifier' => __('Please login from the correct institute website.'),
-            ]);
-        }
-
-        if ((int) $student->institute_id !== (int) $instituteId) {
+        // Institute context: set by DetectInstitute from the request host (mjpitm.in, mjpips.in, etc.).
+        // If the host is an IP or unknown domain, session may be empty — bind to the student's institute
+        // after password check so login still works on VPS/raw URLs.
+        $sessionInstituteId = session('current_institute_id');
+        if ($sessionInstituteId !== null && (int) $sessionInstituteId !== (int) $student->institute_id) {
             throw ValidationException::withMessages([
                 'identifier' => __('You do not have access to this institute.'),
             ]);
         }
+        session(['current_institute_id' => $student->institute_id]);
 
         // Log in the student
         Auth::guard('student')->login($student, $request->boolean('remember'));
