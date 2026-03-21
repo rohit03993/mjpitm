@@ -8,7 +8,6 @@ use App\Models\CourseCategory;
 use App\Models\Qualification;
 use App\Models\Institute;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -179,11 +178,11 @@ class PublicRegistrationController extends Controller
         $validated['session'] = $currentSessionOnly;
 
         // Password = date of birth in DDMMYYYY format (e.g. 03091992); student can change after login
-        $plainPassword = Student::dateOfBirthToPassword($validated['date_of_birth']);
-        if (!$plainPassword) {
+        $credentials = Student::passwordCredentialsFromDateOfBirth($validated['date_of_birth']);
+        if (! $credentials) {
             return redirect()->back()->withErrors(['date_of_birth' => 'Invalid date of birth.'])->withInput();
         }
-        $validated['password'] = Hash::make($plainPassword);
+        $validated = array_merge($validated, $credentials);
 
         // Handle file uploads
         if ($request->hasFile('photo')) {
@@ -248,7 +247,11 @@ class PublicRegistrationController extends Controller
 
         // Ensure session is saved (it's required, so it should be in validated)
         if (!isset($validated['session']) || empty($validated['session'])) {
-            \Log::warning('Student registration: Session field is missing!', ['request_data' => $request->all()]);
+            \Log::warning('Student registration: Session field is missing!', [
+                'url' => $request->fullUrl(),
+                'institute_id' => session('current_institute_id'),
+                'has_session_input' => $request->has('session'),
+            ]);
             return redirect()->back()
                 ->withErrors(['session' => 'Session is required. Please select a session.'])
                 ->withInput();
@@ -263,10 +266,6 @@ class PublicRegistrationController extends Controller
             'session' => $student->session,
             'registration_number' => $student->registration_number
         ]);
-        
-        // Also store encrypted plain password for Super Admin viewing
-        $student->setPlainPassword($plainPassword);
-        $student->save();
 
         // Create notification for new website registration
         \App\Models\RegistrationNotification::create([
@@ -303,10 +302,14 @@ class PublicRegistrationController extends Controller
     public function success($studentId)
     {
         $instituteId = session('current_institute_id');
+        if (!$instituteId) {
+            abort(403, 'Unauthorized access.');
+        }
+
         $student = Student::findOrFail($studentId);
         
         // Verify student belongs to current institute (security check)
-        if ($instituteId && $student->institute_id != $instituteId) {
+        if ((int) $student->institute_id !== (int) $instituteId) {
             abort(403, 'Unauthorized access.');
         }
         

@@ -280,7 +280,7 @@
                                         <div class="flex items-center justify-between border-t border-gray-100 pt-3.5">
                                             <span class="text-xs text-gray-400 font-medium">Added</span>
                                             <span class="text-xs font-semibold text-gray-600">
-                                                {{ $student->created_at->format('M d, Y') }}
+                                                {{ display_date($student->created_at) }}
                                             </span>
                                         </div>
                                     </div>

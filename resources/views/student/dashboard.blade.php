@@ -177,7 +177,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500">Date of Birth</p>
-                                <p class="font-medium text-gray-900">{{ $student->date_of_birth ? $student->date_of_birth->format('d M Y') : 'N/A' }}</p>
+                                <p class="font-medium text-gray-900">{{ display_date($student->date_of_birth) }}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500">Gender</p>
@@ -366,10 +366,10 @@
                                                 | <strong>Subjects:</strong> {{ $semesterResult->total_subjects }}
                                             </p>
                                             @if($semesterResult->result_declaration_date)
-                                            <p class="text-xs text-gray-600 mt-1">Result declared on {{ \Carbon\Carbon::parse($semesterResult->result_declaration_date)->format('d M Y') }}</p>
+                                            <p class="text-xs text-gray-600 mt-1">Result declared on {{ display_date($semesterResult->result_declaration_date) }}</p>
                                             @endif
                                             @if($semesterResult->date_of_issue)
-                                            <p class="text-xs text-gray-600">Marksheet issued on {{ \Carbon\Carbon::parse($semesterResult->date_of_issue)->format('d M Y') }}</p>
+                                            <p class="text-xs text-gray-600">Marksheet issued on {{ display_date($semesterResult->date_of_issue) }}</p>
                                             @endif
                                         </div>
                                         <p class="text-xs text-gray-500 italic">Result published online. The official marksheet is issued by the institute and can be collected from the office.</p>

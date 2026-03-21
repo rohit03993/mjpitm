@@ -90,6 +90,13 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                    @if($canCreateSuperAdmin)
+                        <div class="mb-4 p-4 rounded-lg border border-amber-200 bg-amber-50">
+                            <p class="text-sm text-amber-900 font-medium">Super admin: {{ $superAdminCount }} / {{ \App\Models\User::MAX_SUPER_ADMINS }}</p>
+                            <p class="text-xs text-amber-800 mt-1">You can add one more super admin account from Create Admin.</p>
+                            <a href="{{ route('superadmin.users.create', ['role' => 'super_admin']) }}" class="mt-2 inline-flex items-center text-sm font-semibold text-amber-900 hover:underline">+ Add super admin →</a>
+                        </div>
+                    @endif
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         <a href="{{ route('superadmin.manage-users.index') }}" class="p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
                             <h4 class="font-medium text-indigo-900">Manage Users</h4>

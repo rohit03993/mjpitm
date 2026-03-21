@@ -141,8 +141,8 @@
                         </div>
                     </form>
 
-                    <!-- Results Table -->
-                    <div class="overflow-x-auto">
+                    <!-- Results Table (desktop) -->
+                    <div class="hidden lg:block overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -209,9 +209,50 @@
                         </table>
                     </div>
 
+                    <!-- Results Cards (mobile/tablet) -->
+                    <div class="lg:hidden space-y-4">
+                        @forelse($results as $result)
+                            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-base font-semibold text-gray-900">{{ $result->student->name ?? 'N/A' }}</p>
+                                        <p class="text-xs text-gray-500">{{ $result->student->roll_number ?? $result->student->registration_number ?? 'N/A' }}</p>
+                                    </div>
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full {{ $result->status === 'published' ? 'bg-green-100 text-green-800' : ($result->status === 'pending_verification' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        {{ ucfirst(str_replace('_', ' ', $result->status)) }}
+                                    </span>
+                                </div>
+                                <div class="mt-3 space-y-1 text-sm">
+                                    <p><span class="text-gray-500">Subject:</span> <span class="font-medium text-gray-900">{{ $result->subject->name ?? 'N/A' }}</span></p>
+                                    <p><span class="text-gray-500">Exam:</span> {{ ucfirst($result->exam_type ?? 'N/A') }} | Sem {{ $result->semester }} - {{ $result->academic_year }}</p>
+                                    <p><span class="text-gray-500">Marks:</span> <span class="font-semibold">{{ $result->marks_obtained ?? 'N/A' }}</span> / {{ $result->total_marks ?? 'N/A' }}</p>
+                                    <p><span class="text-gray-500">Percentage:</span> <span class="font-semibold text-gray-900">{{ $result->percentage ?? 'N/A' }}%</span></p>
+                                </div>
+                                <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    <a href="{{ route('admin.results.show', $result->id) }}" class="inline-flex justify-center rounded-lg bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
+                                        View
+                                    </a>
+                                    @if($result->status === 'pending_verification')
+                                        <form action="{{ route('admin.results.verify', $result->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to verify and publish this result?');">
+                                            @csrf
+                                            <button type="submit" class="w-full rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700">
+                                                Verify
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                                No results found. <a href="{{ route('admin.results.create') }}" class="text-indigo-600 hover:text-indigo-900">Add a new result entry</a>
+                            </div>
+                        @endforelse
+                    </div>
+
                     <!-- Pagination -->
                     @if($results->hasPages())
                         <div class="mt-6">
+                            <x-per-page-selector :default="10" />
                             {{ $results->links() }}
                         </div>
                     @endif

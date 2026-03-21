@@ -7,23 +7,39 @@ use Illuminate\Http\Request;
 use App\Models\Result;
 use App\Models\Student;
 use App\Models\Subject;
+use App\Services\StudentAuditLogger;
 use Illuminate\Support\Facades\Auth;
 
 class ResultController extends Controller
 {
+    private function resolveInstituteIdForScopedUser($user): int
+    {
+        if ($user->isSuperAdmin()) {
+            return 0;
+        }
+
+        $instituteId = $user->institute_id ?: session('current_institute_id');
+        if (!$instituteId) {
+            abort(403, 'Institute is not assigned for this account.');
+        }
+
+        return (int) $instituteId;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
         $user = Auth::user();
+        $instituteId = $this->resolveInstituteIdForScopedUser($user);
 
         $query = Result::with(['student.course', 'student.institute', 'subject', 'uploadedBy', 'verifiedBy']);
 
         // Role-based filtering: Institute Admin sees only their institute's students
-        if (!$user->isSuperAdmin() && $user->institute_id) {
-            $query->whereHas('student', function ($q) use ($user) {
-                $q->where('institute_id', $user->institute_id);
+        if (!$user->isSuperAdmin()) {
+            $query->whereHas('student', function ($q) use ($instituteId) {
+                $q->where('institute_id', $instituteId);
             });
         }
 
@@ -72,7 +88,11 @@ class ResultController extends Controller
             });
         }
 
-        $results = $query->latest('academic_year')->latest('semester')->latest()->paginate(15)->withQueryString();
+        $results = $query->latest('academic_year')
+            ->latest('semester')
+            ->latest()
+            ->paginate(resolve_per_page($request->query('per_page')))
+            ->withQueryString();
 
         // Get students for filter dropdown (role-based)
         if ($user->isSuperAdmin()) {
@@ -80,12 +100,12 @@ class ResultController extends Controller
             $subjects = Subject::where('status', 'active')->with('course')->orderBy('name')->get();
         } else {
             $students = Student::where('status', 'active')
-                ->where('institute_id', $user->institute_id)
+                ->where('institute_id', $instituteId)
                 ->orderBy('name')
                 ->get(['id', 'name', 'roll_number', 'registration_number']);
-            $subjects = Subject::whereHas('course', function ($q) use ($user) {
-                $q->whereHas('institute', function ($iq) use ($user) {
-                    $iq->where('id', $user->institute_id);
+            $subjects = Subject::whereHas('course', function ($q) use ($instituteId) {
+                $q->whereHas('institute', function ($iq) use ($instituteId) {
+                    $iq->where('id', $instituteId);
                 });
             })->where('status', 'active')->with('course')->orderBy('name')->get();
         }
@@ -115,6 +135,7 @@ class ResultController extends Controller
     public function create()
     {
         $user = Auth::user();
+        $instituteId = $this->resolveInstituteIdForScopedUser($user);
 
         // Get students for dropdown (role-based)
         if ($user->isSuperAdmin()) {
@@ -125,13 +146,13 @@ class ResultController extends Controller
             $subjects = Subject::where('status', 'active')->with('course')->orderBy('name')->get();
         } else {
             $students = Student::where('status', 'active')
-                ->where('institute_id', $user->institute_id)
+                ->where('institute_id', $instituteId)
                 ->with(['course', 'institute'])
                 ->orderBy('name')
                 ->get();
-            $subjects = Subject::whereHas('course', function ($q) use ($user) {
-                $q->whereHas('institute', function ($iq) use ($user) {
-                    $iq->where('id', $user->institute_id);
+            $subjects = Subject::whereHas('course', function ($q) use ($instituteId) {
+                $q->whereHas('institute', function ($iq) use ($instituteId) {
+                    $iq->where('id', $instituteId);
                 });
             })->where('status', 'active')->with('course')->orderBy('name')->get();
         }
@@ -154,6 +175,9 @@ class ResultController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+        $instituteId = $this->resolveInstituteIdForScopedUser($user);
+
         $validated = $request->validate([
             'student_id' => ['required', 'exists:students,id'],
             'subject_id' => ['required', 'exists:subjects,id'],
@@ -166,10 +190,9 @@ class ResultController extends Controller
         ]);
 
         // Check if student belongs to user's institute (for Institute Admin)
-        $user = Auth::user();
         if (!$user->isSuperAdmin()) {
             $student = Student::findOrFail($validated['student_id']);
-            if ($student->institute_id !== $user->institute_id) {
+            if ((int) $student->institute_id !== $instituteId) {
                 return redirect()->back()
                     ->withErrors(['student_id' => 'You can only add results for students in your institute.'])
                     ->withInput();
@@ -187,7 +210,22 @@ class ResultController extends Controller
         $validated['uploaded_by'] = Auth::id();
 
         // Percentage and grade will be auto-calculated by the Result model
-        Result::create($validated);
+        $result = Result::create($validated);
+        if ($result->student) {
+            StudentAuditLogger::logRelatedCreated($result->student, 'result', $result->only([
+                'id',
+                'subject_id',
+                'semester_result_id',
+                'exam_type',
+                'semester',
+                'academic_year',
+                'marks_obtained',
+                'theory_marks_obtained',
+                'practical_marks_obtained',
+                'total_marks',
+                'status',
+            ]), $result->id);
+        }
 
         return redirect()->route('admin.results.index')
             ->with('success', 'Result entry created successfully. It is now pending verification.');
@@ -225,12 +263,21 @@ class ResultController extends Controller
                 ->with('error', 'Only pending verification results can be verified.');
         }
 
+        $before = $result->only(['status', 'verified_by', 'verified_at', 'published_at']);
         $result->update([
             'status' => 'published',
             'verified_by' => Auth::id(),
             'verified_at' => now(),
             'published_at' => now(),
         ]);
+        if ($result->student) {
+            StudentAuditLogger::logRelatedUpdated($result->student, 'result', $before, $result->only([
+                'status',
+                'verified_by',
+                'verified_at',
+                'published_at',
+            ]), $result->id);
+        }
 
         return redirect()->route('admin.results.index')
             ->with('success', 'Result verified and published successfully.');
@@ -256,12 +303,21 @@ class ResultController extends Controller
             'rejection_remarks' => ['required', 'string', 'max:500'],
         ]);
 
+        $before = $result->only(['status', 'verified_by', 'verified_at', 'remarks']);
         $result->update([
             'status' => 'rejected',
             'verified_by' => Auth::id(),
             'verified_at' => now(),
             'remarks' => ($result->remarks ? $result->remarks . "\n\nRejection: " : 'Rejection: ') . $validated['rejection_remarks'],
         ]);
+        if ($result->student) {
+            StudentAuditLogger::logRelatedUpdated($result->student, 'result', $before, $result->only([
+                'status',
+                'verified_by',
+                'verified_at',
+                'remarks',
+            ]), $result->id);
+        }
 
         return redirect()->route('admin.results.index')
             ->with('success', 'Result rejected.');
@@ -283,9 +339,15 @@ class ResultController extends Controller
                 ->with('error', 'Only verified results can be published.');
         }
 
+        $before = $result->only(['published_at']);
         $result->update([
             'published_at' => now(),
         ]);
+        if ($result->student) {
+            StudentAuditLogger::logRelatedUpdated($result->student, 'result', $before, $result->only([
+                'published_at',
+            ]), $result->id);
+        }
 
         return redirect()->route('admin.results.index')
             ->with('success', 'Result published successfully.');
@@ -297,14 +359,15 @@ class ResultController extends Controller
     public function verificationQueue(Request $request)
     {
         $user = Auth::user();
+        $instituteId = $this->resolveInstituteIdForScopedUser($user);
 
         $query = Result::with(['student.course', 'student.institute', 'subject', 'uploadedBy'])
             ->where('status', 'pending_verification');
 
         // Role-based filtering
-        if (!$user->isSuperAdmin() && $user->institute_id) {
-            $query->whereHas('student', function ($q) use ($user) {
-                $q->where('institute_id', $user->institute_id);
+        if (!$user->isSuperAdmin()) {
+            $query->whereHas('student', function ($q) use ($instituteId) {
+                $q->where('institute_id', $instituteId);
             });
         }
 
@@ -321,7 +384,11 @@ class ResultController extends Controller
             });
         }
 
-        $results = $query->latest('academic_year')->latest('semester')->latest()->paginate(15)->withQueryString();
+        $results = $query->latest('academic_year')
+            ->latest('semester')
+            ->latest()
+            ->paginate(resolve_per_page($request->query('per_page')))
+            ->withQueryString();
 
         return view('admin.results.verification-queue', compact('results'));
     }

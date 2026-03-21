@@ -36,7 +36,9 @@ class SubjectController extends Controller
             });
         }
 
-        $subjects = $query->latest()->paginate(15)->withQueryString();
+        $subjects = $query->latest()
+            ->paginate(resolve_per_page($request->query('per_page')))
+            ->withQueryString();
 
         // Get courses for filter dropdown
         $courses = Course::where('status', 'active')

@@ -135,6 +135,7 @@
 
                     @if($admins->hasPages())
                         <div class="mt-6">
+                            <x-per-page-selector :default="10" />
                             {{ $admins->links() }}
                         </div>
                     @endif

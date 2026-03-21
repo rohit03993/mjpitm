@@ -41,7 +41,9 @@ class CourseController extends Controller
             });
         }
 
-        $courses = $query->latest()->paginate(15)->withQueryString();
+        $courses = $query->latest()
+            ->paginate(resolve_per_page($request->query('per_page')))
+            ->withQueryString();
         
         return view('admin.courses.index', compact('courses'));
     }

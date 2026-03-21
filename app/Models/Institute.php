@@ -17,6 +17,12 @@ class Institute extends Model
         'contact_address',
         'contact_email',
         'contact_phone',
+        'marksheet_header_logo',
+        'marksheet_watermark_image',
+        'marksheet_footer_logo_1',
+        'marksheet_footer_logo_2',
+        'marksheet_footer_logo_3',
+        'marksheet_footer_logo_4',
         'status',
     ];
 

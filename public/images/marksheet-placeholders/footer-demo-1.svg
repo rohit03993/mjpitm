@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 88 88">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#38bdf8"/>
+      <stop offset="100%" style="stop-color:#0369a1"/>
+    </linearGradient>
+    <linearGradient id="shine1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff;stop-opacity:0.45"/>
+      <stop offset="45%" style="stop-color:#fff;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="80" height="80" rx="12" fill="url(#g1)" stroke="#0c4a6e" stroke-width="1.5"/>
+  <path d="M8 12 L72 12 L72 36 Q40 52 8 36 Z" fill="url(#shine1)"/>
+  <text x="44" y="58" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="9" font-weight="bold" fill="#fff">Skill India</text>
+  <text x="44" y="72" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="6" fill="#e0f2fe">(demo)</text>
+</svg>

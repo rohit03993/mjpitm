@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Response;
 use App\Models\Student;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class DocumentsController extends Controller
 {
@@ -16,38 +16,22 @@ class DocumentsController extends Controller
     public function viewRegistrationForm($studentId = null)
     {
         try {
-            // If student ID is provided, generate form for that student
-            if ($studentId) {
-                $student = Student::with(['institute', 'course', 'qualifications', 'creator'])->findOrFail($studentId);
-                
-                // Check if user has permission to view this student
-                $user = auth()->user();
-                if (!$user->isSuperAdmin() && $student->created_by !== $user->id) {
-                    return redirect()->back()
-                        ->with('error', 'You do not have permission to view this student\'s registration form.');
-                }
-                
-                // Generate PDF from student data with optimized settings
-                $pdf = Pdf::loadView('pdf.registration-form', compact('student'));
-                $pdf->setPaper('A4', 'portrait');
-                $pdf->setOption('enable-local-file-access', true);
-                $pdf->setOption('isHtml5ParserEnabled', true);
-                $pdf->setOption('isRemoteEnabled', false);
-                
-                $fileName = 'Registration-Form-' . ($student->registration_number ?? $student->id) . '.pdf';
-                
-                // Stream PDF to browser (view first)
-                return $pdf->stream($fileName);
+            if (! $studentId) {
+                return redirect()->back()
+                    ->with('error', 'Student ID is required to generate registration form.');
             }
-            
-            // If no student ID, redirect back with error
-            return redirect()->back()
-                ->with('error', 'Student ID is required to generate registration form.');
-                
-        } catch (\Exception $e) {
-            // Log the error for debugging
+
+            $student = Student::with(['institute', 'course', 'qualifications', 'creator'])->findOrFail($studentId);
+            $this->assertCanAccessRegistrationPdf($student);
+
+            return $this->makeRegistrationPdf($student)->stream($this->registrationFileName($student));
+        } catch (ModelNotFoundException $e) {
+            throw $e;
+        } catch (HttpException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
             \Log::error('Registration form generation error: ' . $e->getMessage());
-            
+
             return redirect()->back()
                 ->with('error', 'An error occurred while generating the registration form. Please try again or contact the administrator.');
         }
@@ -59,41 +43,63 @@ class DocumentsController extends Controller
     public function downloadRegistrationForm($studentId = null)
     {
         try {
-            // If student ID is provided, generate form for that student
-            if ($studentId) {
-                $student = Student::with(['institute', 'course', 'qualifications', 'creator'])->findOrFail($studentId);
-                
-                // Check if user has permission to view this student
-                $user = auth()->user();
-                if (!$user->isSuperAdmin() && $student->created_by !== $user->id) {
-                    return redirect()->back()
-                        ->with('error', 'You do not have permission to download this student\'s registration form.');
-                }
-                
-                // Generate PDF from student data with optimized settings
-                $pdf = Pdf::loadView('pdf.registration-form', compact('student'));
-                $pdf->setPaper('A4', 'portrait');
-                $pdf->setOption('enable-local-file-access', true);
-                $pdf->setOption('isHtml5ParserEnabled', true);
-                $pdf->setOption('isRemoteEnabled', false);
-                
-                $fileName = 'Registration-Form-' . ($student->registration_number ?? $student->id) . '.pdf';
-                
-                return $pdf->download($fileName);
+            if (! $studentId) {
+                return redirect()->back()
+                    ->with('error', 'Student ID is required to generate registration form.');
             }
-            
-            // If no student ID, redirect back with error
-            return redirect()->back()
-                ->with('error', 'Student ID is required to generate registration form.');
-                
-        } catch (\Exception $e) {
-            // Log the error for debugging
+
+            $student = Student::with(['institute', 'course', 'qualifications', 'creator'])->findOrFail($studentId);
+            $this->assertCanAccessRegistrationPdf($student);
+
+            return $this->makeRegistrationPdf($student)->download($this->registrationFileName($student));
+        } catch (ModelNotFoundException $e) {
+            throw $e;
+        } catch (HttpException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
             \Log::error('Registration form generation error: ' . $e->getMessage());
-            
+
             return redirect()->back()
                 ->with('error', 'An error occurred while generating the registration form. Please try again or contact the administrator.');
         }
     }
 
-}
+    /**
+     * Student guard: own record only. Web guard: same rules as {@see StudentController::show}.
+     */
+    private function assertCanAccessRegistrationPdf(Student $student): void
+    {
+        if (auth()->guard('student')->check()) {
+            if ((int) $student->id !== (int) auth()->guard('student')->id()) {
+                abort(403, 'You are not authorized to access this registration form.');
+            }
 
+            return;
+        }
+
+        $user = auth()->guard('web')->user();
+        if (! $user instanceof User) {
+            abort(403, 'You are not authorized to access this registration form.');
+        }
+
+        if (! $user->canViewStudentRecord($student)) {
+            abort(403, 'You are not authorized to access this registration form.');
+        }
+    }
+
+    private function makeRegistrationPdf(Student $student)
+    {
+        $pdf = Pdf::loadView('pdf.registration-form', compact('student'));
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('enable-local-file-access', true);
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
+
+        return $pdf;
+    }
+
+    private function registrationFileName(Student $student): string
+    {
+        return 'Registration-Form-' . ($student->registration_number ?? $student->id) . '.pdf';
+    }
+}

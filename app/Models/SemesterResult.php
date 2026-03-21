@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class SemesterResult extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'marksheet_serial',
         'student_id',
         'course_id',
         'semester',
@@ -33,6 +36,7 @@ class SemesterResult extends Model
     protected function casts(): array
     {
         return [
+            'marksheet_serial' => 'integer',
             'total_marks_obtained' => 'decimal:2',
             'total_max_marks' => 'decimal:2',
             'overall_percentage' => 'decimal:2',
@@ -41,6 +45,46 @@ class SemesterResult extends Model
             'verified_at' => 'datetime',
             'published_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Padded Sr. No. for marksheet/PDF (uses marksheet_serial, falls back to id for legacy rows).
+     */
+    protected function formattedMarksheetSerial(): Attribute
+    {
+        return Attribute::get(function (): string {
+            $stored = (int) ($this->marksheet_serial ?? $this->id);
+            $n = $stored + (int) config('marksheet.serial_display_offset', 0);
+
+            return str_pad((string) $n, 8, '0', STR_PAD_LEFT);
+        });
+    }
+
+    /**
+     * Next global marksheet serial (monotonic). Uses DB row lock so allocation stays correct inside transactions.
+     * Call from within an open DB transaction when creating a semester result (recommended).
+     */
+    public static function nextMarksheetSerial(): int
+    {
+        $allocate = function (): int {
+            $row = DB::table('marksheet_serial_sequences')->where('id', 1)->lockForUpdate()->first();
+            if (! $row) {
+                throw new \RuntimeException('marksheet_serial_sequences is not initialized (run migrations).');
+            }
+            $next = (int) $row->last_value + 1;
+            DB::table('marksheet_serial_sequences')->where('id', 1)->update([
+                'last_value' => $next,
+                'updated_at' => now(),
+            ]);
+
+            return $next;
+        };
+
+        if (DB::transactionLevel() > 0) {
+            return $allocate();
+        }
+
+        return (int) DB::transaction($allocate);
     }
 
     /**

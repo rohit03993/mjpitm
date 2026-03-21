@@ -36,7 +36,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('superadmin.institutes.update', $institute->id) }}">
+            <form method="POST" action="{{ route('superadmin.institutes.update', $institute->id) }}" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -107,6 +107,75 @@
                             <x-input-label for="contact_phone" :value="__('Phone')" />
                             <x-text-input id="contact_phone" class="block mt-1 w-full" type="text" name="contact_phone" :value="old('contact_phone', $institute->contact_phone)" placeholder="e.g., +91-XXXXX-XXXXX" />
                             <x-input-error :messages="$errors->get('contact_phone')" class="mt-2" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                    <div class="p-6 bg-blue-50 border-b border-blue-200">
+                        <h3 class="text-lg font-semibold text-blue-900">Marksheet Template (Issued Marksheet PDF)</h3>
+                        <p class="text-sm text-blue-700 mt-1">Uploads are per institute (MJPITM/MJPIPS). Images are auto-resized and compressed when possible.</p>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <x-input-label for="marksheet_header_logo" :value="__('Header Logo (optional)')" />
+                            <input id="marksheet_header_logo" type="file" name="marksheet_header_logo" accept="image/*" class="block mt-1 w-full text-sm text-gray-700" />
+                            <x-input-error :messages="$errors->get('marksheet_header_logo')" class="mt-2" />
+                            @if($institute->marksheet_header_logo)
+                                <div class="mt-2">
+                                    <div class="text-xs text-gray-500 mb-1">Current:</div>
+                                    <img src="{{ asset('storage/' . $institute->marksheet_header_logo) }}" alt="Header logo" class="h-16 border border-gray-200 bg-white rounded" />
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <x-input-label for="marksheet_watermark_image" :value="__('Watermark Image (optional)')" />
+                            <input id="marksheet_watermark_image" type="file" name="marksheet_watermark_image" accept="image/*" class="block mt-1 w-full text-sm text-gray-700" />
+                            <x-input-error :messages="$errors->get('marksheet_watermark_image')" class="mt-2" />
+                            @if($institute->marksheet_watermark_image)
+                                <div class="mt-2">
+                                    <div class="text-xs text-gray-500 mb-1">Current:</div>
+                                    <img src="{{ asset('storage/' . $institute->marksheet_watermark_image) }}" alt="Watermark" class="h-20 border border-gray-200 bg-white rounded" />
+                                </div>
+                            @endif
+                            <p class="mt-1 text-xs text-gray-500">Used as a faint watermark behind the marksheet content.</p>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <p class="text-xs text-gray-600 mb-2">Footer row (left → right, e.g. Skill India, ISO, Beti Bachao, Swachh Bharat). Upload PNG/JPG with transparent background if possible.</p>
+                        </div>
+                        <div>
+                            <x-input-label for="marksheet_footer_logo_1" :value="__('Footer Logo 1 (left, optional)')" />
+                            <input id="marksheet_footer_logo_1" type="file" name="marksheet_footer_logo_1" accept="image/*" class="block mt-1 w-full text-sm text-gray-700" />
+                            <x-input-error :messages="$errors->get('marksheet_footer_logo_1')" class="mt-2" />
+                            @if($institute->marksheet_footer_logo_1)
+                                <img src="{{ asset('storage/' . $institute->marksheet_footer_logo_1) }}" alt="Footer logo 1" class="mt-2 h-12 border border-gray-200 bg-white rounded shadow-sm" />
+                            @endif
+                        </div>
+                        <div>
+                            <x-input-label for="marksheet_footer_logo_2" :value="__('Footer Logo 2 (optional)')" />
+                            <input id="marksheet_footer_logo_2" type="file" name="marksheet_footer_logo_2" accept="image/*" class="block mt-1 w-full text-sm text-gray-700" />
+                            <x-input-error :messages="$errors->get('marksheet_footer_logo_2')" class="mt-2" />
+                            @if($institute->marksheet_footer_logo_2)
+                                <img src="{{ asset('storage/' . $institute->marksheet_footer_logo_2) }}" alt="Footer logo 2" class="mt-2 h-12 border border-gray-200 bg-white rounded shadow-sm" />
+                            @endif
+                        </div>
+                        <div>
+                            <x-input-label for="marksheet_footer_logo_3" :value="__('Footer Logo 3 (optional)')" />
+                            <input id="marksheet_footer_logo_3" type="file" name="marksheet_footer_logo_3" accept="image/*" class="block mt-1 w-full text-sm text-gray-700" />
+                            <x-input-error :messages="$errors->get('marksheet_footer_logo_3')" class="mt-2" />
+                            @if($institute->marksheet_footer_logo_3)
+                                <img src="{{ asset('storage/' . $institute->marksheet_footer_logo_3) }}" alt="Footer logo 3" class="mt-2 h-12 border border-gray-200 bg-white rounded shadow-sm" />
+                            @endif
+                        </div>
+                        <div>
+                            <x-input-label for="marksheet_footer_logo_4" :value="__('Footer Logo 4 (right, optional)')" />
+                            <input id="marksheet_footer_logo_4" type="file" name="marksheet_footer_logo_4" accept="image/*" class="block mt-1 w-full text-sm text-gray-700" />
+                            <x-input-error :messages="$errors->get('marksheet_footer_logo_4')" class="mt-2" />
+                            @if($institute->marksheet_footer_logo_4)
+                                <img src="{{ asset('storage/' . $institute->marksheet_footer_logo_4) }}" alt="Footer logo 4" class="mt-2 h-12 border border-gray-200 bg-white rounded shadow-sm" />
+                            @endif
                         </div>
                     </div>
                 </div>

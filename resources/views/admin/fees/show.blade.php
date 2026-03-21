@@ -51,7 +51,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Payment Date</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ $fee->payment_date ? display_date($fee->payment_date) : 'N/A' }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Status</dt>
@@ -81,13 +81,13 @@
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Marked By</dt>
                         <dd class="mt-1 text-sm text-gray-900">{{ $fee->markedBy->name ?? 'N/A' }}</dd>
-                        <dd class="text-xs text-gray-500">{{ $fee->created_at->format('d M Y, h:i A') }}</dd>
+                        <dd class="text-xs text-gray-500">{{ display_datetime($fee->created_at) }}</dd>
                     </div>
                     @if($fee->verified_by)
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Verified By (Admin)</dt>
                         <dd class="mt-1 text-sm text-gray-900">{{ $fee->verifiedBy->name ?? 'N/A' }}</dd>
-                        <dd class="text-xs text-gray-500">{{ $fee->verified_at ? $fee->verified_at->format('d M Y, h:i A') : 'N/A' }}</dd>
+                        <dd class="text-xs text-gray-500">{{ $fee->verified_at ? display_datetime($fee->verified_at) : 'N/A' }}</dd>
                     </div>
                     @endif
                     @if($fee->approved_by_name)

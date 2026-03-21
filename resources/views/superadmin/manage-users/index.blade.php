@@ -320,6 +320,13 @@
                             </div>
                         @endforelse
                     </div>
+
+                    @if($users->hasPages())
+                        <div class="mt-6">
+                            <x-per-page-selector :default="10" />
+                            {{ $users->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

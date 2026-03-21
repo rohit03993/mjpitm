@@ -123,4 +123,14 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Display date formats (UI & PDF only — does not change DB storage)
+    |--------------------------------------------------------------------------
+    */
+
+    'date_format' => env('APP_DATE_FORMAT', 'd-m-Y'),
+
+    'datetime_format' => env('APP_DATETIME_FORMAT', 'd-m-Y h:i A'),
+
 ];

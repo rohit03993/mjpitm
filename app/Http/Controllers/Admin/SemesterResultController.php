@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\SemesterResult;
 use App\Models\Result;
 use App\Models\Subject;
+use App\Services\StudentAuditLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -292,8 +293,9 @@ class SemesterResultController extends Controller
                 $totalMaxMarks += $subject->total_marks;
             }
 
-            // Create semester result
+            // Create semester result (marksheet_serial is global monotonic, not the DB row id)
             $semesterResult = SemesterResult::create([
+                'marksheet_serial' => SemesterResult::nextMarksheetSerial(),
                 'student_id' => $student->id,
                 'course_id' => $student->course_id,
                 'semester' => $validated['semester'],
@@ -308,6 +310,16 @@ class SemesterResultController extends Controller
             // Calculate overall percentage and grade
             $semesterResult->calculateOverall();
             $semesterResult->save();
+            StudentAuditLogger::logRelatedCreated($student, 'semester_result', $semesterResult->only([
+                'id',
+                'semester',
+                'academic_year',
+                'total_subjects',
+                'total_marks_obtained',
+                'total_max_marks',
+                'overall_percentage',
+                'status',
+            ]), $semesterResult->id);
 
             // Create individual result records
             foreach ($validated['subjects'] as $subjectData) {
@@ -331,6 +343,10 @@ class SemesterResultController extends Controller
                     'uploaded_by' => Auth::id(),
                 ]);
             }
+            StudentAuditLogger::logRelatedCreated($student, 'result', [
+                'bulk_create_for_semester_result_id' => $semesterResult->id,
+                'total_rows' => count($validated['subjects']),
+            ]);
 
             DB::commit();
 
@@ -431,6 +447,13 @@ class SemesterResultController extends Controller
 
         DB::beginTransaction();
         try {
+            $before = $semesterResult->only([
+                'result_declaration_date',
+                'status',
+                'verified_by',
+                'verified_at',
+                'published_at',
+            ]);
             $semesterResult->update([
                 'result_declaration_date' => $resultDate->format('Y-m-d'),
                 'status' => 'published',
@@ -438,6 +461,15 @@ class SemesterResultController extends Controller
                 'verified_at' => now(),
                 'published_at' => now(),
             ]);
+            if ($semesterResult->student) {
+                StudentAuditLogger::logRelatedUpdated($semesterResult->student, 'semester_result', $before, $semesterResult->only([
+                    'result_declaration_date',
+                    'status',
+                    'verified_by',
+                    'verified_at',
+                    'published_at',
+                ]), $semesterResult->id);
+            }
 
             $semesterResult->results()->update([
                 'status' => 'published',
@@ -445,6 +477,14 @@ class SemesterResultController extends Controller
                 'verified_at' => now(),
                 'published_at' => now(),
             ]);
+            if ($semesterResult->student) {
+                StudentAuditLogger::logRelatedUpdated($semesterResult->student, 'result', [
+                    'bulk_status' => 'pending_verification',
+                ], [
+                    'bulk_status' => 'published',
+                    'semester_result_id' => $semesterResult->id,
+                ]);
+            }
 
             $student = $semesterResult->student;
             if ($student->current_semester < $semesterResult->semester) {
@@ -521,12 +561,19 @@ class SemesterResultController extends Controller
         }
 
         try {
+            $before = $semesterResult->only(['date_of_issue', 'pdf_path']);
             $semesterResult->update(['date_of_issue' => $issueDate->format('Y-m-d')]);
 
             $pdf = $this->generatePdf($semesterResult);
             $pdfPath = 'results/' . $semesterResult->student_id . '/' . $semesterResult->id . '.pdf';
             \Storage::disk('public')->put($pdfPath, $pdf->output());
             $semesterResult->update(['pdf_path' => $pdfPath]);
+            if ($semesterResult->student) {
+                StudentAuditLogger::logRelatedUpdated($semesterResult->student, 'semester_result', $before, $semesterResult->only([
+                    'date_of_issue',
+                    'pdf_path',
+                ]), $semesterResult->id);
+            }
 
             return redirect()->route('admin.semester-results.show', $semesterResult)
                 ->with('success', 'Marksheet issued. You can view and download the PDF.');
@@ -568,13 +615,14 @@ class SemesterResultController extends Controller
                 ->with('error', 'Issue the marksheet first (set issue date) to download the PDF.');
         }
 
-        if (!$semesterResult->pdf_path || !\Storage::disk('public')->exists($semesterResult->pdf_path)) {
-            $pdf = $this->generatePdf($semesterResult);
-            return $pdf->download('Semester-' . $semesterResult->semester . '-Result-' . $semesterResult->student->roll_number . '.pdf');
-        }
+        // Always regenerate so layout/template changes apply (previously we served a stale file from last issue).
+        $pdf = $this->generatePdf($semesterResult);
+        $pdfPath = 'results/' . $semesterResult->student_id . '/' . $semesterResult->id . '.pdf';
+        \Storage::disk('public')->put($pdfPath, $pdf->output());
+        $semesterResult->update(['pdf_path' => $pdfPath]);
 
-        $fullPath = storage_path('app/public/' . $semesterResult->pdf_path);
-        return response()->download($fullPath, basename($semesterResult->pdf_path));
+        $downloadName = 'Semester-' . $semesterResult->semester . '-Result-' . $semesterResult->student->roll_number . '.pdf';
+        return response()->download(storage_path('app/public/' . $pdfPath), $downloadName);
     }
 
     /**

@@ -31,13 +31,18 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $superAdminCount = User::superAdminCount();
+        $canCreateSuperAdmin = User::canCreateAnotherSuperAdmin();
+
         return view('superadmin.dashboard', compact(
             'totalInstitutes',
             'totalUsers',
             'totalStudents',
             'totalCourses',
             'institutes',
-            'recentUsers'
+            'recentUsers',
+            'superAdminCount',
+            'canCreateSuperAdmin'
         ));
     }
 }

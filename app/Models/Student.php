@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -157,6 +158,14 @@ class Student extends Authenticatable
     }
 
     /**
+     * Audit history of changes made to the student profile.
+     */
+    public function audits()
+    {
+        return $this->hasMany(StudentAudit::class)->latest();
+    }
+
+    /**
      * Convert date of birth to default password format (DDMMYYYY, e.g. 03091992).
      * Used for new registrations and one-time sync of existing students.
      */
@@ -170,6 +179,23 @@ class Student extends Authenticatable
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    /**
+     * Default login credentials derived from DOB (DDMMYYYY plain → bcrypt + encrypted copy for admin view).
+     * Returns null if DOB cannot be parsed.
+     */
+    public static function passwordCredentialsFromDateOfBirth(string $dateOfBirth): ?array
+    {
+        $plain = self::dateOfBirthToPassword($dateOfBirth);
+        if (! $plain) {
+            return null;
+        }
+
+        return [
+            'password' => Hash::make($plain),
+            'password_plain_encrypted' => encrypt($plain),
+        ];
     }
 
     /**

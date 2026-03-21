@@ -80,8 +80,8 @@
                         </div>
                     </form>
 
-                    <!-- Subjects Table -->
-                    <div class="overflow-x-auto">
+                    <!-- Subjects Table (desktop) -->
+                    <div class="hidden lg:block overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -143,9 +143,48 @@
                         </table>
                     </div>
 
+                    <!-- Subjects Cards (mobile/tablet) -->
+                    <div class="lg:hidden space-y-4">
+                        @forelse($subjects as $subject)
+                            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-sm font-semibold text-indigo-700">{{ $subject->code }}</p>
+                                        <p class="text-base font-semibold text-gray-900">{{ $subject->name }}</p>
+                                    </div>
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full {{ $subject->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ ucfirst($subject->status) }}
+                                    </span>
+                                </div>
+                                <div class="mt-3 space-y-1 text-sm text-gray-700">
+                                    <p><span class="text-gray-500">Course:</span> {{ $subject->course->name ?? 'N/A' }}</p>
+                                    <p><span class="text-gray-500">Institute:</span> {{ $subject->course->institute->name ?? 'N/A' }}</p>
+                                    <p><span class="text-gray-500">Semester:</span> {{ $subject->semester }}</p>
+                                    <p><span class="text-gray-500">Credits:</span> {{ $subject->credits ?? 'N/A' }}</p>
+                                </div>
+                                <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                    <a href="{{ route('admin.subjects.show', $subject->id) }}" class="inline-flex justify-center rounded-lg bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">View</a>
+                                    <a href="{{ route('admin.subjects.edit', $subject->id) }}" class="inline-flex justify-center rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-100">Edit</a>
+                                    @if($subject->results->count() == 0)
+                                        <form action="{{ route('admin.subjects.destroy', $subject->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this subject?');" class="col-span-2 sm:col-span-1">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="w-full rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-100">Delete</button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                                No subjects found. <a href="{{ route('admin.subjects.create') }}" class="text-indigo-600 hover:text-indigo-900">Add a new subject</a>
+                            </div>
+                        @endforelse
+                    </div>
+
                     <!-- Pagination -->
                     @if($subjects->hasPages())
                         <div class="mt-6">
+                            <x-per-page-selector :default="10" />
                             {{ $subjects->links() }}
                         </div>
                     @endif

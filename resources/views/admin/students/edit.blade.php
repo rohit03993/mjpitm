@@ -36,9 +36,19 @@
                 </div>
             @endif
 
-            <form action="{{ route('admin.students.update', $student->id) }}" method="POST" enctype="multipart/form-data" id="edit-form">
+            <form action="{{ route('admin.students.update', $student->id) }}" method="POST" enctype="multipart/form-data" id="edit-form" class="pb-24 lg:pb-0">
                 @csrf
                 @method('PUT')
+
+                <!-- Quick Actions (desktop/tablet top) -->
+                <div class="hidden md:flex sticky top-4 z-20 mb-6 justify-end gap-3">
+                    <a href="{{ route('admin.students.index') }}" class="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+                        Cancel
+                    </a>
+                    <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                        Save Changes
+                    </button>
+                </div>
 
                 <!-- Status and Enrollment No Section -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
@@ -537,9 +547,9 @@
                     </div>
                 </div>
 
-                <!-- Submit Button -->
+                <!-- Submit Button (desktop fallback at bottom) -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6 flex justify-end space-x-4">
+                    <div class="hidden md:flex p-6 justify-end space-x-4">
                         <a href="{{ route('admin.students.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded">
                             Cancel
                         </a>
@@ -549,6 +559,20 @@
                     </div>
                 </div>
             </form>
+
+            <!-- Sticky Action Bar (mobile) -->
+            <div class="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur">
+                <div class="mx-auto max-w-7xl px-4 py-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="{{ route('admin.students.index') }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700">
+                            Cancel
+                        </a>
+                        <button type="submit" form="edit-form" class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

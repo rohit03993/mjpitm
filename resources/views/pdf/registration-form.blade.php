@@ -9,157 +9,165 @@
         $themeLight = $isTech ? '#dbeafe' : '#dcfce7';
     @endphp
     <style>
-        /* A4 portrait, 8mm margins – content area 194mm x 281mm */
-        @page { margin: 8mm; size: A4 portrait; }
+        /* A4 single-page: tight margins + compact type (DomPDF) */
+        @page { margin: 7mm 8mm; size: A4 portrait; }
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 8pt;
-            color: #374151;
-            line-height: 1.25;
+            font-size: 6.5pt;
+            color: #334155;
+            line-height: 1.2;
         }
         table { border-collapse: collapse; width: 100%; }
         .header-table {
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 5px;
-            margin-bottom: 5px;
-            background: #fafafa;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 4px 4px 6px 4px;
+            margin-bottom: 4px;
+            background: #f8fafc;
         }
-        .header-table td { vertical-align: middle; padding: 0; }
-        .logo-cell { width: 11%; padding-right: 6px; }
-        .logo-cell img { max-width: 52px; max-height: 52px; display: block; }
-        .institute-cell { width: 89%; }
+        .header-table td { vertical-align: middle; }
+        .logo-cell { width: 11%; padding: 2px 6px 2px 2px; }
+        .logo-cell img { max-width: 44px; max-height: 44px; display: block; }
+        .institute-cell { width: 89%; padding: 2px; }
         .institute-name {
-            font-size: 11pt;
+            font-size: 9pt;
             font-weight: bold;
             text-transform: uppercase;
             text-align: center;
-            margin: 0 0 1px 0;
-            line-height: 1.2;
+            margin: 0;
+            line-height: 1.15;
             color: {{ $themePrimary }};
         }
-        .institute-address { font-size: 7pt; text-align: center; margin: 0; color: #555; }
+        .institute-address { font-size: 6pt; text-align: center; margin: 0; color: #64748b; }
         .main-title {
             text-align: center;
-            font-size: 11pt;
+            font-size: 8.5pt;
             font-weight: bold;
             text-transform: uppercase;
-            margin: 5px 0 4px 0;
-            letter-spacing: 0.5px;
-            border: 1px solid #d1d5db;
-            padding: 6px 10px;
-            background: #fff;
-            color: #111827;
+            margin: 3px 0 3px 0;
+            letter-spacing: 0.3px;
+            border: 1px solid #e2e8f0;
+            padding: 4px 8px;
+            background: #ffffff;
+            color: #0f172a;
         }
         .regno-top {
-            margin: 0 0 5px 0;
-            padding: 5px 10px;
-            border: 1px solid {{ $themePrimary }};
+            margin: 0 0 4px 0;
+            padding: 4px 8px;
+            border: 1px solid #cbd5e1;
             background: {{ $themeLight }};
             text-align: center;
             font-weight: bold;
             color: {{ $themePrimary }};
         }
-        .regno-top .label { font-size: 6.5pt; text-transform: uppercase; margin-bottom: 0; }
-        .regno-top .value { font-size: 10pt; letter-spacing: 0.5px; }
+        .regno-top .label { font-size: 5.5pt; text-transform: uppercase; margin-bottom: 0; color: #475569; }
+        .regno-top .value { font-size: 8.5pt; letter-spacing: 0.3px; }
         .course-box {
-            border: 1px solid #e5e7eb;
-            padding: 6px;
-            margin: 4px 0;
+            border: 1px solid #e2e8f0;
+            padding: 5px 7px;
+            margin: 3px 0 4px 0;
             position: relative;
-            min-height: 82px;
-            background: #fafafa;
+            min-height: 62px;
+            background: #ffffff;
         }
         .course-box table { width: 68%; }
-        .course-box td { padding: 2px 0; border: none; font-size: 7.5pt; vertical-align: top; }
-        .course-label { font-weight: bold; padding-right: 5px; color: #4b5563; }
+        .course-box td { padding: 1px 0; border: none; font-size: 6.5pt; vertical-align: top; line-height: 1.15; }
+        .course-label { font-weight: bold; padding-right: 5px; color: #475569; }
         .photo-box {
             position: absolute;
             right: 6px;
-            top: 6px;
-            width: 64px;
-            height: 76px;
-            border: 1px solid #d1d5db;
+            top: 5px;
+            width: 52px;
+            height: 62px;
+            border: 1px solid #e2e8f0;
             padding: 2px;
             text-align: center;
-            background: #fff;
+            background: #f8fafc;
         }
-        .photo-box img { width: 100%; height: calc(100% - 10px); object-fit: cover; display: block; }
-        .photo-label { font-size: 5.5pt; font-weight: bold; margin-top: 0; }
+        .photo-box img { width: 100%; height: calc(100% - 8px); object-fit: cover; display: block; }
+        .photo-label { font-size: 5pt; font-weight: bold; margin-top: 0; color: #64748b; }
         .section-header {
-            background-color: {{ $themePrimary }};
-            color: white;
-            padding: 4px 6px;
-            font-size: 7pt;
+            background-color: #f1f5f9;
+            color: {{ $themePrimary }};
+            padding: 3px 6px;
+            font-size: 6.5pt;
             font-weight: bold;
             text-transform: uppercase;
-            text-align: center;
-            margin: 5px 0 0 0;
+            text-align: left;
+            margin: 4px 0 0 0;
+            border-left: 3px solid {{ $themePrimary }};
         }
-        .info-table { border: 1px solid #e5e7eb; }
+        .info-table { border: 1px solid #e2e8f0; }
         .info-table td {
-            border: 1px solid #e5e7eb;
-            padding: 4px 6px;
+            border: 1px solid #e2e8f0;
+            padding: 3px 5px;
             width: 50%;
             vertical-align: top;
-            min-height: 20px;
-            font-size: 7.5pt;
-        }
-        .field-label { font-weight: bold; font-size: 7pt; color: {{ $themePrimary }}; display: block; margin-bottom: 0; }
-        .field-value { font-size: 7.5pt; text-transform: uppercase; color: #111827; }
-        .qual-table { border: 1px solid #e5e7eb; margin-top: 3px; }
-        .qual-table th, .qual-table td {
-            border: 1px solid #e5e7eb;
-            padding: 3px 4px;
-            text-align: center;
-            font-size: 7pt;
-        }
-        .qual-table th { background-color: #f3f4f6; font-weight: bold; color: #374151; }
-        .declaration-box p {
-            border: 1px solid #e5e7eb;
-            padding: 6px 8px;
-            margin: 0 0 3px 0;
             font-size: 6.5pt;
+            line-height: 1.15;
+            background: #ffffff;
+        }
+        .field-label { font-weight: bold; font-size: 6pt; color: #475569; display: block; margin-bottom: 0; }
+        .field-value { font-size: 6.5pt; text-transform: uppercase; color: #0f172a; }
+        .qual-table { border: 1px solid #e2e8f0; margin-top: 2px; }
+        .qual-table th, .qual-table td {
+            border: 1px solid #e2e8f0;
+            padding: 2px 3px;
+            text-align: center;
+            font-size: 6pt;
+            line-height: 1.1;
+        }
+        .qual-table th { background-color: #f1f5f9; font-weight: bold; color: #334155; }
+        /* Keep declaration title + text together (avoid orphan heading) */
+        .declaration-wrap { page-break-inside: avoid; }
+        .declaration-box p {
+            border: 1px solid #e2e8f0;
+            padding: 4px 6px;
+            margin: 0;
+            font-size: 5.5pt;
             text-align: justify;
-            line-height: 1.4;
-            background: #fafafa;
+            line-height: 1.22;
+            background: #f8fafc;
+            color: #475569;
         }
         .signature-section {
-            margin-top: 6px;
-            padding: 5px;
-            border: 1px solid #e5e7eb;
-            background: #fafafa;
+            margin-top: 3px;
+            padding: 4px 6px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
         }
-        .signature-section > div:first-child { font-size: 6.5pt; font-weight: bold; margin-bottom: 2px; }
+        .signature-section > div:first-child { font-size: 6pt; font-weight: bold; margin-bottom: 2px; color: #334155; }
         .signature-box {
             display: inline-block;
-            width: 100px;
-            height: 36px;
-            border: 1px solid #d1d5db;
+            width: 88px;
+            height: 28px;
+            border: 1px solid #e2e8f0;
             padding: 2px;
             margin-top: 2px;
             text-align: center;
-            background: #fff;
+            background: #f8fafc;
         }
         .signature-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .signature-label { font-size: 5.5pt; font-weight: bold; margin-top: 0; }
+        .signature-label { font-size: 5pt; font-weight: bold; margin-top: 0; color: #64748b; }
         .office-use {
-            margin-top: 6px;
-            border: 1px solid #e5e7eb;
-            padding: 5px 8px;
+            margin-top: 3px;
+            border: 1px dashed #cbd5e1;
+            padding: 4px 6px;
             background: #fafafa;
-            font-size: 6.5pt;
-            color: #6b7280;
+            font-size: 5.5pt;
+            line-height: 1.2;
+            color: #64748b;
         }
-        .office-use .title { font-weight: bold; margin-bottom: 2px; color: #374151; }
+        .office-use .title { font-weight: bold; margin-bottom: 2px; color: #475569; }
         .footer {
-            margin-top: 6px;
-            padding-top: 5px;
-            border-top: 1px solid #e5e7eb;
+            margin-top: 4px;
+            padding-top: 3px;
+            border-top: 1px solid #e2e8f0;
             text-align: center;
-            font-size: 6.5pt;
-            color: #6b7280;
+            font-size: 5.5pt;
+            line-height: 1.15;
+            color: #94a3b8;
         }
     </style>
 </head>
@@ -250,7 +258,7 @@
                 <td>{{ strtoupper($student->stream ?? 'GENERAL') }}</td>
             </tr>
             <tr>
-                <td class="course-label">YEAR:</td>
+                <td class="course-label">SEMESTER:</td>
                 <td>{{ $student->current_semester ?? '1' }}</td>
             </tr>
         </table>
@@ -293,7 +301,7 @@
             </td>
             <td>
                 <span class="field-label">Date Of Birth:</span>
-                <div class="field-value">{{ $student->date_of_birth ? $student->date_of_birth->format('d-m-Y') : 'N/A' }}</div>
+                <div class="field-value">{{ display_date($student->date_of_birth) }}</div>
             </td>
         </tr>
         <tr>
@@ -338,7 +346,7 @@
         </tr>
         <tr>
             <td>
-                <span class="field-label">Year:</span>
+                <span class="field-label">Semester:</span>
                 <div class="field-value">{{ $student->current_semester ?? '1' }}</div>
             </td>
             <td>
@@ -405,10 +413,12 @@
     </table>
     @endif
 
-    <!-- Declaration -->
-    <div class="section-header">Declaration</div>
-    <div class="declaration-box">
-        <p>I hereby declare that the entries made and documents submitted by me in this registration form are true to the best of my knowledge and belief. I understand that if any information provided by me is found to be false or incorrect, my registration shall be automatically cancelled and all fees paid by me shall be forfeited. The institute/university reserves the right to take any other action as deemed fit. I further declare that my registration is subject to the rules and regulations of the institute/university. I agree to abide by all discipline and conduct rules. I am aware that ragging is banned and if found guilty I shall be liable to be punished as per the law.</p>
+    <!-- Declaration (wrapped to reduce page-break between heading and text) -->
+    <div class="declaration-wrap">
+        <div class="section-header">Declaration</div>
+        <div class="declaration-box">
+            <p>I hereby declare that the entries made and documents submitted by me in this registration form are true to the best of my knowledge and belief. I understand that if any information provided by me is found to be false or incorrect, my registration shall be automatically cancelled and all fees paid by me shall be forfeited. The institute/university reserves the right to take any other action as deemed fit. I further declare that my registration is subject to the rules and regulations of the institute/university. I agree to abide by all discipline and conduct rules. I am aware that ragging is banned and if found guilty I shall be liable to be punished as per the law.</p>
+        </div>
     </div>
 
     <!-- Signature Section -->
@@ -455,7 +465,7 @@
 
     <!-- Footer -->
     <div class="footer">
-        <p>Registration No: <strong>{{ $student->registration_number ?? 'N/A' }}</strong> | Generated on {{ now()->format('d M Y, h:i A') }}</p>
+        <p>Registration No: <strong>{{ $student->registration_number ?? 'N/A' }}</strong> | Generated on {{ display_datetime(now()) }}</p>
         <p>{{ $student->institute->name ?? 'Mahatma Jyotiba Phule Institutes' }}</p>
     </div>
 </body>

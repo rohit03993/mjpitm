@@ -53,8 +53,8 @@
                         </div>
                     </form>
 
-                    <!-- Pending Fees Table -->
-                    <div class="overflow-x-auto">
+                    <!-- Pending Fees Table (desktop) -->
+                    <div class="hidden lg:block overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-yellow-50">
                                 <tr>
@@ -90,11 +90,11 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}
+                                            {{ $fee->payment_date ? display_date($fee->payment_date) : 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $fee->markedBy->name ?? 'N/A' }}
-                                            <div class="text-xs text-gray-400">{{ $fee->created_at->format('d M Y') }}</div>
+                                            <div class="text-xs text-gray-400">{{ display_date($fee->created_at) }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex flex-col gap-1">
@@ -114,9 +114,44 @@
                         </table>
                     </div>
 
+                    <!-- Pending Fees Cards (mobile/tablet) -->
+                    <div class="lg:hidden space-y-4">
+                        @forelse($fees as $fee)
+                            <div class="rounded-xl border border-yellow-200 bg-white p-4 shadow-sm">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-base font-semibold text-gray-900">{{ $fee->student->name ?? 'N/A' }}</p>
+                                        <p class="text-xs text-gray-500">{{ $fee->student->roll_number ?? $fee->student->registration_number ?? 'N/A' }}</p>
+                                    </div>
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                </div>
+                                <div class="mt-3 space-y-1 text-sm">
+                                    <p><span class="text-gray-500">Amount:</span> <span class="font-semibold text-gray-900">₹{{ number_format($fee->amount, 2) }}</span></p>
+                                    <p><span class="text-gray-500">Payment:</span> {{ ucfirst($fee->payment_type ?? 'N/A') }} @if($fee->semester)(Sem {{ $fee->semester }})@endif</p>
+                                    <p><span class="text-gray-500">Mode:</span> {{ ucfirst($fee->payment_mode ?? 'offline') }}</p>
+                                    <p><span class="text-gray-500">Date:</span> {{ $fee->payment_date ? display_date($fee->payment_date) : 'N/A' }}</p>
+                                    <p><span class="text-gray-500">Marked By:</span> {{ $fee->markedBy->name ?? 'N/A' }} ({{ display_date($fee->created_at) }})</p>
+                                </div>
+                                <div class="mt-4 grid grid-cols-2 gap-2">
+                                    <a href="{{ route('admin.fees.show', $fee->id) }}" class="inline-flex justify-center rounded-lg bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
+                                        View
+                                    </a>
+                                    <a href="{{ route('admin.fees.show', $fee->id) }}" class="inline-flex justify-center rounded-lg bg-green-50 px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-100">
+                                        Approve
+                                    </a>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                                No pending fees for verification. Great job! 🎉
+                            </div>
+                        @endforelse
+                    </div>
+
                     <!-- Pagination -->
                     @if($fees->hasPages())
                         <div class="mt-6">
+                            <x-per-page-selector :default="10" />
                             {{ $fees->links() }}
                         </div>
                     @endif

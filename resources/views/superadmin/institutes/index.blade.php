@@ -158,6 +158,7 @@
                     <!-- Pagination -->
                     @if($institutes->hasPages())
                         <div class="mt-6">
+                            <x-per-page-selector :default="10" />
                             {{ $institutes->links() }}
                         </div>
                     @endif

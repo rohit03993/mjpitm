@@ -72,7 +72,7 @@
                                 <div class="flex items-center justify-between">
                                     <span class="text-sm text-gray-500">Payment Date</span>
                                     <span class="text-sm font-medium text-gray-900">
-                                        {{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}
+                                        {{ $fee->payment_date ? display_date($fee->payment_date) : 'N/A' }}
                                     </span>
                                 </div>
 
@@ -88,7 +88,7 @@
                                 <div class="flex items-center justify-between">
                                     <span class="text-xs text-gray-400">Created</span>
                                     <span class="text-xs text-gray-500">
-                                        {{ $fee->created_at ? $fee->created_at->format('d M Y, h:i A') : 'N/A' }}
+                                        {{ $fee->created_at ? display_datetime($fee->created_at) : 'N/A' }}
                                     </span>
                                 </div>
                             </div>
@@ -97,7 +97,7 @@
                             @if(auth()->user()->isSuperAdmin())
                             <div class="mt-4 pt-4 border-t flex flex-col sm:flex-row gap-2">
                                 <button type="button" 
-                                    onclick="openViewModal({{ $fee->id }}, {{ $fee->amount }}, '{{ $fee->payment_mode ?? 'offline' }}', '{{ $fee->payment_date ? $fee->payment_date->format('d M Y') : 'N/A' }}', '{{ $fee->status }}', '{{ addslashes($fee->markedBy->name ?? 'N/A') }}', '{{ $fee->created_at ? $fee->created_at->format('d M Y, h:i A') : 'N/A' }}', '{{ addslashes($fee->verifiedBy->name ?? 'N/A') }}', '{{ $fee->verified_at ? $fee->verified_at->format('d M Y, h:i A') : 'N/A' }}', '{{ addslashes($fee->approved_by_name ?? 'N/A') }}')" 
+                                    onclick="openViewModal({{ $fee->id }}, {{ $fee->amount }}, '{{ $fee->payment_mode ?? 'offline' }}', '{{ $fee->payment_date ? display_date($fee->payment_date) : 'N/A' }}', '{{ $fee->status }}', '{{ addslashes($fee->markedBy->name ?? 'N/A') }}', '{{ $fee->created_at ? display_datetime($fee->created_at) : 'N/A' }}', '{{ addslashes($fee->verifiedBy->name ?? 'N/A') }}', '{{ $fee->verified_at ? display_datetime($fee->verified_at) : 'N/A' }}', '{{ addslashes($fee->approved_by_name ?? 'N/A') }}')" 
                                     class="flex-1 px-3 py-2 text-sm font-medium text-center text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors">
                                     View Details
                                 </button>
@@ -131,6 +131,7 @@
             <!-- Pagination -->
             @if($fees->hasPages())
                 <div class="mt-6">
+                    <x-per-page-selector :default="10" />
                     {{ $fees->links() }}
                 </div>
             @endif

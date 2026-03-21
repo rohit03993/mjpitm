@@ -130,6 +130,7 @@
                         </div>
 
                         <div class="mt-4">
+                            <x-per-page-selector :default="10" />
                             {{ $categories->links() }}
                         </div>
                     @else

@@ -281,6 +281,7 @@
                     <!-- Pagination -->
                     @if($students->hasPages())
                         <div class="mt-6">
+                            <x-per-page-selector :default="10" />
                             {{ $students->links() }}
                         </div>
                     @endif

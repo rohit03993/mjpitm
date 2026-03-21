@@ -6,20 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Models\Institute;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
     /**
      * Display a listing of admins.
      */
-    public function index()
+    public function index(Request $request)
     {
         $admins = User::whereIn('role', ['super_admin', 'institute_admin', 'staff'])
             ->with('institute')
             ->latest()
-            ->paginate(15);
+            ->paginate(resolve_per_page($request->query('per_page')))
+            ->withQueryString();
 
         return view('superadmin.users.index', compact('admins'));
     }
@@ -34,7 +37,9 @@ class UserController extends Controller
         // Get role from query parameter (if coming from manage-users page)
         $preselectedRole = $request->get('role', old('role'));
 
-        return view('superadmin.users.create', compact('institutes', 'preselectedRole'));
+        $canCreateSuperAdmin = User::canCreateAnotherSuperAdmin();
+
+        return view('superadmin.users.create', compact('institutes', 'preselectedRole', 'canCreateSuperAdmin'));
     }
 
     /**
@@ -42,25 +47,57 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $authUser = auth()->user();
+        if (!$authUser || !$authUser->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can create admin users.');
+        }
+
+        $allowedRoles = ['institute_admin', 'staff'];
+        if (User::canCreateAnotherSuperAdmin()) {
+            $allowedRoles[] = 'super_admin';
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['required', Rule::in(['institute_admin', 'staff'])], // Super Admin cannot be created
+            'role' => ['required', Rule::in($allowedRoles)],
             'institute_id' => ['nullable', 'exists:institutes,id'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-            'institute_id' => $validated['institute_id'] ?? null,
-            'status' => $validated['status'],
-        ]);
-        
-        // Also store encrypted plain password for Super Admin viewing
+        if ($validated['role'] === 'super_admin') {
+            $user = DB::transaction(function () use ($validated) {
+                $count = User::query()
+                    ->where('role', 'super_admin')
+                    ->lockForUpdate()
+                    ->count();
+                if ($count >= User::MAX_SUPER_ADMINS) {
+                    throw ValidationException::withMessages([
+                        'role' => __('Maximum :max super admins allowed.', ['max' => User::MAX_SUPER_ADMINS]),
+                    ]);
+                }
+
+                return User::create([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'password' => Hash::make($validated['password']),
+                    'role' => 'super_admin',
+                    'institute_id' => $validated['institute_id'] ?? null,
+                    'status' => $validated['status'],
+                ]);
+            });
+        } else {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => $validated['role'],
+                'institute_id' => $validated['institute_id'] ?? null,
+                'status' => $validated['status'],
+            ]);
+        }
+
         $user->setPlainPassword($validated['password']);
         $user->save();
 

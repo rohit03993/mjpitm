@@ -164,7 +164,10 @@
                 <p class="text-gray-400">
                     &copy; {{ date('Y') }} {{ $institute?->name ?? 'Mahatma Jyotiba Phule Institute of Paramedical Science' }}. All rights reserved.
                 </p>
-                <p class="text-gray-500 text-sm mt-2">Designed with <i class="fas fa-heart text-red-500"></i> for Healthcare Excellence</p>
+                <p class="text-gray-500 text-sm mt-2">
+                    Designed with <i class="fas fa-heart text-red-500"></i>
+                    <a href="https://paldigital.in/" target="_blank" rel="noopener noreferrer" class="text-yellow-400 hover:text-yellow-300">By Pal Digital</a>
+                </p>
             </div>
         </div>
     </footer>

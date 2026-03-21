@@ -85,8 +85,8 @@
                         </div>
                     </form>
 
-                    <!-- Students Table -->
-                    <div class="overflow-x-auto">
+                    <!-- Students Table (desktop) -->
+                    <div class="hidden lg:block overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -136,7 +136,7 @@
                                             {{ $student->phone ?? 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $student->created_at->format('d M Y') }}
+                                            {{ display_date($student->created_at) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
@@ -169,9 +169,51 @@
                         </table>
                     </div>
 
+                    <!-- Students Cards (mobile/tablet) -->
+                    <div class="lg:hidden space-y-4">
+                        @forelse($students as $student)
+                            <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-base font-semibold text-gray-900">{{ $student->name }}</p>
+                                        <p class="text-xs text-gray-500">{{ $student->registration_number ?? 'N/A' }}</p>
+                                    </div>
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full
+                                        @if($student->status === 'active') bg-green-100 text-green-800
+                                        @elseif($student->status === 'pending') bg-yellow-100 text-yellow-800
+                                        @else bg-red-100 text-red-800 @endif">
+                                        {{ ucfirst($student->status) }}
+                                    </span>
+                                </div>
+                                <div class="mt-3 space-y-1 text-sm">
+                                    <p><span class="text-gray-500">Institute:</span> {{ $student->institute->name ?? 'N/A' }}</p>
+                                    <p><span class="text-gray-500">Course:</span> {{ $student->course->name ?? 'N/A' }}</p>
+                                    <p><span class="text-gray-500">Email:</span> {{ $student->email ?? 'N/A' }}</p>
+                                    <p><span class="text-gray-500">Phone:</span> {{ $student->phone ?? 'N/A' }}</p>
+                                    <p><span class="text-gray-500">Registered On:</span> {{ display_date($student->created_at) }}</p>
+                                </div>
+                                <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    <a href="{{ route('admin.students.show', $student->id) }}" class="inline-flex justify-center rounded-lg bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
+                                        View
+                                    </a>
+                                    @if(auth()->user() && auth()->user()->isSuperAdmin())
+                                        <a href="{{ route('admin.students.edit', $student->id) }}" class="inline-flex justify-center rounded-lg bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-100">
+                                            Process
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                                No website registrations found.
+                            </div>
+                        @endforelse
+                    </div>
+
                     <!-- Pagination -->
                     @if($students->hasPages())
                         <div class="mt-6">
+                            <x-per-page-selector :default="10" />
                             {{ $students->links() }}
                         </div>
                     @endif

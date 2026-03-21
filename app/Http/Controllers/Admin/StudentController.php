@@ -11,11 +11,13 @@ use App\Models\CourseCategory;
 use App\Models\RegistrationNotification;
 use App\Services\RollNumberGenerator;
 use App\Services\InstituteAdminFeeCalculator;
+use App\Services\StudentAuditLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
 class StudentController extends Controller
 {
@@ -73,7 +75,9 @@ class StudentController extends Controller
             });
         }
 
-        $students = $query->latest()->paginate(15)->withQueryString();
+        $students = $query->latest()
+            ->paginate(resolve_per_page($request->query('per_page')))
+            ->withQueryString();
 
         // For filters dropdowns
         $institutes = \App\Models\Institute::where('status', 'active')->get(['id', 'name']);
@@ -158,7 +162,9 @@ class StudentController extends Controller
             });
         }
 
-        $students = $query->latest()->paginate(15)->withQueryString();
+        $students = $query->latest()
+            ->paginate(resolve_per_page($request->query('per_page')))
+            ->withQueryString();
 
         // For filters dropdowns
         $institutes = \App\Models\Institute::where('status', 'active')->get(['id', 'name']);
@@ -389,11 +395,11 @@ class StudentController extends Controller
         $validated['created_by'] = Auth::id();
 
         // Password = date of birth in DDMMYYYY format (e.g. 03091992); student can change after login
-        $plainPassword = Student::dateOfBirthToPassword($validated['date_of_birth']);
-        if (!$plainPassword) {
+        $credentials = Student::passwordCredentialsFromDateOfBirth($validated['date_of_birth']);
+        if (! $credentials) {
             return redirect()->back()->withErrors(['date_of_birth' => 'Invalid date of birth.'])->withInput();
         }
-        $validated['password'] = Hash::make($plainPassword);
+        $validated = array_merge($validated, $credentials);
         
         // New students start as pending until approved by admin / super admin
         $validated['status'] = 'pending';
@@ -443,6 +449,7 @@ class StudentController extends Controller
 
         // Create student
         $student = Student::create($validated);
+        StudentAuditLogger::logCreated($student);
         
         // Log to verify session was saved
         \Log::info('Student created by admin with session', [
@@ -451,15 +458,12 @@ class StudentController extends Controller
             'registration_number' => $student->registration_number
         ]);
         
-        // Also store encrypted plain password for Super Admin viewing
-        $student->setPlainPassword($plainPassword);
-        $student->save();
-        
         // Create qualifications (only if examination is provided)
         if (!empty($qualifications)) {
+            $createdQualifications = [];
             foreach ($qualifications as $qualification) {
                 if (!empty($qualification['examination']) && !empty($qualification['year_of_passing']) && $qualification['year_of_passing'] !== 'yyyy') {
-                    Qualification::create([
+                    $newQualification = Qualification::create([
                         'student_id' => $student->id,
                         'examination' => $qualification['examination'],
                         'year_of_passing' => $qualification['year_of_passing'] ?? null,
@@ -468,7 +472,22 @@ class StudentController extends Controller
                         'cgpa' => $qualification['cgpa'] ?? null,
                         'subjects' => $qualification['subjects'] ?? null,
                     ]);
+                    $createdQualifications[] = $newQualification->only([
+                        'id',
+                        'examination',
+                        'year_of_passing',
+                        'board_university',
+                        'percentage',
+                        'cgpa',
+                        'subjects',
+                    ]);
                 }
+            }
+
+            if (!empty($createdQualifications)) {
+                StudentAuditLogger::logRelatedCreated($student, 'qualification', [
+                    'rows' => $createdQualifications,
+                ]);
             }
         }
         
@@ -500,18 +519,14 @@ class StudentController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $user = Auth::user();
 
         $student = Student::with(['institute', 'course', 'qualifications', 'creator'])->findOrFail($id);
 
-        // Normal admins (staff) can view only students they created OR website registrations from their institute
-        if (!$user->isSuperAdmin()) {
-            $instituteId = session('current_institute_id');
-            if ($student->created_by !== $user->id && ($student->created_by !== null || $student->institute_id != $instituteId)) {
-                abort(403, 'You are not authorized to view this student.');
-            }
+        if (! $user->canViewStudentRecord($student)) {
+            abort(403, 'You are not authorized to view this student.');
         }
 
         // Load published semester results (only truly published ones)
@@ -531,7 +546,11 @@ class StudentController extends Controller
             $notification->markAsRead($user->id);
         }
 
-        return view('admin.students.show', compact('student', 'publishedSemesterResults'));
+        $studentAudits = $student->audits()
+            ->with('actor:id,name,email')
+            ->paginate(resolve_per_page($request->query('history_per_page'), 10), ['*'], 'history_page');
+
+        return view('admin.students.show', compact('student', 'publishedSemesterResults', 'studentAudits'));
     }
 
     /**
@@ -803,14 +822,29 @@ class StudentController extends Controller
             $validated['certificate_others'] = $certOthersPath;
         }
         
-        // Handle password update (if provided)
-        if (!empty($validated['password'])) {
+        $passwordSyncedFromDob = false;
+
+        // Handle password: explicit new password wins; else if DOB changed, sync default password from new DOB
+        if (! empty($validated['password'])) {
             $plainPassword = $validated['password'];
             $validated['password'] = Hash::make($plainPassword);
-            // Store encrypted plain password
-            $student->password_plain_encrypted = $plainPassword;
+            $validated['password_plain_encrypted'] = encrypt($plainPassword);
         } else {
             unset($validated['password']);
+            $oldDob = $student->date_of_birth
+                ? Carbon::parse($student->date_of_birth)->format('Y-m-d')
+                : null;
+            $newDob = Carbon::parse($validated['date_of_birth'])->format('Y-m-d');
+            if ($oldDob !== $newDob) {
+                $credentials = Student::passwordCredentialsFromDateOfBirth($validated['date_of_birth']);
+                if (! $credentials) {
+                    return redirect()->back()
+                        ->withErrors(['date_of_birth' => 'Invalid date of birth.'])
+                        ->withInput();
+                }
+                $validated = array_merge($validated, $credentials);
+                $passwordSyncedFromDob = true;
+            }
         }
         
         // Calculate total deposit if not provided
@@ -909,16 +943,29 @@ class StudentController extends Controller
         // Remove qualifications from validated data (will be handled separately)
         $qualifications = $validated['qualifications'] ?? [];
         unset($validated['qualifications']);
+        $oldQualifications = $student->qualifications()
+            ->get(['id', 'examination', 'year_of_passing', 'board_university', 'percentage', 'cgpa', 'subjects'])
+            ->toArray();
         
-        // Update student
-        $student->update($validated);
+        // Update student and capture field-level diffs for audit history.
+        $student->fill($validated);
+        $dirty = $student->getDirty();
+        $oldValues = [];
+        $newValues = [];
+        foreach ($dirty as $field => $newValue) {
+            $oldValues[$field] = $student->getOriginal($field);
+            $newValues[$field] = $newValue;
+        }
+        $student->save();
+        StudentAuditLogger::logUpdated($student, $oldValues, $newValues);
         
         // Update qualifications - delete existing and create new ones
         $student->qualifications()->delete();
+        $newQualifications = [];
         if (!empty($qualifications)) {
             foreach ($qualifications as $qualification) {
                 if (!empty($qualification['examination']) && !empty($qualification['year_of_passing']) && $qualification['year_of_passing'] !== 'yyyy') {
-                    Qualification::create([
+                    $newQualification = Qualification::create([
                         'student_id' => $student->id,
                         'examination' => $qualification['examination'],
                         'year_of_passing' => $qualification['year_of_passing'] ?? null,
@@ -927,12 +974,31 @@ class StudentController extends Controller
                         'cgpa' => $qualification['cgpa'] ?? null,
                         'subjects' => $qualification['subjects'] ?? null,
                     ]);
+                    $newQualifications[] = $newQualification->only([
+                        'id',
+                        'examination',
+                        'year_of_passing',
+                        'board_university',
+                        'percentage',
+                        'cgpa',
+                        'subjects',
+                    ]);
                 }
             }
+        }
+        if ($oldQualifications !== $newQualifications) {
+            StudentAuditLogger::logRelatedUpdated($student, 'qualification', [
+                'rows' => $oldQualifications,
+            ], [
+                'rows' => $newQualifications,
+            ]);
         }
 
         // Prepare success message
         $successMessage = 'Student details updated successfully.';
+        if ($passwordSyncedFromDob ?? false) {
+            $successMessage .= ' Login password was updated to match the new date of birth (DDMMYYYY).';
+        }
         if ($sessionChanged) {
             $successMessage .= ' Registration number updated to: ' . $validated['registration_number'];
             if (isset($validated['roll_number'])) {
@@ -958,6 +1024,7 @@ class StudentController extends Controller
         }
 
         $student = Student::findOrFail($id);
+        StudentAuditLogger::logDeleted($student);
         $student->delete(); // Soft delete: sets deleted_at
 
         return redirect()->route('admin.students.index')

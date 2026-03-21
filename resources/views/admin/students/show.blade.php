@@ -4,9 +4,16 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Student Details') }}
             </h2>
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="hidden md:flex flex-wrap items-center gap-2">
                 <a href="{{ route('admin.students.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                     ← Back
+                </a>
+                <a href="{{ route('admin.documents.view.registration', $student->id) }}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Registration Form
                 </a>
                 @if($student->status === 'active' && $student->roll_number)
                     <a href="{{ route('admin.documents.view.idcard', $student->id) }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
@@ -40,7 +47,7 @@
         </div>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12 pb-32 md:pb-12">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
             @if(session('error'))
                 <div class="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -92,6 +99,7 @@
                         <div class="md:col-span-1">
                             <h3 class="text-lg font-semibold text-gray-900 mb-2">Basic Information</h3>
                             <p class="text-sm text-gray-700"><strong>Name:</strong> {{ $student->name }}</p>
+                            <p class="text-sm text-gray-700"><strong>Date of Birth:</strong> {{ display_date($student->date_of_birth) }}</p>
                             <p class="text-sm text-gray-700"><strong>Email:</strong> {{ $student->email ?? 'N/A' }}</p>
                             <p class="text-sm text-gray-700"><strong>Mobile:</strong> {{ $student->phone ?? 'N/A' }}</p>
                             <p class="text-sm text-gray-700"><strong>Institute:</strong> {{ $student->institute->name ?? 'N/A' }}</p>
@@ -126,7 +134,7 @@
                                 <strong>Registered By:</strong> {{ $student->creator->name ?? 'N/A' }}
                             </p>
                             <p class="text-xs text-gray-500 mt-2">
-                                Registered on {{ $student->created_at?->format('d M Y, h:i A') ?? 'N/A' }}
+                                Registered on {{ $student->created_at ? display_datetime($student->created_at) : 'N/A' }}
                             </p>
                         </div>
                     </div>
@@ -431,33 +439,104 @@
                         </div>
                     @endif
 
-                    {{-- Actions --}}
-                    <div class="mt-4 flex flex-wrap justify-end gap-3">
-                        <a href="{{ route('admin.students.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded">
-                            Back to List
-                        </a>
-                        <a href="{{ route('admin.documents.view.registration', $student->id) }}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded inline-flex items-center">
-                            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            Registration Form
-                        </a>
-                        @if($student->status === 'active' && $student->roll_number)
-                            <a href="{{ route('admin.documents.view.idcard', $student->id) }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded inline-flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                                </svg>
-                                View ID Card
-                            </a>
-                        @endif
-                        @if(auth()->user() && auth()->user()->isSuperAdmin())
-                            <a href="{{ route('admin.students.edit', $student->id) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded">
-                                Edit Status & Enrollment No.
-                            </a>
+                    {{-- Change History --}}
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Profile Change History</h3>
+                        @if(isset($studentAudits) && $studentAudits->count() > 0)
+                            <x-per-page-selector param="history_per_page" :default="10" />
+                            <div class="space-y-3">
+                                @foreach($studentAudits as $audit)
+                                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <p class="text-sm font-semibold text-gray-900">
+                                                {{ ucwords(str_replace('_', ' ', $audit->event)) }}
+                                                by {{ $audit->actor->name ?? 'System' }}
+                                            </p>
+                                            <p class="text-xs text-gray-500">
+                                                {{ display_datetime($audit->created_at) }}
+                                            </p>
+                                        </div>
+
+                                        @if(str_contains($audit->event, 'updated') && !empty($audit->changes['after']))
+                                            <div class="mt-3 overflow-x-auto">
+                                                <table class="min-w-full divide-y divide-gray-200 text-xs">
+                                                    <thead class="bg-white">
+                                                        <tr>
+                                                            <th class="px-3 py-2 text-left font-medium text-gray-700">Field</th>
+                                                            <th class="px-3 py-2 text-left font-medium text-gray-700">Old Value</th>
+                                                            <th class="px-3 py-2 text-left font-medium text-gray-700">New Value</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white divide-y divide-gray-200">
+                                                        @foreach($audit->changes['after'] as $field => $newValue)
+                                                            <tr>
+                                                                <td class="px-3 py-2 text-gray-800">{{ str_replace('_', ' ', $field) }}</td>
+                                                                <td class="px-3 py-2 text-gray-600">{{ display_audit_value($field, $audit->changes['before'][$field] ?? null) }}</td>
+                                                                <td class="px-3 py-2 text-gray-900">{{ display_audit_value($field, $newValue) }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        @else
+                                            <p class="mt-2 text-sm text-gray-600">
+                                                Snapshot captured for <strong>{{ $audit->event }}</strong> event.
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if($studentAudits->hasPages())
+                                <div class="mt-4">
+                                    {{ $studentAudits->links() }}
+                                </div>
+                            @endif
+                        @else
+                            <div class="border border-gray-200 rounded-lg p-6 bg-gray-50 text-center">
+                                <p class="text-gray-500">No profile history recorded yet.</p>
+                            </div>
                         @endif
                     </div>
+
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sticky Actions -->
+    <div class="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur">
+        <div class="mx-auto max-w-5xl px-3 py-3">
+            <div class="grid grid-cols-2 gap-2">
+                <a href="{{ route('admin.students.index') }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-xs font-semibold text-gray-700">
+                    Back
+                </a>
+                <a href="{{ route('admin.documents.view.registration', $student->id) }}" target="_blank" class="inline-flex items-center justify-center rounded-lg bg-amber-600 px-3 py-2.5 text-xs font-semibold text-white">
+                    Registration
+                </a>
+
+                @if($student->status === 'active' && $student->roll_number)
+                    <a href="{{ route('admin.documents.view.idcard', $student->id) }}" class="inline-flex items-center justify-center rounded-lg bg-green-600 px-3 py-2.5 text-xs font-semibold text-white">
+                        View ID Card
+                    </a>
+                    @if(auth()->user() && auth()->user()->isSuperAdmin())
+                        <a href="{{ route('admin.students.generate-semester-result', $student->id) }}" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-semibold text-white">
+                            Generate Result
+                        </a>
+                    @endif
+                @endif
+
+                @if(auth()->user() && auth()->user()->isSuperAdmin())
+                    <a href="{{ route('admin.students.edit', $student->id) }}" class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-2.5 text-xs font-semibold text-white">
+                        Edit
+                    </a>
+                    <form action="{{ route('admin.students.destroy', $student->id) }}" method="POST" onsubmit="return confirm('Remove this student from the active list? Their data will be kept for audit but they will not appear in lists or be able to log in.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="w-full rounded-lg bg-red-600 px-3 py-2.5 text-xs font-semibold text-white">
+                            Remove
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     </div>

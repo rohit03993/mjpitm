@@ -2,26 +2,31 @@
 
 use App\Models\Student;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     /**
      * One-time: set each existing student's password to their date of birth in DDMMYYYY format.
-     * No other data is changed. Students can change password after login.
+     * Uses the query builder (not the Student model) so this runs even if soft-deletes column
+     * is added in a later migration. No rows are deleted.
      */
     public function up(): void
     {
-        Student::query()
+        DB::table('students')
             ->whereNotNull('date_of_birth')
-            ->chunkById(100, function ($students) {
-                foreach ($students as $student) {
-                    $dobPassword = Student::dateOfBirthToPassword($student->date_of_birth);
-                    if ($dobPassword) {
-                        $student->password = Hash::make($dobPassword);
-                        $student->setPlainPassword($dobPassword);
-                        $student->saveQuietly();
+            ->orderBy('id')
+            ->chunkById(100, function ($rows) {
+                foreach ($rows as $row) {
+                    $creds = Student::passwordCredentialsFromDateOfBirth((string) $row->date_of_birth);
+                    if (! $creds) {
+                        continue;
                     }
+                    DB::table('students')->where('id', $row->id)->update([
+                        'password' => $creds['password'],
+                        'password_plain_encrypted' => $creds['password_plain_encrypted'],
+                        'updated_at' => now(),
+                    ]);
                 }
             });
     }

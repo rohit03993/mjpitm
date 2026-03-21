@@ -57,11 +57,11 @@
                         </div>
                         <div>
                             <h4 class="text-sm font-medium text-gray-500">Created At</h4>
-                            <p class="mt-1 text-gray-900">{{ $category->created_at->format('d M Y, h:i A') }}</p>
+                            <p class="mt-1 text-gray-900">{{ display_datetime($category->created_at) }}</p>
                         </div>
                         <div>
                             <h4 class="text-sm font-medium text-gray-500">Last Updated</h4>
-                            <p class="mt-1 text-gray-900">{{ $category->updated_at->format('d M Y, h:i A') }}</p>
+                            <p class="mt-1 text-gray-900">{{ display_datetime($category->updated_at) }}</p>
                         </div>
                     </div>
                 </div>

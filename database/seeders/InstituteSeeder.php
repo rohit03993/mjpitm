@@ -13,18 +13,22 @@ class InstituteSeeder extends Seeder
      */
     public function run(): void
     {
-        Institute::create([
-            'name' => 'Mahatma Jyotiba Phule Institute of Technology & Management',
-            'domain' => 'mjpitm.in',
-            'description' => 'Technical & Management courses (BCA, BBA, etc.)',
-            'status' => 'active',
-        ]);
+        Institute::updateOrCreate(
+            ['domain' => 'mjpitm.in'],
+            [
+                'name' => 'Mahatma Jyotiba Phule Institute of Technology & Management',
+                'description' => 'Technical & Management courses (BCA, BBA, etc.)',
+                'status' => 'active',
+            ]
+        );
 
-        Institute::create([
-            'name' => 'Mahatma Jyotiba Phule Institute of Paramedical Science',
-            'domain' => 'mjpips.in',
-            'description' => 'Paramedical & health science courses (DMLT, B.Sc Nursing, etc.)',
-            'status' => 'active',
-        ]);
+        Institute::updateOrCreate(
+            ['domain' => 'mjpips.in'],
+            [
+                'name' => 'Mahatma Jyotiba Phule Institute of Paramedical Science',
+                'description' => 'Paramedical & health science courses (DMLT, B.Sc Nursing, etc.)',
+                'status' => 'active',
+            ]
+        );
     }
 }

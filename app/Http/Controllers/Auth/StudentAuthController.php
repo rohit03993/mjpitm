@@ -54,7 +54,13 @@ class StudentAuthController extends Controller
 
         // Check if student's institute matches the current domain's institute
         $instituteId = session('current_institute_id');
-        if ($instituteId && $student->institute_id != $instituteId) {
+        if (!$instituteId) {
+            throw ValidationException::withMessages([
+                'identifier' => __('Please login from the correct institute website.'),
+            ]);
+        }
+
+        if ((int) $student->institute_id !== (int) $instituteId) {
             throw ValidationException::withMessages([
                 'identifier' => __('You do not have access to this institute.'),
             ]);
@@ -161,7 +167,11 @@ class StudentAuthController extends Controller
             return back()->withErrors(['token' => 'Invalid reset link.']);
         }
 
-        $student->update(['password' => Hash::make($request->password)]);
+        $plain = $request->password;
+        $student->update([
+            'password' => Hash::make($plain),
+            'password_plain_encrypted' => encrypt($plain),
+        ]);
         Cache::forget('student_reset_' . $request->token);
 
         return redirect()->route('student.login')

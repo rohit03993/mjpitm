@@ -53,8 +53,8 @@
                         </div>
                     </form>
 
-                    <!-- Pending Results Table -->
-                    <div class="overflow-x-auto">
+                    <!-- Pending Results Table (desktop) -->
+                    <div class="hidden lg:block overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-yellow-50">
                                 <tr>
@@ -94,7 +94,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $result->uploadedBy->name ?? 'N/A' }}
-                                            <div class="text-xs text-gray-400">{{ $result->created_at->format('d M Y') }}</div>
+                                            <div class="text-xs text-gray-400">{{ display_date($result->created_at) }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex flex-col gap-1">
@@ -117,9 +117,48 @@
                         </table>
                     </div>
 
+                    <!-- Pending Results Cards (mobile/tablet) -->
+                    <div class="lg:hidden space-y-4">
+                        @forelse($results as $result)
+                            <div class="rounded-xl border border-yellow-200 bg-white p-4 shadow-sm">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-base font-semibold text-gray-900">{{ $result->student->name ?? 'N/A' }}</p>
+                                        <p class="text-xs text-gray-500">{{ $result->student->roll_number ?? $result->student->registration_number ?? 'N/A' }}</p>
+                                    </div>
+                                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        Pending
+                                    </span>
+                                </div>
+                                <div class="mt-3 space-y-1 text-sm">
+                                    <p><span class="text-gray-500">Subject:</span> <span class="font-medium text-gray-900">{{ $result->subject->name ?? 'N/A' }}</span></p>
+                                    <p><span class="text-gray-500">Exam:</span> {{ ucfirst($result->exam_type ?? 'N/A') }} | Sem {{ $result->semester }} - {{ $result->academic_year }}</p>
+                                    <p><span class="text-gray-500">Marks:</span> <span class="font-semibold">{{ $result->marks_obtained ?? 'N/A' }}</span> / {{ $result->total_marks ?? 'N/A' }}</p>
+                                    <p><span class="text-gray-500">Uploaded By:</span> {{ $result->uploadedBy->name ?? 'N/A' }} ({{ display_date($result->created_at) }})</p>
+                                </div>
+                                <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    <a href="{{ route('admin.results.show', $result->id) }}" class="inline-flex justify-center rounded-lg bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
+                                        View
+                                    </a>
+                                    <form action="{{ route('admin.results.verify', $result->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to verify and publish this result?');">
+                                        @csrf
+                                        <button type="submit" class="w-full rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700">
+                                            Verify
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                                No pending results for verification. Great job! 🎉
+                            </div>
+                        @endforelse
+                    </div>
+
                     <!-- Pagination -->
                     @if($results->hasPages())
                         <div class="mt-6">
+                            <x-per-page-selector :default="10" />
                             {{ $results->links() }}
                         </div>
                     @endif

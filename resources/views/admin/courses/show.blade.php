@@ -118,7 +118,7 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Created At</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $course->created_at->format('d M Y') }}</dd>
+                            <dd class="mt-1 text-sm text-gray-900">{{ display_date($course->created_at) }}</dd>
                         </div>
                     </div>
                 </div>

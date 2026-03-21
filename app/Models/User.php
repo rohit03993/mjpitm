@@ -6,10 +6,31 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
+
+    /** Matches `users.role` enum — keep in sync with migrations. */
+    public const ROLE_NAMES = ['super_admin', 'institute_admin', 'staff', 'student'];
+
+    /** Max super admin accounts (enforced in SuperAdmin UserController). */
+    public const MAX_SUPER_ADMINS = 2;
+
+    public static function superAdminCount(): int
+    {
+        return static::query()->where('role', 'super_admin')->count();
+    }
+
+    public static function canCreateAnotherSuperAdmin(): bool
+    {
+        return self::superAdminCount() < self::MAX_SUPER_ADMINS;
+    }
+
+    /** @var string Guard used by spatie/laravel-permission (must match Role guard). */
+    protected $guard_name = 'web';
 
     /**
      * The attributes that are mass assignable.
@@ -50,6 +71,19 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saved(function (User $user) {
+            if (! $user->role || ! Schema::hasTable('roles')) {
+                return;
+            }
+            if (! in_array($user->role, self::ROLE_NAMES, true)) {
+                return;
+            }
+            $user->syncRoles([$user->role]);
+        });
+    }
+
     /**
      * Get the institute that the user belongs to (for admins)
      */
@@ -71,7 +105,8 @@ class User extends Authenticatable
      */
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin';
+        return $this->role === 'super_admin'
+            || $this->hasRoleWhenTablesExist('super_admin');
     }
 
     /**
@@ -79,7 +114,8 @@ class User extends Authenticatable
      */
     public function isInstituteAdmin(): bool
     {
-        return $this->role === 'institute_admin';
+        return $this->role === 'institute_admin'
+            || $this->hasRoleWhenTablesExist('institute_admin');
     }
 
     /**
@@ -87,7 +123,20 @@ class User extends Authenticatable
      */
     public function isStaff(): bool
     {
-        return $this->role === 'staff';
+        return $this->role === 'staff'
+            || $this->hasRoleWhenTablesExist('staff');
+    }
+
+    /**
+     * Spatie role check only when permission tables exist (avoids errors before migrate).
+     */
+    protected function hasRoleWhenTablesExist(string $role): bool
+    {
+        if (! Schema::hasTable('roles')) {
+            return false;
+        }
+
+        return $this->hasRole($role);
     }
 
     /**
@@ -96,6 +145,21 @@ class User extends Authenticatable
     public function canAccessAdminLogin(): bool
     {
         return $this->isSuperAdmin() || $this->isStaff();
+    }
+
+    /**
+     * Whether this admin (web guard) may view the given student — mirrors {@see \App\Http\Controllers\Admin\StudentController::show}.
+     */
+    public function canViewStudentRecord(Student $student): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $instituteId = session('current_institute_id');
+
+        return ! ($student->created_by !== $this->id
+            && ($student->created_by !== null || $student->institute_id != $instituteId));
     }
 
     /**

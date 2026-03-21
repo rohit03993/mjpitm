@@ -29,13 +29,20 @@
                                 <x-input-label for="role" :value="__('Role *')" />
                                 <select id="role" name="role" class="block mt-1 w-full rounded-md border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500" required>
                                     <option value="">Select Role</option>
+                                    @if($canCreateSuperAdmin ?? false)
+                                        <option value="super_admin" {{ old('role', $preselectedRole ?? '') === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
+                                    @endif
                                     <option value="institute_admin" {{ old('role', $preselectedRole ?? '') === 'institute_admin' ? 'selected' : '' }}>Institute Admin (Guest)</option>
                                     <option value="staff" {{ old('role', $preselectedRole ?? '') === 'staff' ? 'selected' : '' }}>Staff (Helper)</option>
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500">
                                     <strong>Institute Admin:</strong> Uses Guest Login, manages own institute<br>
                                     <strong>Staff:</strong> Uses Admin Login, helps Super Admin with tasks<br>
-                                    <em>Note: Super Admin role cannot be created through this interface.</em>
+                                    @if($canCreateSuperAdmin ?? false)
+                                        <strong>Super Admin:</strong> Full access; max {{ \App\Models\User::MAX_SUPER_ADMINS }} accounts ({{ \App\Models\User::superAdminCount() }} created).<br>
+                                    @else
+                                        <em>Super Admin slots are full ({{ \App\Models\User::MAX_SUPER_ADMINS }} max).</em><br>
+                                    @endif
                                 </p>
                                 <x-input-error :messages="$errors->get('role')" class="mt-2" />
                             </div>

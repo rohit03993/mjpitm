@@ -87,19 +87,19 @@
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Uploaded By</dt>
                         <dd class="mt-1 text-sm text-gray-900">{{ $result->uploadedBy->name ?? 'N/A' }}</dd>
-                        <dd class="text-xs text-gray-500">{{ $result->created_at->format('d M Y, h:i A') }}</dd>
+                        <dd class="text-xs text-gray-500">{{ display_datetime($result->created_at) }}</dd>
                     </div>
                     @if($result->verified_by)
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Verified By</dt>
                         <dd class="mt-1 text-sm text-gray-900">{{ $result->verifiedBy->name ?? 'N/A' }}</dd>
-                        <dd class="text-xs text-gray-500">{{ $result->verified_at ? $result->verified_at->format('d M Y, h:i A') : 'N/A' }}</dd>
+                        <dd class="text-xs text-gray-500">{{ $result->verified_at ? display_datetime($result->verified_at) : 'N/A' }}</dd>
                     </div>
                     @endif
                     @if($result->published_at)
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Published At</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $result->published_at->format('d M Y, h:i A') }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ display_datetime($result->published_at) }}</dd>
                     </div>
                     @endif
                 </div>

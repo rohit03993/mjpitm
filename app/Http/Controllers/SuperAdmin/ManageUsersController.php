@@ -23,24 +23,30 @@ class ManageUsersController extends Controller
                 $users = User::where('role', 'staff')
                     ->with('institute')
                     ->latest()
-                    ->get();
+                    ->paginate(resolve_per_page($request->query('per_page')))
+                    ->withQueryString();
                 break;
                 
             case 'institute_admin':
                 $users = User::where('role', 'institute_admin')
                     ->with('institute')
                     ->latest()
-                    ->get();
+                    ->paginate(resolve_per_page($request->query('per_page')))
+                    ->withQueryString();
                 break;
                 
             case 'students':
                 $users = Student::with(['institute', 'course'])
                     ->latest()
-                    ->get();
+                    ->paginate(resolve_per_page($request->query('per_page')))
+                    ->withQueryString();
                 break;
                 
             default:
-                $users = collect();
+                $users = User::query()
+                    ->whereRaw('1 = 0')
+                    ->paginate(resolve_per_page($request->query('per_page')))
+                    ->withQueryString();
         }
         
         return view('superadmin.manage-users.index', compact('users', 'tab'));

@@ -46,7 +46,7 @@ class CourseCategoryController extends Controller
         $categories = $query->orderBy('institute_id')
             ->orderBy('display_order')
             ->orderBy('name')
-            ->paginate(15)
+            ->paginate(resolve_per_page($request->query('per_page')))
             ->withQueryString();
 
         // Get institutes for filter dropdown

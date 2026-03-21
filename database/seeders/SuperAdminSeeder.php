@@ -14,13 +14,14 @@ class SuperAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@gurukul.edu',
-            'password' => Hash::make('
-        '), // Change this password in production!
-            'role' => 'super_admin',
-            'status' => 'active',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'superadmin@gurukul.edu'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password'), // Change in production
+                'role' => 'super_admin',
+                'status' => 'active',
+            ]
+        );
     }
 }

@@ -145,6 +145,7 @@
                     <!-- Pagination -->
                     @if($courses->hasPages())
                         <div class="mt-6">
+                            <x-per-page-selector :default="10" />
                             {{ $courses->links() }}
                         </div>
                     @endif
