@@ -131,7 +131,7 @@
                         </div>
                     </div>
 
-                    <!-- Results Status -->
+                    <!-- Semester result status (not subject rows — matches Super Admin publish + issue marksheet) -->
                     <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg border-l-4 border-purple-500">
                         <div class="p-6">
                             <div class="flex items-center mb-4">
@@ -140,22 +140,47 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
-                                <h3 class="text-lg font-semibold text-gray-900">Results Status</h3>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Result &amp; marksheet status</h3>
+                                    <p class="text-xs text-gray-500 mt-0.5">Per semester (not individual subjects)</p>
+                                </div>
                             </div>
-                            <div class="space-y-2">
-                                <p class="text-gray-700">
-                                    <span class="font-medium">Total Results:</span> 
-                                    <span class="text-gray-900">{{ $student->results->count() }}</span>
-                                </p>
-                                <p class="text-gray-700">
-                                    <span class="font-medium">Published:</span> 
-                                    <span class="text-green-600 font-semibold">{{ $student->results->where('status', 'published')->count() }}</span>
-                                </p>
-                                <p class="text-gray-700">
-                                    <span class="font-medium">Pending:</span> 
-                                    <span class="text-yellow-600 font-semibold">{{ $student->results->where('status', 'pending_verification')->count() }}</span>
-                                </p>
-                            </div>
+                            @if($semesterResultsOverview->isEmpty())
+                                <p class="text-sm text-gray-600">No semester results on file yet.</p>
+                            @else
+                                <ul class="space-y-3">
+                                    @foreach($semesterResultsOverview as $sr)
+                                        @php
+                                            $onlinePublished = $sr->isTrulyPublished();
+                                            $marksheetIssued = $sr->date_of_issue !== null;
+                                        @endphp
+                                        <li class="rounded-lg border border-gray-200 bg-gray-50/80 p-3">
+                                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                                <span class="text-sm font-semibold text-gray-900">Semester {{ $sr->semester }}</span>
+                                                <span class="text-xs text-gray-500">{{ $sr->academic_year }}</span>
+                                            </div>
+                                            <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                                                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium {{ $onlinePublished ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900' }}">
+                                                    @if($onlinePublished)
+                                                        <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                        Result published (online)
+                                                    @else
+                                                        Result not published online
+                                                    @endif
+                                                </span>
+                                                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium {{ $marksheetIssued ? 'bg-indigo-100 text-indigo-900' : 'bg-slate-200 text-slate-700' }}">
+                                                    @if($marksheetIssued)
+                                                        <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                        Marksheet issued{{ $sr->date_of_issue ? ' · ' . display_date($sr->date_of_issue) : '' }}
+                                                    @else
+                                                        Marksheet not issued yet
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -338,41 +363,96 @@
                     </div>
                 </div>
 
-                <!-- Published Semester Results Section -->
+                <!-- Published Semester Results Section (online declaration only — no PDF marksheet here) -->
                 <div id="results-section" class="bg-white overflow-hidden shadow-lg sm:rounded-lg mb-6">
                     <div class="p-6 border-b border-gray-200">
-                        <div class="flex justify-between items-center">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                             <h3 class="text-xl font-semibold text-gray-900">My Semester Results</h3>
                             <span class="text-sm text-gray-500">{{ $publishedSemesterResults->count() }} semester(s) published</span>
+                        </div>
+                        <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                            <p class="font-semibold text-amber-900">Online result only</p>
+                            <p class="mt-1 text-amber-900/90 leading-relaxed">
+                                This portal shows your <strong>published marks and percentage</strong> for information. The <strong>official printed marksheet</strong> is prepared and issued by the institute (Super Admin / office). It is <strong>not</strong> available as a downloadable PDF to students here — collect the signed marksheet from the institute when notified.
+                            </p>
                         </div>
                     </div>
                     <div class="p-6">
                         @if($publishedSemesterResults->count() > 0)
-                            <div class="space-y-4">
+                            <div class="space-y-8">
                                 @foreach($publishedSemesterResults as $semesterResult)
-                                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                                        <div class="flex justify-between items-start mb-3">
+                                    @php
+                                        $lineResults = $semesterResult->results->where('status', 'published');
+                                    @endphp
+                                    <div class="rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-4 sm:p-6 shadow-sm ring-1 ring-slate-100">
+                                        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                                             <div>
-                                                <h4 class="text-lg font-semibold text-gray-900">Semester {{ $semesterResult->semester }}</h4>
-                                                <p class="text-sm text-gray-500">{{ $semesterResult->academic_year }}</p>
+                                                <h4 class="text-lg font-bold text-slate-900">Semester {{ $semesterResult->semester }}</h4>
+                                                <p class="text-sm text-slate-500">{{ $semesterResult->academic_year }}</p>
                                             </div>
-                                            <div class="text-right">
-                                                <div class="text-2xl font-bold text-gray-900">{{ number_format($semesterResult->overall_percentage ?? 0, 2) }}%</div>
+                                            <div class="flex items-center gap-3 rounded-xl bg-indigo-600 px-4 py-3 text-white shadow-md sm:text-right">
+                                                <div class="text-xs font-medium uppercase tracking-wide text-indigo-100">Overall</div>
+                                                <div class="text-3xl font-bold tabular-nums">{{ number_format($semesterResult->overall_percentage ?? 0, 2) }}%</div>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <p class="text-sm text-gray-700">
-                                                <strong>Total:</strong> {{ $semesterResult->total_marks_obtained }} / {{ $semesterResult->total_max_marks }} marks
-                                                | <strong>Subjects:</strong> {{ $semesterResult->total_subjects }}
-                                            </p>
-                                            @if($semesterResult->result_declaration_date)
-                                            <p class="text-xs text-gray-600 mt-1">Result declared on {{ display_date($semesterResult->result_declaration_date) }}</p>
-                                            @endif
-                                            @if($semesterResult->date_of_issue)
-                                            <p class="text-xs text-gray-600">Marksheet issued on {{ display_date($semesterResult->date_of_issue) }}</p>
-                                            @endif
+                                        <div class="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700">
+                                            <span><strong class="text-slate-800">Aggregate:</strong> {{ number_format((float) $semesterResult->total_marks_obtained, 2) }} / {{ number_format((float) $semesterResult->total_max_marks, 2) }} marks</span>
+                                            <span class="hidden sm:inline text-slate-300">|</span>
+                                            <span><strong class="text-slate-800">Subjects:</strong> {{ $lineResults->count() ?: $semesterResult->total_subjects }}</span>
                                         </div>
-                                        <p class="text-xs text-gray-500 italic">Result published online. The official marksheet is issued by the institute and can be collected from the office.</p>
+                                        @if($semesterResult->result_declaration_date)
+                                            <p class="text-xs text-slate-600 mb-1">Result declared: {{ display_date($semesterResult->result_declaration_date) }}</p>
+                                        @endif
+                                        @if($semesterResult->date_of_issue)
+                                            <p class="text-xs text-slate-600 mb-4">Marksheet issue date (office): {{ display_date($semesterResult->date_of_issue) }}</p>
+                                        @endif
+
+                                        {{-- Subject-wise marks: desktop table --}}
+                                        @if($lineResults->isNotEmpty())
+                                            <div class="mt-4">
+                                                <p class="text-sm font-semibold text-slate-800 mb-3">Subject-wise marks</p>
+                                                <div class="hidden md:block overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                                                    <table class="min-w-full text-sm">
+                                                        <thead>
+                                                            <tr class="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                                                                <th class="px-4 py-3">Subject</th>
+                                                                <th class="px-4 py-3 text-right">Max</th>
+                                                                <th class="px-4 py-3 text-right">Theory</th>
+                                                                <th class="px-4 py-3 text-right">Practical</th>
+                                                                <th class="px-4 py-3 text-right">Obtained</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="divide-y divide-slate-100">
+                                                            @foreach($lineResults as $row)
+                                                                <tr class="hover:bg-slate-50/80">
+                                                                    <td class="px-4 py-3 font-medium text-slate-900">{{ $row->subject->name ?? '—' }}</td>
+                                                                    <td class="px-4 py-3 text-right tabular-nums text-slate-700">{{ number_format((float) $row->total_marks, 2) }}</td>
+                                                                    <td class="px-4 py-3 text-right tabular-nums text-slate-700">{{ number_format((float) $row->theory_marks_obtained, 2) }}</td>
+                                                                    <td class="px-4 py-3 text-right tabular-nums text-slate-700">{{ number_format((float) $row->practical_marks_obtained, 2) }}</td>
+                                                                    <td class="px-4 py-3 text-right font-semibold tabular-nums text-indigo-700">{{ number_format((float) $row->marks_obtained, 2) }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                {{-- Mobile cards --}}
+                                                <div class="md:hidden space-y-3">
+                                                    @foreach($lineResults as $row)
+                                                        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                                            <p class="font-semibold text-slate-900 mb-2">{{ $row->subject->name ?? '—' }}</p>
+                                                            <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                                                                <div><span class="text-slate-400">Max</span><br><span class="font-medium text-slate-800">{{ number_format((float) $row->total_marks, 2) }}</span></div>
+                                                                <div><span class="text-slate-400">Obtained</span><br><span class="font-semibold text-indigo-700">{{ number_format((float) $row->marks_obtained, 2) }}</span></div>
+                                                                <div><span class="text-slate-400">Theory</span><br><span class="font-medium text-slate-800">{{ number_format((float) $row->theory_marks_obtained, 2) }}</span></div>
+                                                                <div><span class="text-slate-400">Practical</span><br><span class="font-medium text-slate-800">{{ number_format((float) $row->practical_marks_obtained, 2) }}</span></div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        <p class="text-xs text-slate-500 italic mt-4 pt-4 border-t border-slate-200">Online result for your reference. Official signed marksheet from the institute office is the authoritative document.</p>
                                     </div>
                                 @endforeach
                             </div>
@@ -387,7 +467,7 @@
                     <div class="p-6">
                         <h3 class="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <a href="#results" onclick="document.getElementById('results-section').scrollIntoView({behavior: 'smooth'}); return false;" class="block p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg hover:shadow-md transition border border-indigo-100">
+                            <a href="#results-section" onclick="document.getElementById('results-section').scrollIntoView({behavior: 'smooth'}); return false;" class="block p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg hover:shadow-md transition border border-indigo-100">
                                 <div class="flex items-center">
                                     <div class="w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center mr-4">
                                         <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -395,8 +475,8 @@
                                         </svg>
                                     </div>
                                     <div>
-                                        <h4 class="font-semibold text-indigo-900 text-lg">View Results</h4>
-                                        <p class="text-sm text-indigo-700 mt-1">Check your exam results</p>
+                                        <h4 class="font-semibold text-indigo-900 text-lg">Semester results (online)</h4>
+                                        <p class="text-sm text-indigo-700 mt-1">Subject-wise marks &amp; aggregate — not the printable marksheet</p>
                                     </div>
                                 </div>
                             </a>
