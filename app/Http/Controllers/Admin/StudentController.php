@@ -869,8 +869,11 @@ class StudentController extends Controller
             }
         }
         
-        // Check if session changed - if so, regenerate registration and roll numbers
+        // Check if session changed - regenerate registration number safely.
+        // For roll number, avoid destructive auto-change for existing active students to prevent collisions.
         $sessionChanged = false;
+        $rollNumberUpdatedOnSessionChange = false;
+        $rollNumberUpdateSkippedOnSessionChange = false;
         if (isset($validated['session']) && $validated['session'] !== $student->session) {
             $sessionChanged = true;
             $newSession = $validated['session'];
@@ -887,8 +890,12 @@ class StudentController extends Controller
                     ->withInput();
             }
             
-            // Regenerate Roll Number (if student is active and has roll number)
-            if ($student->status === 'active' && $student->roll_number) {
+            // Roll number policy on session change:
+            // - If active student already has roll number, keep it unchanged (stable identifier).
+            // - If active and roll is empty, generate and enforce uniqueness.
+            if ($student->status === 'active' && !empty($student->roll_number)) {
+                $rollNumberUpdateSkippedOnSessionChange = true;
+            } elseif ($student->status === 'active') {
                 try {
                     // Reload student with relationships for enrollment number generation
                     $student->load(['institute', 'course']);
@@ -901,7 +908,18 @@ class StudentController extends Controller
                     }
                     
                     $newRollNumber = RollNumberGenerator::generateForYear($student, $newYear);
+                    $conflictExists = Student::where('roll_number', $newRollNumber)
+                        ->where('id', '!=', $student->id)
+                        ->exists();
+
+                    if ($conflictExists) {
+                        return back()
+                            ->withErrors(['session' => 'Failed to update session because generated enrollment number already exists. Please enter a unique enrollment number manually and save again.'])
+                            ->withInput();
+                    }
+
                     $validated['roll_number'] = $newRollNumber;
+                    $rollNumberUpdatedOnSessionChange = true;
                 } catch (\Exception $e) {
                     return back()
                         ->withErrors(['session' => 'Failed to generate new enrollment number: ' . $e->getMessage()])
@@ -1001,8 +1019,10 @@ class StudentController extends Controller
         }
         if ($sessionChanged) {
             $successMessage .= ' Registration number updated to: ' . $validated['registration_number'];
-            if (isset($validated['roll_number'])) {
+            if ($rollNumberUpdatedOnSessionChange && isset($validated['roll_number'])) {
                 $successMessage .= ', Enrollment No updated to: ' . $validated['roll_number'];
+            } elseif ($rollNumberUpdateSkippedOnSessionChange) {
+                $successMessage .= '. Existing Enrollment No kept unchanged to prevent duplicate conflicts';
             }
             $successMessage .= '. Old PDFs have been deleted and will regenerate with new numbers on next view.';
         }
@@ -1012,9 +1032,7 @@ class StudentController extends Controller
     }
 
     /**
-     * Soft-delete the student (only Super Admin).
-     * No data is permanently removed; the student is hidden from lists and cannot log in.
-     * Related records (results, fees, etc.) are kept for audit; they still show the student via withTrashed().
+     * Permanently delete the student and all related data (only Super Admin).
      */
     public function destroy(string $id)
     {
@@ -1023,12 +1041,45 @@ class StudentController extends Controller
             abort(403, 'Only Super Admin can remove students.');
         }
 
-        $student = Student::findOrFail($id);
-        StudentAuditLogger::logDeleted($student);
-        $student->delete(); // Soft delete: sets deleted_at
+        $student = Student::withTrashed()->findOrFail($id);
+
+        // Collect file paths before hard-deleting DB rows.
+        $documentPaths = array_values(array_filter([
+            $student->photo,
+            $student->signature,
+            $student->aadhar_front,
+            $student->aadhar_back,
+            $student->certificate_class_10th,
+            $student->certificate_class_12th,
+            $student->certificate_graduation,
+            $student->certificate_others,
+        ]));
+        $resultPdfPaths = $student->semesterResults()
+            ->whereNotNull('pdf_path')
+            ->pluck('pdf_path')
+            ->all();
+        $resultDirectory = 'results/' . $student->id;
+
+        \DB::transaction(function () use ($student): void {
+            // fees.student_id uses ON DELETE SET NULL; delete explicitly to satisfy full data removal.
+            $student->fees()->delete();
+
+            // Force delete student row. Cascades remove related rows (results, semester_results, qualifications, audits, notifications).
+            $student->forceDelete();
+        });
+
+        // Best-effort file cleanup after DB delete.
+        foreach (array_merge($documentPaths, $resultPdfPaths) as $path) {
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+        if (Storage::disk('public')->exists($resultDirectory)) {
+            Storage::disk('public')->deleteDirectory($resultDirectory);
+        }
 
         return redirect()->route('admin.students.index')
-            ->with('success', 'Student has been removed from the active list. Their records are retained for audit.');
+            ->with('success', 'Student and all related records have been permanently deleted.');
     }
 
     /**
