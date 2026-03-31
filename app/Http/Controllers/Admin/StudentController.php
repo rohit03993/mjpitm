@@ -291,7 +291,7 @@ class StudentController extends Controller
             'certificate_others' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
             
             // Communication Details
-            'email' => ['nullable', 'email', 'max:255', 'unique:students,email'],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('students', 'email')->whereNull('deleted_at')],
             'phone' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:255'],
             'nationality' => ['nullable', 'string', 'max:255'],
@@ -652,7 +652,7 @@ class StudentController extends Controller
             'certificate_others' => ['nullable', 'file', 'mimes:jpeg,png,jpg,gif,pdf', 'max:5120'],
             
             // Communication Details
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('students', 'email')->ignore($student->id)],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('students', 'email')->whereNull('deleted_at')->ignore($student->id)],
             'phone' => ['nullable', 'string', 'max:20'],
             'father_contact' => ['nullable', 'string', 'max:20'],
             'mother_contact' => ['nullable', 'string', 'max:20'],

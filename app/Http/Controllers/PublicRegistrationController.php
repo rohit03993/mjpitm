@@ -140,7 +140,7 @@ class PublicRegistrationController extends Controller
             'aadhar_back' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             
             // Contact Details
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('students', 'email')],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('students', 'email')->whereNull('deleted_at')],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['required', 'string', 'max:500'],
             'district' => ['nullable', 'string', 'max:255'],
