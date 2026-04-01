@@ -802,6 +802,43 @@ class CourseController extends Controller
             'subjects.*.practical_marks' => ['required', 'numeric', 'min:0'],
         ]);
 
+        $semester = (int) $semester;
+        if ($semester < 1) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Invalid semester number.'])
+                ->withInput();
+        }
+
+        // Validate duplicate subject codes inside the submitted form (case-insensitive)
+        $normalizedCodes = collect($validated['subjects'])
+            ->pluck('code')
+            ->map(fn($code) => strtoupper(trim((string) $code)))
+            ->filter()
+            ->values();
+        $duplicateInRequest = $normalizedCodes->duplicates()->unique()->values();
+        if ($duplicateInRequest->isNotEmpty()) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Duplicate subject codes in this semester form: ' . $duplicateInRequest->implode(', ') . '. Please keep each code unique.'])
+                ->withInput();
+        }
+
+        // Block cross-semester/course code collisions instead of deleting existing records
+        // (protects historical subjects/results from accidental data loss).
+        $conflictingCodes = Subject::whereIn('code', $normalizedCodes->all())
+            ->where(function ($query) use ($course, $semester) {
+                $query->where('course_id', '!=', $course->id)
+                      ->orWhere('semester', '!=', $semester);
+            })
+            ->pluck('code')
+            ->map(fn($code) => strtoupper(trim((string) $code)))
+            ->unique()
+            ->values();
+        if ($conflictingCodes->isNotEmpty()) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Subject code(s) already used in another course/semester: ' . $conflictingCodes->implode(', ') . '. Update the code(s) and try again.'])
+                ->withInput();
+        }
+
         // Use database transaction to ensure data consistency
         DB::beginTransaction();
         
@@ -809,16 +846,6 @@ class CourseController extends Controller
             // Delete existing subjects for this course and semester first
             Subject::where('course_id', $course->id)
                 ->where('semester', $semester)
-                ->delete();
-
-            // Also check and delete any subjects with the same codes globally
-            // (since code has a unique constraint, we need to remove duplicates)
-            $codesToCreate = collect($validated['subjects'])->pluck('code')->toArray();
-            Subject::whereIn('code', $codesToCreate)
-                ->where(function($query) use ($course, $semester) {
-                    $query->where('course_id', '!=', $course->id)
-                          ->orWhere('semester', '!=', $semester);
-                })
                 ->delete();
 
             // Create new subjects

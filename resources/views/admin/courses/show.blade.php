@@ -132,15 +132,29 @@
                 </div>
                 <div class="p-6">
                     @php
-                        $semesters = $course->subjects()->distinct()->pluck('semester')->sort()->values();
-                        $nextSemester = $semesters->count() > 0 ? $semesters->max() + 1 : 1;
+                        $subjectCountsBySemester = $course->subjects()
+                            ->selectRaw('semester, COUNT(*) as c')
+                            ->groupBy('semester')
+                            ->pluck('c', 'semester');
+                        $maxSemesters = max(1, (int) ($course->max_semesters ?? 1));
+                        $semesters = collect(range(1, $maxSemesters));
+                        $nextSemester = null;
+                        foreach ($semesters as $semNo) {
+                            if (((int) ($subjectCountsBySemester[$semNo] ?? 0)) === 0) {
+                                $nextSemester = $semNo;
+                                break;
+                            }
+                        }
+                        if ($nextSemester === null) {
+                            $nextSemester = $maxSemesters + 1;
+                        }
                     @endphp
                     
                     @if($semesters->count() > 0)
                         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
                             @foreach($semesters as $sem)
                                 @php
-                                    $subjectCount = $course->subjects()->where('semester', $sem)->count();
+                                    $subjectCount = (int) ($subjectCountsBySemester[$sem] ?? 0);
                                 @endphp
                                 <a href="{{ route('admin.courses.semester.subjects', [$course->id, $sem]) }}" 
                                    class="block p-4 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-center transition">
