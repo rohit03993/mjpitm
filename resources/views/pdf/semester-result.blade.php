@@ -402,14 +402,7 @@
                                 <tr><td class="field-label">Enrollment No. :</td><td class="field-value">{{ $semesterResult->student?->roll_number ?? $semesterResult->student?->registration_number ?? 'N/A' }}</td></tr>
                                 <tr><td class="field-label">Date of Birth :</td><td class="field-value">{{ $semesterResult->student?->date_of_birth ? display_date($semesterResult->student->date_of_birth) : 'N/A' }}</td></tr>
                                 <tr><td class="field-label">Mother’s name :</td><td class="field-value">{{ strtoupper($semesterResult->student?->mother_name ?? 'N/A') }}</td></tr>
-                                <tr><td class="field-label">Semester/Year :</td><td class="field-value">
-                                    @php
-                                        $sem = (int) $semesterResult->semester;
-                                        $yearNum = (int) ceil($sem / 2);
-                                        $yearOrd = $yearNum == 1 ? '1ST' : ($yearNum == 2 ? '2ND' : ($yearNum == 3 ? '3RD' : $yearNum . 'TH'));
-                                    @endphp
-                                    {{ $yearOrd }} YEAR
-                                </td></tr>
+                                <tr><td class="field-label">Semester/Year :</td><td class="field-value">{{ $semesterResult->marksheet_semester_year_line }}</td></tr>
                             </table>
                         </td>
                     </tr>

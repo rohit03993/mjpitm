@@ -61,6 +61,34 @@ class SemesterResult extends Model
     }
 
     /**
+     * Printed on marksheet next to "Semester/Year :" — e.g. "1ST SEMESTER / 1ST YEAR" (two semesters per year).
+     */
+    protected function marksheetSemesterYearLine(): Attribute
+    {
+        return Attribute::get(function (): string {
+            $sem = max(1, (int) $this->semester);
+            $yearNum = (int) ceil($sem / 2);
+
+            return self::marksheetOrdinalUpper($sem).' SEMESTER / '.self::marksheetOrdinalUpper($yearNum).' YEAR';
+        });
+    }
+
+    /**
+     * Ordinal labels matching existing marksheet style (1ST, 2ND, 3RD, 4TH, …).
+     */
+    private static function marksheetOrdinalUpper(int $n): string
+    {
+        $n = max(1, $n);
+
+        return match (true) {
+            $n === 1 => '1ST',
+            $n === 2 => '2ND',
+            $n === 3 => '3RD',
+            default => $n.'TH',
+        };
+    }
+
+    /**
      * Next global marksheet serial (monotonic). Uses DB row lock so allocation stays correct inside transactions.
      * Call from within an open DB transaction when creating a semester result (recommended).
      */
