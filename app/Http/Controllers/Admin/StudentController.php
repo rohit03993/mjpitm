@@ -12,11 +12,13 @@ use App\Models\RegistrationNotification;
 use App\Services\RollNumberGenerator;
 use App\Services\InstituteAdminFeeCalculator;
 use App\Services\StudentAuditLogger;
+use App\Services\StudentPermanentDeletion;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 
 class StudentController extends Controller
@@ -722,6 +724,11 @@ class StudentController extends Controller
             try {
                 // Reload student with relationships for roll number generation
                 $student->load(['institute', 'course.category']);
+
+                // RollNumberGenerator reads $student->session; align with the form before save
+                if (!empty($validated['session'])) {
+                    $student->session = $validated['session'];
+                }
                 
                 // Check if student has session (required for enrollment number generation)
                 $studentSession = $validated['session'] ?? $student->session;
@@ -974,7 +981,24 @@ class StudentController extends Controller
             $oldValues[$field] = $student->getOriginal($field);
             $newValues[$field] = $newValue;
         }
-        $student->save();
+        try {
+            $student->save();
+        } catch (QueryException $e) {
+            if (($e->errorInfo[1] ?? null) === 1062) {
+                $msg = $e->getMessage();
+                if (str_contains($msg, 'roll_number')) {
+                    return back()
+                        ->withErrors(['roll_number' => 'This enrollment number is already in use. Enter a different one or leave blank to auto-generate.'])
+                        ->withInput();
+                }
+                if (str_contains($msg, 'registration_number')) {
+                    return back()
+                        ->withErrors(['session' => 'Could not assign a unique registration number for this session. Please try again or contact support.'])
+                        ->withInput();
+                }
+            }
+            throw $e;
+        }
         StudentAuditLogger::logUpdated($student, $oldValues, $newValues);
         
         // Update qualifications - delete existing and create new ones
@@ -1043,40 +1067,7 @@ class StudentController extends Controller
 
         $student = Student::withTrashed()->findOrFail($id);
 
-        // Collect file paths before hard-deleting DB rows.
-        $documentPaths = array_values(array_filter([
-            $student->photo,
-            $student->signature,
-            $student->aadhar_front,
-            $student->aadhar_back,
-            $student->certificate_class_10th,
-            $student->certificate_class_12th,
-            $student->certificate_graduation,
-            $student->certificate_others,
-        ]));
-        $resultPdfPaths = $student->semesterResults()
-            ->whereNotNull('pdf_path')
-            ->pluck('pdf_path')
-            ->all();
-        $resultDirectory = 'results/' . $student->id;
-
-        \DB::transaction(function () use ($student): void {
-            // fees.student_id uses ON DELETE SET NULL; delete explicitly to satisfy full data removal.
-            $student->fees()->delete();
-
-            // Force delete student row. Cascades remove related rows (results, semester_results, qualifications, audits, notifications).
-            $student->forceDelete();
-        });
-
-        // Best-effort file cleanup after DB delete.
-        foreach (array_merge($documentPaths, $resultPdfPaths) as $path) {
-            if (Storage::disk('public')->exists($path)) {
-                Storage::disk('public')->delete($path);
-            }
-        }
-        if (Storage::disk('public')->exists($resultDirectory)) {
-            Storage::disk('public')->deleteDirectory($resultDirectory);
-        }
+        StudentPermanentDeletion::purge($student);
 
         return redirect()->route('admin.students.index')
             ->with('success', 'Student and all related records have been permanently deleted.');
