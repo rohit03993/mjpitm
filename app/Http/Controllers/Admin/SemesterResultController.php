@@ -56,11 +56,30 @@ class SemesterResultController extends Controller
         }
 
         // Find next semester to generate
-        // Priority: 1) Draft results (can be edited), 2) Published results with zero marks (can be regenerated), 3) Unpublished semesters
+        // Priority: 1) For a fresh student (no result rows): force Semester 1.
+        // 2) Draft results (can be edited), 3) Published results with zero marks (can be regenerated), 4) Unpublished semesters
         $nextSemester = null;
         $existingDraftResult = null;
+
+        $studentHasAnyResultRows = SemesterResult::where('student_id', $student->id)->exists();
+        if (!$studentHasAnyResultRows) {
+            $semesterOneSubjectsExist = Subject::where('course_id', $student->course_id)
+                ->where('status', 'active')
+                ->where('semester', 1)
+                ->exists();
+
+            if (! $semesterOneSubjectsExist) {
+                return redirect()->route('admin.students.show', $student)
+                    ->with('error', 'This student has no prior results, but Semester 1 subjects are missing for the course. Please add Semester 1 subjects first.');
+            }
+
+            $nextSemester = 1;
+        }
         
         foreach ($availableSemesters as $sem) {
+            if ($nextSemester !== null) {
+                break;
+            }
             // First check if there's a draft result for this semester (can be edited)
             $draftResult = SemesterResult::where('student_id', $student->id)
                 ->where('semester', $sem)
