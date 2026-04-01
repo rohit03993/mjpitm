@@ -97,6 +97,7 @@
                                                        max="{{ $subject->theory_marks ?? 0 }}"
                                                        data-theory-max="{{ $subject->theory_marks ?? 0 }}"
                                                        value="{{ old("subjects.$index.theory_marks_obtained", '') }}"
+                                                       oninput="validateAndCalculate(this)"
                                                        onchange="validateAndCalculate(this)">
                                                 <input type="hidden" name="subjects[{{ $index }}][subject_id]" value="{{ $subject->id }}">
                                                 <span class="text-xs text-red-600 theory-error hidden"></span>
@@ -112,6 +113,7 @@
                                                        max="{{ $subject->practical_marks ?? 0 }}"
                                                        data-practical-max="{{ $subject->practical_marks ?? 0 }}"
                                                        value="{{ old("subjects.$index.practical_marks_obtained", '') }}"
+                                                       oninput="validateAndCalculate(this)"
                                                        onchange="validateAndCalculate(this)">
                                                 <span class="text-xs text-red-600 practical-error hidden"></span>
                                             </td>
@@ -240,6 +242,14 @@
                 }
             }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.theory-obtained, .practical-obtained').forEach((el) => {
+                if (el.value !== '') {
+                    validateAndCalculate(el);
+                }
+            });
+        });
     </script>
 </x-app-layout>
 

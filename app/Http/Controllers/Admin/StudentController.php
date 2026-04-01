@@ -880,7 +880,6 @@ class StudentController extends Controller
         // For roll number, avoid destructive auto-change for existing active students to prevent collisions.
         $sessionChanged = false;
         $rollNumberUpdatedOnSessionChange = false;
-        $rollNumberUpdateSkippedOnSessionChange = false;
         if (isset($validated['session']) && $validated['session'] !== $student->session) {
             $sessionChanged = true;
             $newSession = $validated['session'];
@@ -897,23 +896,18 @@ class StudentController extends Controller
                     ->withInput();
             }
             
-            // Roll number policy on session change:
-            // - If active student already has roll number, keep it unchanged (stable identifier).
-            // - If active and roll is empty, generate and enforce uniqueness.
-            if ($student->status === 'active' && !empty($student->roll_number)) {
-                $rollNumberUpdateSkippedOnSessionChange = true;
-            } elseif ($student->status === 'active') {
+            // Active students: enrollment number must match the new session year (same basis as registration).
+            // Uniqueness is checked to avoid duplicate-key errors; on conflict, user must set roll manually on edit.
+            if ($student->status === 'active') {
                 try {
-                    // Reload student with relationships for enrollment number generation
                     $student->load(['institute', 'course']);
-                    
-                    // Check prerequisites
-                    if (!$student->course) {
+
+                    if (! $student->course) {
                         return back()
                             ->withErrors(['session' => 'Cannot generate enrollment number: Student must have a course assigned.'])
                             ->withInput();
                     }
-                    
+
                     $newRollNumber = RollNumberGenerator::generateForYear($student, $newYear);
                     $conflictExists = Student::where('roll_number', $newRollNumber)
                         ->where('id', '!=', $student->id)
@@ -936,28 +930,7 @@ class StudentController extends Controller
             
             // Update admission_year to match new session
             $validated['admission_year'] = $newYear;
-
-            // Recompute academic_year, result_declaration_date, and date_of_issue per semester from new session
-            $semesterResults = \App\Models\SemesterResult::where('student_id', $student->id)->get();
-            foreach ($semesterResults as $sr) {
-                $sem = (int) $sr->semester;
-                $academicYear = \App\Models\SemesterResult::getAcademicYearForSessionSemester($newSession, $sem);
-                $resultDate = \App\Models\SemesterResult::getDefaultResultDeclarationDate($newSession, $sem);
-                $issueDate = \App\Models\SemesterResult::getDefaultMarksheetIssueDate($newSession, $sem);
-                $sr->update([
-                    'academic_year' => $academicYear,
-                    'result_declaration_date' => $resultDate,
-                    'date_of_issue' => $sr->date_of_issue ? $issueDate : null, // keep issue date in sync if it was set
-                ]);
-                // Sync child Result records to same academic_year
-                \App\Models\Result::where('semester_result_id', $sr->id)->update(['academic_year' => $academicYear]);
-            }
-            // Legacy Result rows without semester_result_id: set academic_year from new session (year 1)
-            \App\Models\Result::where('student_id', $student->id)->whereNull('semester_result_id')
-                ->update(['academic_year' => $newSession]);
-
-            // Delete old PDFs (they will regenerate with new numbers on next view)
-            $this->deleteStudentPDFs($student);
+            // Semester results, legacy results, student save, and PDF cleanup run after (transaction + post-commit).
         }
         
         // Handle boolean fields
@@ -971,18 +944,88 @@ class StudentController extends Controller
         $oldQualifications = $student->qualifications()
             ->get(['id', 'examination', 'year_of_passing', 'board_university', 'percentage', 'cgpa', 'subjects'])
             ->toArray();
-        
-        // Update student and capture field-level diffs for audit history.
-        $student->fill($validated);
-        $dirty = $student->getDirty();
-        $oldValues = [];
-        $newValues = [];
-        foreach ($dirty as $field => $newValue) {
-            $oldValues[$field] = $student->getOriginal($field);
-            $newValues[$field] = $newValue;
-        }
+
+        $newQualifications = [];
+
         try {
-            $student->save();
+            \DB::transaction(function () use (
+                $student,
+                $validated,
+                $sessionChanged,
+                $qualifications,
+                $oldQualifications,
+                &$newQualifications
+            ): void {
+                if ($sessionChanged) {
+                    $newSession = $validated['session'];
+                    $semesterResults = \App\Models\SemesterResult::where('student_id', $student->id)->get();
+                    foreach ($semesterResults as $sr) {
+                        $sem = (int) $sr->semester;
+                        $academicYear = \App\Models\SemesterResult::getAcademicYearForSessionSemester($newSession, $sem);
+                        $resultDate = \App\Models\SemesterResult::getDefaultResultDeclarationDate($newSession, $sem);
+                        $issueDate = \App\Models\SemesterResult::getDefaultMarksheetIssueDate($newSession, $sem);
+                        $sr->update([
+                            'academic_year' => $academicYear,
+                            'result_declaration_date' => $resultDate,
+                            'date_of_issue' => $sr->date_of_issue ? $issueDate : null,
+                        ]);
+                        \App\Models\Result::where('semester_result_id', $sr->id)->update(['academic_year' => $academicYear]);
+                    }
+                    $legacyResults = \App\Models\Result::where('student_id', $student->id)
+                        ->whereNull('semester_result_id')
+                        ->orderBy('id')
+                        ->get();
+                    foreach ($legacyResults as $legacyRow) {
+                        $sem = max(1, (int) $legacyRow->semester);
+                        $academicYear = \App\Models\SemesterResult::getAcademicYearForSessionSemester($newSession, $sem);
+                        $legacyRow->update(['academic_year' => $academicYear]);
+                    }
+                }
+
+                $student->fill($validated);
+                $dirty = $student->getDirty();
+                $oldValues = [];
+                $newValues = [];
+                foreach ($dirty as $field => $newValue) {
+                    $oldValues[$field] = $student->getOriginal($field);
+                    $newValues[$field] = $newValue;
+                }
+                $student->save();
+                StudentAuditLogger::logUpdated($student, $oldValues, $newValues);
+
+                $student->qualifications()->delete();
+                if (! empty($qualifications)) {
+                    foreach ($qualifications as $qualification) {
+                        if (! empty($qualification['examination']) && ! empty($qualification['year_of_passing']) && $qualification['year_of_passing'] !== 'yyyy') {
+                            $newQualification = Qualification::create([
+                                'student_id' => $student->id,
+                                'examination' => $qualification['examination'],
+                                'year_of_passing' => $qualification['year_of_passing'] ?? null,
+                                'board_university' => $qualification['board_university'] ?? null,
+                                'percentage' => $qualification['percentage'] ?? null,
+                                'cgpa' => $qualification['cgpa'] ?? null,
+                                'subjects' => $qualification['subjects'] ?? null,
+                            ]);
+                            $newQualifications[] = $newQualification->only([
+                                'id',
+                                'examination',
+                                'year_of_passing',
+                                'board_university',
+                                'percentage',
+                                'cgpa',
+                                'subjects',
+                            ]);
+                        }
+                    }
+                }
+                if ($oldQualifications !== $newQualifications) {
+                    StudentAuditLogger::logRelatedUpdated($student, 'qualification', [
+                        'rows' => $oldQualifications,
+                    ], [
+                        'rows' => $newQualifications,
+                    ]);
+                }
+            });
         } catch (QueryException $e) {
             if (($e->errorInfo[1] ?? null) === 1062) {
                 $msg = $e->getMessage();
@@ -999,41 +1042,9 @@ class StudentController extends Controller
             }
             throw $e;
         }
-        StudentAuditLogger::logUpdated($student, $oldValues, $newValues);
-        
-        // Update qualifications - delete existing and create new ones
-        $student->qualifications()->delete();
-        $newQualifications = [];
-        if (!empty($qualifications)) {
-            foreach ($qualifications as $qualification) {
-                if (!empty($qualification['examination']) && !empty($qualification['year_of_passing']) && $qualification['year_of_passing'] !== 'yyyy') {
-                    $newQualification = Qualification::create([
-                        'student_id' => $student->id,
-                        'examination' => $qualification['examination'],
-                        'year_of_passing' => $qualification['year_of_passing'] ?? null,
-                        'board_university' => $qualification['board_university'] ?? null,
-                        'percentage' => $qualification['percentage'] ?? null,
-                        'cgpa' => $qualification['cgpa'] ?? null,
-                        'subjects' => $qualification['subjects'] ?? null,
-                    ]);
-                    $newQualifications[] = $newQualification->only([
-                        'id',
-                        'examination',
-                        'year_of_passing',
-                        'board_university',
-                        'percentage',
-                        'cgpa',
-                        'subjects',
-                    ]);
-                }
-            }
-        }
-        if ($oldQualifications !== $newQualifications) {
-            StudentAuditLogger::logRelatedUpdated($student, 'qualification', [
-                'rows' => $oldQualifications,
-            ], [
-                'rows' => $newQualifications,
-            ]);
+
+        if ($sessionChanged) {
+            $this->deleteStudentPDFs($student);
         }
 
         // Prepare success message
@@ -1045,8 +1056,6 @@ class StudentController extends Controller
             $successMessage .= ' Registration number updated to: ' . $validated['registration_number'];
             if ($rollNumberUpdatedOnSessionChange && isset($validated['roll_number'])) {
                 $successMessage .= ', Enrollment No updated to: ' . $validated['roll_number'];
-            } elseif ($rollNumberUpdateSkippedOnSessionChange) {
-                $successMessage .= '. Existing Enrollment No kept unchanged to prevent duplicate conflicts';
             }
             $successMessage .= '. Old PDFs have been deleted and will regenerate with new numbers on next view.';
         }

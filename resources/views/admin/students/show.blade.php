@@ -35,7 +35,7 @@
                     <a href="{{ route('admin.students.edit', $student->id) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
                         Edit Status & Enrollment No.
                     </a>
-                    <form action="{{ route('admin.students.destroy', $student->id) }}" method="POST" class="inline" onsubmit="return confirm('Remove this student from the active list? Their data will be kept for audit but they will not appear in lists or be able to log in.');">
+                    <form action="{{ route('admin.students.destroy', $student->id) }}" method="POST" class="inline" onsubmit="return confirm('Permanently delete this student? All related records (results, fees, qualifications, files) will be removed. This cannot be undone.');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
@@ -529,7 +529,7 @@
                     <a href="{{ route('admin.students.edit', $student->id) }}" class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-2.5 text-xs font-semibold text-white">
                         Edit
                     </a>
-                    <form action="{{ route('admin.students.destroy', $student->id) }}" method="POST" onsubmit="return confirm('Remove this student from the active list? Their data will be kept for audit but they will not appear in lists or be able to log in.');">
+                    <form action="{{ route('admin.students.destroy', $student->id) }}" method="POST" onsubmit="return confirm('Permanently delete this student? All related records (results, fees, qualifications, files) will be removed. This cannot be undone.');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="w-full rounded-lg bg-red-600 px-3 py-2.5 text-xs font-semibold text-white">

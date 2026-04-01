@@ -11,6 +11,7 @@ use App\Models\Subject;
 use App\Services\StudentAuditLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class SemesterResultController extends Controller
@@ -353,10 +354,27 @@ class SemesterResultController extends Controller
             return redirect()->route('admin.semester-results.show', $semesterResult)
                 ->with('success', 'Semester result created successfully. Please review and publish.');
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
+            Log::error('Semester result store failed', [
+                'student_id' => $student->id,
+                'message' => $e->getMessage(),
+                'exception' => $e,
+            ]);
+
+            $userMessage = 'An error occurred while saving the result. Please try again.';
+            if (config('app.debug')) {
+                $userMessage .= ' ('.$e->getMessage().')';
+            } elseif (
+                str_contains($e->getMessage(), 'marksheet_serial_sequences')
+                || str_contains($e->getMessage(), 'no such table')
+                || str_contains($e->getMessage(), "doesn't exist")
+            ) {
+                $userMessage .= ' The database may be missing recent migrations — on the server run: php artisan migrate';
+            }
+
             return redirect()->back()
-                ->withErrors(['error' => 'An error occurred while saving the result. Please try again.'])
+                ->withErrors(['error' => $userMessage])
                 ->withInput();
         }
     }
